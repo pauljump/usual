@@ -108,6 +108,32 @@ transcripts. Reports expose exclusions, malformed/oversized records, cancelled q
 and import errors. Deterministic secret redaction runs before storage; it does not remove
 all potentially private information. See [runtime semantics](references/runtime.md).
 
+## Usual Pop (à la carte)
+
+Pop the links your coding agent hands you into the browser you actually want. Pop is independent of
+the rest of Usual: it installs on its own, stores nothing, and needs no account, database, or mined
+history. Install it without Usual if that is all you want.
+
+```
+read https://tryusual.com/pop and install it
+```
+
+Your agent works out whether it is Claude Code or Codex, asks which browser you prefer, and writes
+the rule into `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md`. After that, every link it hands you
+arrives with one affordance per destination:
+
+```markdown
+[Chrome](googlechromes://example.com) · [Safari](x-safari-https://example.com) · [Desktop](https://example.com) · `https://example.com`
+```
+
+The mobile links use the iOS browser URL schemes, so they open that browser regardless of which one
+is set as default. The desktop link is an ordinary URL and opens whatever the default is — no
+clickable link can force a browser on macOS, and Pop does not pretend otherwise. When your agent has
+shell access, `open -a "Google Chrome" "<url>"` is the reliable desktop path.
+
+Full rule, install steps, and a table of which schemes actually work on which platform:
+[tryusual.com/pop](https://tryusual.com/pop).
+
 ## From Itchy to Usual
 
 Itchy started with a small question: how useful could a model be if it focused on one

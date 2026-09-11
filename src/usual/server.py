@@ -1305,12 +1305,19 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/robots.txt": ("public/robots.txt", "text/plain; charset=utf-8"),
         "/sitemap.xml": ("public/sitemap.xml", "application/xml; charset=utf-8"),
         "/learn.md": ("public/learn.md", "text/plain; charset=utf-8"),
+        "/pop": ("public/pop.md", "text/plain; charset=utf-8"),
         "/demo.json": ("public/demo.json", "application/json"),
         "/build.json": ("public/build.json", "application/json"),
         "/reading-list.zip": ("public/reading-list.zip", "application/zip"),
         "/release.json": ("public/release.json", "application/json"),
         "/usual.zip": ("public/usual.zip", "application/zip"),
         "/og.png": ("public/og.png", "image/png"),
+    }
+
+    # Usual Pop replaced the per-browser pages; keep already-shared links working.
+    PATH_REDIRECTS = {
+        "/chrome": "/pop",
+        "/safari": "/pop",
     }
 
     def _serve(self, head=False):
@@ -1327,6 +1334,16 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         if path in slash_pages:
             query = urllib.parse.urlparse(self.path).query
             destination = path + "/"
+            if query:
+                destination += "?" + query
+            self.send_response(308)
+            self.send_header("Location", destination)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path in self.PATH_REDIRECTS:
+            query = urllib.parse.urlparse(self.path).query
+            destination = self.PATH_REDIRECTS[path]
             if query:
                 destination += "?" + query
             self.send_response(308)
