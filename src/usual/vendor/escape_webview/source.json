@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "name": "escape-webview",
+  "version": "1.0.0",
+  "repository": "https://github.com/pauljump/escape-webview",
+  "commit": "8ded426d530638ea334bfd137345114973f3d602",
+  "license": "MIT",
+  "integration": "Pinned upstream dependency with one explicit Usual integration patch. Upstream remains canonical; Usual owns its catalog and installation.",
+  "files": {
+    "escape-webview.js": "cd94ccce483e2be8aa973feb345fdcdad80bce4511c37484df5eed571ac81c39",
+    "escape-webview.upstream.js": "d0bfd537046e22021070c26a33c6af8e54d9a073d9fed3bec37f948905268b46",
+    "LICENSE": "5cd63faebadcf20277c9e438f525198655a807229ab9a3523007c4f312ab9afa"
+  },
+  "source_files": {
+    "escape-webview.upstream.js": "src/escape-webview.js",
+    "LICENSE": "LICENSE"
+  },
+  "update_policy": "Review an explicit upstream commit, replace escape-webview.upstream.js and LICENSE, review or retire the one-line patch, regenerate escape-webview.js, update both hashes and the install cache version, rerun tests/test_collection_escape.py and browser integration tests. Serve only escape-webview.js. Never fetch latest at runtime.",
+  "verification": {
+    "scripted_client": "Usual tests exercise synthetic user agents, DOM render paths, telemetry-disabled installation, and unsafe URL rejection. These are not device tests.",
+    "upstream_device_report": "Upstream reports X for iPhone 12.21 on iOS 26.6 only; not independently revalidated by Usual.",
+    "limitations": [
+      "iOS is guided; no automatic escape is promised.",
+      "Android intent navigation is attempted; app and device behavior varies.",
+      "Other app menu wording and browser handoff remain device-unverified."
+    ]
+  },
+  "distribution_version": "1.0.0+usual.1",
+  "patches": [
+    {
+      "id": "usual-generic-guide-copy-1",
+      "file": "escape-webview.js",
+      "from": "GUIDE.menu.trigger",
+      "to": "GUIDE.menu.tap",
+      "reason": "The generic menu object defines tap, not trigger. Correct visible undefined text in generic or forced desktop card."
+    }
+  ]
+}

@@ -1292,8 +1292,7 @@ class ConsumerUsualHandler(UsualHandler):
 class PublicAutopilotHandler(BaseHTTPRequestHandler):
     """A public product demo and code download. No private store is opened here."""
     ASSETS = {
-        "/": ("autopilot.html", "text/html; charset=utf-8"),
-        "/index.html": ("autopilot.html", "text/html; charset=utf-8"),
+        "/choices/legacy/": ("autopilot.html", "text/html; charset=utf-8"),
         "/claude-code-memory/": ("claude-code-memory.html", "text/html; charset=utf-8"),
         "/codex-memory/": ("codex-memory.html", "text/html; charset=utf-8"),
         "/local-ai-coding-memory/": ("local-ai-coding-memory.html", "text/html; charset=utf-8"),
@@ -1316,6 +1315,17 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/og.png": ("public/og.png", "image/png"),
         "/demo/video": ("public/demo-video.mp4", "video/mp4"),
         "/demo/video.mp4": ("public/demo-video.mp4", "video/mp4"),
+        "/collection.css": ("public/collection.css", "text/css; charset=utf-8"),
+        "/collection.js": ("public/collection.js", "text/javascript; charset=utf-8"),
+        "/mark.svg": ("public/mark.svg", "image/svg+xml"),
+        "/collection-og.svg": ("public/collection-og.svg", "image/svg+xml"),
+        "/collection-og.png": ("public/collection-og.png", "image/png"),
+        "/catalog.json": ("catalog.json", "application/json"),
+        "/flagship.json": ("public/flagship.json", "application/json"),
+        "/example-setup.json": ("public/example-setup.json", "application/json"),
+        "/example-setup.html": ("public/example-setup.html", "text/html; charset=utf-8"),
+        "/escape/escape-webview.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
+        "/escape-widget.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
     }
 
     # A plain-text URL carries no markup, so sharing one produces a bare link with no
@@ -1330,8 +1340,8 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
     PREVIEW_CARDS = {
         "/pop/install": (
             "Usual Pop: Open Agent Links in the Browser You Actually Want",
-            "The install script for Usual Pop. Hand it to Claude Code or Codex and every "
-            "link it gives you arrives ready for Chrome, Safari, or your desktop.",
+            "The standalone Pop install guide. Choose a browser-link format and inspect "
+            "its local changes and verification limits.",
             "/pop/",
         ),
     }
@@ -1381,6 +1391,14 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
 
     def _serve(self, head=False):
         path = urllib.parse.urlparse(self.path).path
+        # Only the six packaged catalog IDs may select a generated route. No
+        # request path is used to open a local file or a private runtime store.
+        from . import website
+        try:
+            catalog_ids = {item["id"] for item in website.items()}
+        except (OSError, ValueError, KeyError, TypeError):
+            self.send_error(503, "The public catalog is unavailable")
+            return
         slash_pages = {
             "/claude-code-memory",
             "/codex-memory",
@@ -1391,7 +1409,11 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/install",
             "/pop",
             "/demo/interactive",
+            "/escape/demo",
+            "/choices/legacy",
         }
+        slash_pages.update("/" + item_id for item_id in catalog_ids)
+        slash_pages.update("/menu/" + item_id for item_id in catalog_ids)
         if path in slash_pages:
             query = urllib.parse.urlparse(self.path).query
             destination = path + "/"
@@ -1426,7 +1448,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         if path == "/health":
-            data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.0.0b2"}'
+            data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.1.0b1","collection":"six"}'
             mime = "application/json"
         elif path in self.PREVIEW_CARDS and self._is_social_crawler():
             data = self._preview_card(path)
@@ -1438,6 +1460,20 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             except OSError:
                 self.send_error(503, "Release assets are not built yet")
                 return
+        elif path in ("/", "/index.html"):
+            data = website.homepage()
+            mime = "text/html; charset=utf-8"
+        elif path == "/escape/demo/":
+            data = website.escape_demo()
+            mime = "text/html; charset=utf-8"
+        elif any(path in {f"/{item_id}/", f"/menu/{item_id}/"} for item_id in catalog_ids):
+            data = website.item_page(path.strip("/").split("/")[-1])
+            mime = "text/html; charset=utf-8"
+        elif any(path in {f"/{item_id}/{action}", f"/menu/{item_id}/{action}"}
+                 for item_id in catalog_ids for action in ("install", "use")):
+            item_id, action = path.strip("/").split("/")[-2:]
+            data = website.agent_guide(item_id, action)
+            mime = "text/plain; charset=utf-8"
         else:
             self.send_error(404, "Not Found")
             return
@@ -1454,6 +1490,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/reading-list.zip",
             "/release.json",
             "/usual.zip",
+            "/flagship.json",
         }:
             self.send_header("X-Robots-Tag", "noindex, nofollow")
         if path in ("/usual.zip", "/reading-list.zip"):
@@ -1482,9 +1519,15 @@ def run_server(host: str = "127.0.0.1", port: int = 8780, consumer_only: bool = 
     httpd = ThreadingHTTPServer(server_address, handler)
     print(f"============================================================")
     print(f"  ⚖️  Usual Server Running at http://{host}:{port}")
-    print(f"  🌐  Web Studio:     http://{host}:{port}/")
-    print(f"  🔌  WebMCP (SSE):   http://{host}:{port}/sse")
-    print(f"  📋  OpenAPI Spec:   http://{host}:{port}/openapi.json")
+    if autopilot_public:
+        print(f"  Public collection: http://{host}:{port}/")
+        print("  Public examples and downloads only; no private history API.")
+    elif consumer_only:
+        print(f"  Consumer preview: http://{host}:{port}/")
+    else:
+        print(f"  🌐  Web Studio:     http://{host}:{port}/")
+        print(f"  🔌  WebMCP (SSE):   http://{host}:{port}/sse")
+        print(f"  📋  OpenAPI Spec:   http://{host}:{port}/openapi.json")
     print(f"============================================================")
     try:
         httpd.serve_forever()

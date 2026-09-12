@@ -1,239 +1,134 @@
 # Usual
 
-**Your AI should know how you work.**
+**Your AI, how you like it.**
 
-[Usual](https://tryusual.com) is an open-source local memory skill for Claude Code and Codex. It carries past coding decisions into future builds without adding a hosted inference service.
+Useful tools for your coding agents. Pick your favorites, discover what fits, and make them your usual.
 
-[Website](https://tryusual.com) · [Learn Usual](LEARN.md) · [Source](https://github.com/pauljump/usual)
+[Try the synthetic demo](https://tryusual.com/#example) · [Browse the menu](https://tryusual.com/#menu) · [Source & contributions](https://github.com/pauljump/usual)
 
-Usual analyzes your local Claude and Codex conversations for the moments when an agent
-asked you to choose. It preserves the question, offered alternatives, your actual answer,
-and the surrounding context. The next time a similar decision arises, your agent can
-consult that history, make a reasoned call, and show you what it decided afterward.
+![Usual: six independently useful tools](src/usual/public/collection-og.svg)
 
-Tell your coding AI:
+A repeated request can become a useful change: **selected history → a cited finding → an inspected routine → a real result → a receipt → an optional setup to share.** Vibecheck is the discovery door. You can also take a single item from the menu immediately.
 
-> Learn Usual: https://tryusual.com/learn.md
-
-It installs the skill and walks you through learning from your past decisions. Then:
-
-> Build me a reading-list app with Usual.
-
-Usual helps your agent make the routine choices and gives you a decision review afterward.
-
-Your old answers already contain useful evidence. You do not have to label every past
-conversation again. Your review of **new** predictions closes the loop and makes future
-evidence better. Usual retains context and exceptions rather than turning every
-“Yes” into an unconditional rule.
-
-MIT licensed. Mining, storage, retrieval, and review run locally without a Usual
-account or hosted inference service. **Your current coding model supplies the reasoning.**
-Usual makes no model API calls, trains no weights, and does not claim that local
-storage makes your coding model's inference offline.
-
-## Install and use
-
-Requires Python 3.11+ and a local Codex or Claude Code installation. The runtime uses only the Python standard library. No extra model account, pip dependencies, or Usual API key.
-
-The [learn guide](LEARN.md) gives your agent the installation steps. Once installed,
-start with `/usual` in Claude Code, `$usual` or the skill picker in Codex,
-or simply “use Usual.” The first conversation offers recent history, all local
-history, or starting without history; shows supported patterns with examples; then
-helps you start a build. You can skip mining and learn through future reviewed decisions.
-
-| Mode | How your agent works |
-| --- | --- |
-| **Autopilot** (default) | Makes routine reversible choices; labels assumptions; gives you a review afterward. |
-| **Check-in** | Asks before each material judgment call; carries out choices you've already agreed. |
-| **Escalation** | Uses applicable history; asks when evidence is missing, weak, or conflicting. |
-
-Say “use check-in mode for this build” or “make escalation my default.” Usual
-stores the mode locally. Changing a default affects new builds; an active run keeps
-its own mode unless you change it explicitly.
-
-**Every mode asks before deleting existing files, data, or resources unless you've
-already given permission for that deletion.** Spending, publication, sharing, and
-credential changes also require current authority. Past approvals are never permission
-for a new action. These are instructions and ledger gates for the calling agent;
-Usual does not intercept shell commands or replace client permission controls.
-
-Client invocation follows the official [Codex skills documentation](https://developers.openai.com/codex/skills)
-and [Claude Code skills documentation](https://code.claude.com/docs/en/skills).
-
-<details>
-<summary>Manual installation and history commands</summary>
-
-Obtain this repository, inspect the installer, and run:
-
-```bash
-python3 install.py --client both
+```sh
+# From a downloaded or cloned source checkout. Python 3.11+, no pip or API key.
+python3 scripts/run_flagship.py --out /tmp/my-first-usual-demo
 ```
 
-Use `--client codex` or `--client claude` for one client. The installer copies a
-self-contained skill into `~/.agents/skills/usual` and/or
-`~/.claude/skills/usual`. Existing versions are backed up outside skill discovery.
-Moving the source folder afterward will not break the skill. No global client settings
-or permissions are changed. Reopen the client if the skill does not appear.
+Open `/tmp/my-first-usual-demo/setup.html` for the shareable card and `my-usual.private.html` for the private setup inspection. This reproducible example uses three synthetic history files, keeps a note-only exception, checks actual files twice, and installs a sanitized recipe into a separate recipient home. Its checks are deterministic; no live model or device behavior is implied.
 
-```bash
-python3 scripts/usual.py onboard
-python3 scripts/usual.py mine --provider both --all --dry-run
-python3 scripts/usual.py mine --provider both --all
-python3 scripts/usual.py mode --set autopilot
+## Pick one
+
+<!-- usual:menu:start -->
+| # | Tool | What it does | Maturity |
+| --- | --- | --- | --- |
+| 01 | [Vibecheck](https://tryusual.com/menu/vibecheck/) | Find useful patterns in the history you choose. | Evidence beta |
+| 02 | [Choices](https://tryusual.com/menu/choices/) | Carry past decisions into the next build, with a review. | Local beta |
+| 03 | [Recall](https://tryusual.com/menu/recall/) | Find what was said, with the source attached. | Adapter beta |
+| 04 | [Loops](https://tryusual.com/menu/loops/) | Make one recurring method easy to run again. | Scoped routine beta |
+| 05 | [Pop](https://tryusual.com/menu/pop/) | Get links in the format and browser you prefer. | Rule beta |
+| 06 | [Escape](https://tryusual.com/menu/escape/) | Help website visitors leave an in-app browser. | Pinned upstream widget |
+<!-- usual:menu:end -->
+
+À la carte means independently useful. History and Choices are optional. Each item declares its changes, storage, configuration, source and verification in the [versioned catalog](src/usual/catalog.json).
+
+**Try Pop on its own:**
+
+```sh
+python3 scripts/usual.py pop use 'https://example.com' --browser both
 ```
 
-The agent uses its installed script's absolute path. `--all` includes Codex archives
-and main-session Claude transcripts; omit it for a recent sample. Unchanged files are
-skipped on later runs. Use `--force` after a miner upgrade.
+To install the instruction into your coding client, inspect the source, then run:
 
-</details>
-
-Usual links native question controls to the actual human replies, including Claude's
-`AskUserQuestion` and Codex's synchronous/asynchronous question tools. It also retains
-adjacent assistant-question/user-reply pairs as candidates for interpretation. Short
-answers such as “yes” retain the question that gives them meaning.
-
-Each private episode includes source project, date, file and line references, options,
-answer, and the next assistant statement when available. That follow-up is observed
-context, not proof an action succeeded. Exact matching can identify a selected option;
-freeform answers stay in your words. The agent interprets reasons and exceptions.
-
-```bash
-python3 scripts/usual.py episodes --search "storage" --limit 10
+```sh
+python3 scripts/usual.py pop install --client codex --browser both
+# Or --client claude. Use --project /path/to/project for a project-only rule.
 ```
 
-Mining is explicit and repeatable, with per-file checkpoints and reversible retirement
-of candidate links invalidated by source reprocessing. It never modifies original
-transcripts. Reports expose exclusions, malformed/oversized records, cancelled questions,
-and import errors. Deterministic secret redaction runs before storage; it does not remove
-all potentially private information. See [runtime semantics](references/runtime.md).
+Pop preserves unrelated instructions and refuses conflicting edits. It needs no decision database, history import, Usual skill installation or account. [Agent installation instructions](https://tryusual.com/pop/install) keep the existing simple URL. Custom iOS schemes are candidates to check on the actual device; ordinary desktop links use the default browser.
 
-## Experiment: portable thinking profile
+## Find my usual
 
-Analyze how you decide in a selected chat, combine that evidence into a private thinking profile, and let another assistant look it up:
+Install the portable skill for your client:
 
-```bash
-python3 experiments/portable-memory/app.py
+```sh
+python3 install.py --client codex
+# Or --client claude / --client both. --home /tmp/test-home isolates installation.
 ```
 
-The private pilot now offers a remote MCP connection at
-`https://testing.polyfeeds.dev/mcp`. Connect once with OAuth, then say **Add to my
-Usual** to save decisions directly and **Use my Usual** to retrieve them in another
-connected session. The website provides optional review and export; manual transfer
-is a fallback. The invited testers have separate private links and databases. The experiment does not
-read all your chat history. [Setup, tools, and limitations](experiments/portable-memory/README.md).
+Then ask your current agent to **find my usual from a selected history folder**. Choose that scope explicitly. The public website cannot access local files or connect itself to your agent. These commands run on the machine holding the history:
 
-## Usual Pop (à la carte)
-
-Pop the links your coding agent hands you into the browser you actually want. Pop is independent of
-the rest of Usual: it installs on its own, stores nothing, and needs no account, database, or mined
-history. Install it without Usual if that is all you want.
-
-```
-read https://tryusual.com/pop/install and install it
+```sh
+python3 scripts/usual.py vibecheck scan --source /path/to/selected-history
+python3 scripts/usual.py vibecheck handoff REPORT_ID
 ```
 
-Your agent works out whether it is Claude Code or Codex, asks which browser you prefer, and writes
-the rule into `~/.claude/CLAUDE.md` or `~/.codex/AGENTS.md`. After that, every link it hands you
-arrives with one affordance per destination:
+The scan returns up to three cautious findings with source lines, dates, context, exceptions and limits. A file handoff lets the active agent interpret bounded evidence; `vibecheck import REPORT_ID --file report.json` validates its citations. You can inspect, correct or dismiss findings. No engineering grade, percentile or universal preference is inferred from activity.
 
-```markdown
-[Chrome](googlechromes://example.com) · [Safari](x-safari-https://example.com) · [Desktop](https://example.com) · `https://example.com`
+A finding does not install or execute anything. Inspect the proposed change, select its scope, use it, and read the resulting receipt. [History commands and limits](references/history.md) · [Loops commands](references/loops.md).
+
+## My Usual
+
+Tool selections, configuration, scope, installation state and verification persist separately from private historical evidence:
+
+```sh
+python3 scripts/usual.py setup install loops --scope /path/to/project
+python3 scripts/usual.py loops create release-files --scope /path/to/project --file README.md --file manifest.json
+python3 scripts/usual.py loops preview release-files --label 'Release review'
+python3 scripts/usual.py loops run release-files --label 'Release review'
+python3 scripts/usual.py setup inspect
+python3 scripts/usual.py setup inspect --format html --out /tmp/my-usual.private.html
 ```
 
-The mobile links use the iOS browser URL schemes, so they open that browser regardless of which one
-is set as default. The desktop link is an ordinary URL and opens whatever the default is — no
-clickable link can force a browser on macOS, and Pop does not pretend otherwise. When your agent has
-shell access, `open -a "Google Chrome" "<url>"` is the reliable desktop path.
+Loops' first maintained method checks explicitly selected files, JSON validity and optional expected hashes. It is editable, invocable and bounded; it does not invent or execute arbitrary project commands. A receipt proves those file checks, not application correctness or permission to release.
 
-Full rule, install steps, and a table of which schemes actually work on which platform:
-[tryusual.com/pop](https://tryusual.com/pop/), where the à la carte menu lists Pop and anything
-else that stands on its own, with a live example you can tap.
+Use `setup configure`, `setup disable` and `setup remove` to adjust selections. Pop updates use `pop install` again; modified managed blocks are preserved for reconciliation. Loops uses `loops edit`, `disable`, `enable` and `remove`; corrections preserve previous versions. Escape installs its pinned asset and license; you explicitly add or remove its script tag. [Setup and removal details](references/collection.md).
 
-## From Itchy to Usual
+## Share the selection
 
-Itchy started with a small question: how useful could a model be if it focused on one
-narrow job? Building with coding agents made that job concrete. The agent kept asking
-for decisions its user had already made in earlier conversations.
+```sh
+# Default export: module IDs and versions only, after review.
+python3 scripts/usual.py setup export --reviewed --out /tmp/setup.json --html /tmp/setup.html
+# Include an explicitly reviewed safe option: --include-config pop.browser
 
-Usual carries those decisions forward. It finds the original question and human answer,
-keeps the context, and gives your current agent evidence for the next call. Your
-corrections improve what it can draw on next time.
-
-The name changed; the thread stayed the same: make a focused tool useful through
-feedback. Usual uses your existing coding model rather than the original Itchy weights.
-The [original research and its results correction](archive/itchy/README.md) are preserved
-in the archive. [Read the evolution](references/evolution.md).
-
-## Already using Whetstone?
-
-Run the new installer. It installs `/usual`, backs up the old skill, and preserves your
-local history under `~/.usual`. Existing database paths keep working through a
-compatibility link. If both old and new data directories exist, neither is overwritten.
-See [migration details](references/migration.md).
-
-## What actually runs
-
-The **current coding model** supplies judgment. Usual is its local evidence and audit tool, not a second model or a set of fine-tuned weights. Using the skill still consumes the coding client's normal model usage. The runtime itself makes no inference calls.
-
-Each task gets a durable run ID. The skill consults material implementation questions and records one of:
-
-- **Prediction:** a proposed user-like choice with citations to retrieved evidence.
-- **Agent default:** a visible low-confidence assumption for a reversible, in-scope choice when evidence is insufficient.
-- **Escalation:** something needing the current user's input or authority.
-
-Evidence retrieval is lexical and confidence is the agent's qualitative assessment. Neither is an accuracy percentage. Quotes can be context-dependent or contradictory; the skill must interpret them and follow current instructions. Usual does not execute actions or override the client's permission system. It cannot convert an old “yes” into permission to publish, spend, delete, or share now.
-
-## Review and learn
-
-At the end, the agent returns its report and a `review-ui --run RUN_ID` command. The private local review page shows the choice, rationale, source quotes, and review status. Choose **That's my call**, **I'd choose differently**, or **Don't learn this**.
-
-Historical human replies enter as observed decision episodes. For new agent predictions, only explicit acceptance/correction adds project-scoped endorsed evidence. Unreviewed and rejected predictions are never fed back as human choices. The original prediction survives correction. Retired evidence is excluded from future retrieval while old receipts remain intact. The local confirmation mechanism is a contract with the calling skill, not separate human identity verification against another process on the same computer.
-
-## Data and recovery
-
-The default store is `~/.usual/judgment.sqlite3`, outside project repositories. SQLite uses private file permissions, transactions, WAL, foreign keys, and a busy timeout. Native transcript files are never modified. Common secrets are redacted before persistence; this is not complete PII detection. Evidence supplied to Codex or Claude is processed by that provider under its normal data handling.
-
-The private review server binds to 127.0.0.1 and requires a fresh in-memory capability for data access. It checks Host/Origin and does not allow cross-origin data access. Never tunnel it. The public website serves only code downloads and worked examples, not a private corpus API.
-
-Use `backup /new/private/file.sqlite3` for a consistent snapshot; existing backups are not overwritten. Use `status` and `report --run RUN_ID` to resume interrupted work. See [runtime semantics](references/runtime.md) for import limits, scopes, retirement, and review behavior.
-
-The public hosting layer has existing Pulse and Cloudflare visit/performance analytics. The CLI and private review UI contain no analytics and do not upload transcript data to the website.
-
-## Demo and validation status
-
-This is a **local beta**. The website source bundle includes guided setup, the decision-history miner, and autonomy modes. The local runtime and clean installation have been tested. The public walkthrough exercises the same importer, retrieval, ledger, and review workflow you use with your own coding history.
-
-```bash
-python3 scripts/run_demo.py --out /tmp/usual-demo.json
+# Recipient: inspect, choose your own scope, then select and install deliberately.
+python3 scripts/usual.py setup import /tmp/setup.json
+python3 scripts/usual.py setup import /tmp/setup.json --scope /path/to/my-project --reviewed
+python3 scripts/usual.py setup install pop --scope /path/to/my-project
 ```
 
-It verifies native imports, duplicate handling, source citations, permission escalation, isolation of unreviewed predictions, and retrieval of a correction in the next run. JSON and HTML receipts are generated. See [the end-to-end demo protocol](references/demo.md) for live-client testing and the distinction between a replay and an actual generated application.
+A recipe excludes transcripts, source quotes, paths, private project names, permissions, private routines and unreviewed preferences. Import does not run code or install instructions. There is no public sharing backend. A recipient adapts environment-specific choices locally.
 
-Validation covers durable runs, source attribution, idempotent and concurrent recording, run closure, explicit human review, project isolation, backups, redaction, review authentication, native transcript role filtering, and clean installation. Live client/version results must be recorded separately; a test suite alone does not prove unattended production readiness or decision accuracy across users.
+## Already using Usual or Whetstone?
 
-## Development and release
+**Choices is a menu label.** `$usual`, `/usual`, `onboard`, `mine`, `episodes`, `start`, `consult`, `record`, `finish`, `review`, `review-ui`, modes and `--db` keep their meanings. The existing `~/.usual/judgment.sqlite3` remains intact; new selections use separate files. Existing Whetstone migration and backup compatibility remain supported.
 
-```bash
-PYTHONPATH=src python3 -m pytest -q
-```
+[Choices runtime and permissions](references/runtime.md) · [Onboarding](references/onboarding.md) · [Migration](references/migration.md) · [Decision-review demo](references/demo.md).
 
-From the repository root:
+Recall answers **what was said**, with citations. Choices asks the current agent **which historical decision applies now**, then records and reviews the resulting choice. Neither historical approvals nor passing checks create new authority.
 
-```bash
-python3 scripts/usual.py --help
+## Privacy and compatibility
+
+This is a **local beta**. Codex and Claude native JSONL adapters, Python runtime behavior, managed instruction installs and synthetic browser clients have local test coverage. Fresh live-agent sessions, new operating systems and additional physical devices need separate validation. [Exact verification boundaries](references/verification.md).
+
+Parsing, indexing, storage and receipts run locally with Python's standard library. Derived data belongs outside source repositories. Usual makes no model API calls and sends no CLI telemetry. **Evidence given to a hosted coding agent goes through that provider's normal handling and consumes its usual model usage.** Local storage does not make inference offline.
+
+The new collection pages have no third-party browser scripts. Existing legacy pages retain disclosed browser analytics; the public hosting layer may collect visit/performance data. The public site contains synthetic examples and source downloads, never a private corpus endpoint. [Privacy](https://tryusual.com/privacy/).
+
+Escape is a pinned MIT upstream dependency with one documented integration patch; its original repository stays canonical. Recall adapts Transcript Mine's local core into one maintained Usual implementation. Vibecheck's former material remains guide/reference material; it does not establish engineering quality. [Source provenance](references/provenance.md).
+
+## Build and contribute
+
+```sh
+python3 -m pytest -q
+python3 scripts/validate_catalog.py
+python3 scripts/run_flagship.py --out /tmp/usual-flagship
 python3 scripts/build_release.py
-PYTHONPATH=src python3 -m usual.server --autopilot-public --port 8794
+PYTHONPATH=src python3 -m usual.server --autopilot-public --host 127.0.0.1 --port 8876
 ```
 
-The release builder uses an explicit code-only allowlist and emits a SHA-256 manifest. It never packages private SQLite files, local reports, credentials, or real transcripts. Public deployment uses the `tryusual.com` Cloudflare Tunnel route, process `usual-web`, port 8230, through the control-plane fleet registry/vault runner. See [deploy/web.json](deploy/web.json).
+Release downloads are built from an explicit source allowlist with SHA-256 contents. Private data, experiments, credentials and research are excluded. The current local work requires review before publication to the canonical `tryusual.com` route.
 
-The earlier consumer onboarding and experimental studio remain local legacy interfaces. The old blinded-decision benchmark is historical, single-person research. Its original implementation remains in the repository's exam/grade modules and Git history.
+[Contribute an item or adapter](CONTRIBUTING.md), reproduce a failure, or generalize a useful routine. The [minimal contributor example](examples/catalog/) includes its own validation command. If Usual is useful, a voluntary [GitHub star](https://github.com/pauljump/usual) helps others find the collection.
 
-Skill format references: [Codex](https://learn.chatgpt.com/docs/build-skills), [Claude Code](https://code.claude.com/docs/en/skills).
-
-MIT licensed. See [LICENSE](LICENSE).
-
-## Recorded build
-
-The public site also offers a runnable reading-list app at `/reading-list.zip` and its decision receipts at `/build.json`. The example shows the choices being made before implementation, the evidence behind them, and the resulting working artifact. See [the recorded build](demo/reading-list/README.md) for reproduction.
+MIT · [Original Itchy research](archive/itchy/README.md) · [Project evolution](references/evolution.md)

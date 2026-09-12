@@ -44,7 +44,8 @@ def report_html(report):
 
 
 def parser():
-    p = argparse.ArgumentParser(description="Usual — autopilot for your coding judgment.")
+    p = argparse.ArgumentParser(description="Usual — your AI, how you like it.",
+        epilog="Collection commands: menu, setup, vibecheck, recall, loops, pop. Use 'COMMAND --help'. Collection data: --home PRIVATE_DIRECTORY before the command. Existing Choices commands below retain --db and their behavior.")
     p.add_argument("--db", default=str(default_database()), help="Private local database (never inside a public project)")
     commands = p.add_subparsers(dest="command")
     commands.add_parser("onboard", help="Start the guided setup; inventory history without reading its contents")
@@ -111,6 +112,14 @@ def parser():
 
 
 def main(argv=None):
+    from .collection_cli import dispatch
+    try:
+        collection_result = dispatch(argv)
+        if collection_result is not None:
+            return collection_result
+    except (ValueError, OSError, KeyError, TypeError) as error:
+        print(json.dumps({"error": str(error)}))
+        return 2
     args = parser().parse_args(argv)
     try:
         if args.command == "init":

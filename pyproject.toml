@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "usual"
-version = "2.0.0b2"
-description = "Local judgment autopilot for Codex and Claude Code, with evidence and run review."
+version = "2.1.0b1"
+description = "Your AI, how you like it: independent local tools, evidence, routines and shareable setups."
 requires-python = ">=3.11"
 # NO runtime deps — stdlib only (spec §2)
 dependencies = []
@@ -18,7 +18,7 @@ pythonpath = ["src"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-usual = ["*.html", "public/*"]
+usual = ["*.html", "catalog.json", "public/*", "recall_core/LICENSE", "vendor/escape_webview/*"]
 
 [project.scripts]
 usual = "usual.cli:main"

@@ -1,5 +1,5 @@
-"""Usual — local decision history for your coding agent."""
-__version__ = "2.0.0b2"
+"""Usual — independent local tools, evidence, routines and inspectable setups."""
+__version__ = "2.1.0b1"
 
 from .parsers import parse_conversation_export, extract_candidate_judgments
 from .synthesize import (

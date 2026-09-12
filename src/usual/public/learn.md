@@ -1,5 +1,16 @@
 # Learn Usual
 
+**Your AI, how you like it.** Usual's menu contains Vibecheck, Choices, Recall,
+Loops, Pop and Escape. Browse `https://tryusual.com/#menu` or run
+`python3 scripts/usual.py menu` from an inspected source checkout. Any item may
+be used independently; history import and decision memory are optional.
+
+The existing learning workflow below is **Choices**, with the same Usual skill,
+commands and database. If the user instead asks to **find my usual**, choose an
+explicit history scope and follow `references/history.md`: local scan, bounded
+current-agent interpretation, cited findings, one selected improvement and a
+receipt. The public site cannot access the user's files or start their agent.
+
 For a local coding agent whose user asked it to learn or install Usual.
 
 Usual is a skill that uses past human decisions to help with future coding choices. The canonical source is https://github.com/pauljump/usual. Install the self-contained skill, then guide the user through its first conversation.

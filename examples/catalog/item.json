@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "items": [
+    {
+      "id": "hello-example",
+      "number": "00",
+      "name": "Hello example",
+      "benefit": "Return one inspectable local result.",
+      "maturity": "Contributor example only",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "Python 3.11+"
+      ],
+      "requirements": [
+        "Python 3.11+"
+      ],
+      "configuration": {},
+      "install": [
+        "No installation required; use this checked-in example."
+      ],
+      "use": [
+        "python3 examples/catalog/hello.py"
+      ],
+      "remove": [
+        "Stop invoking the example. It installs nothing and stores no data."
+      ],
+      "storage": "None.",
+      "network": "None.",
+      "example": "A JSON result with source attribution.",
+      "verification": {
+        "status": "example command",
+        "tested": [
+          "Local invocation"
+        ],
+        "pending": [
+          "This is not a maintained catalog tool."
+        ]
+      }
+    }
+  ]
+}

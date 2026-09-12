@@ -1,175 +1,61 @@
-# Usual Pop
+# Usual Pop — independent install
 
-Pop the links your coding agent hands you into the browser you actually want — Chrome or Safari, on
-phone or on desktop.
+Pop changes how a coding agent hands you an actionable link. It needs no history, Choices database, Usual account, or permission-setting changes.
 
-To install, tell Claude Code or Codex:
+Source: https://github.com/pauljump/usual · Local rule beta · MIT
 
+## Installing agent: use the current user's request
+
+Identify the active client from the current session. Supported instruction targets are Codex (`~/.codex/AGENTS.md`) and Claude Code (`~/.claude/CLAUDE.md`). A project-only request uses that project's `AGENTS.md` or `CLAUDE.md`. If the browser preference is missing, ask whether the user wants Chrome, Safari, or both. Do not ask again when the current request already supplies it. Do not install Choices or import history as a prerequisite.
+
+With an inspected Usual source checkout or portable skill available, run its script by absolute path:
+
+```sh
+python3 /path/to/usual/scripts/usual.py pop install --client codex --browser both
 ```
-read https://tryusual.com/pop/install and install it
-```
 
----
+Use `--client claude` for Claude and `--browser chrome` or `safari` for one browser. Use `--project /path/to/project` for a project-only rule. `--client-home /tmp/isolated-home` and the global `--home /tmp/private-data` support safe installation testing without changing the real account.
 
-# Instructions for the installing agent
+The installer changes only its marked block, preserves surrounding customization, refuses conflicting edits or unmarked legacy rules, and produces a private receipt. It stores installation metadata separately from historical evidence. The rule itself stores no history and makes no network calls. If there is an existing customized Pop section, inspect the difference and reconcile it under the user's current instruction before attempting the update; never overwrite it wholesale.
 
-You are installing Usual Pop for your user. Work these four steps in order.
+## If installing only the instruction
 
-## 1. Work out which client you are — do not ask
+The installing agent may add a small managed `Usual Pop` block directly under the current task authorization, without installing the full skill. Preserve unrelated content. Use exactly one block and record the chosen client, file and browser so the user can remove that block later. If a prior block exists, show and reconcile conflicting edits.
 
-You already know whether you are Claude Code or Codex. Only if genuinely ambiguous, check for
-`~/.claude/` versus `~/.codex/`. Never make the user tell you.
+The instruction's behavior is:
 
-| Client | Append the rule to |
-| --- | --- |
-| Claude Code | `~/.claude/CLAUDE.md` |
-| Codex | `~/.codex/AGENTS.md` |
+- Apply this format only to the URL the user is meant to act on. Citations and passing references stay ordinary links.
+- For Chrome, replace `https://` with `googlechromes://` or `http://` with `googlechrome://` in the mobile link.
+- For Safari, use `x-safari-https://` only for HTTPS. Omit its mobile link for plain HTTP.
+- Keep the destination host, path, query and fragment unchanged. Encode Markdown delimiters when needed.
+- Include an ordinary HTTP(S) Desktop link and a copyable URL. Desktop links use the default browser; do not claim they force a particular browser.
+- The iOS links are scheme candidates whose actual navigation must be checked on the user's client/device. Do not label a scheme working based solely on OS registration.
+- Do not open an app, change client permissions, allowlist shell commands or install another tool as an incidental part of this rule.
 
-Use the project-local `CLAUDE.md` or `AGENTS.md` instead if the user says this project only. If the
-target file already contains a `## Usual Pop` section, replace it rather than appending a second copy.
-
-## 2. Ask the user exactly two questions
-
-Ask both together, then wait. Claude Code should use `AskUserQuestion`; Codex should ask in plain
-text. Do not ask anything else, and do not ask which client they use.
-
-**Question 1 — Which browser should links pop into?** Options: `Chrome`, `Safari`, `Both`.
-
-**Question 2 — Also install Usual itself?** Options: `Yes`, `No`. Describe it in one sentence: Usual
-is a skill that uses your past decisions to inform future coding choices. Offer the read-more links
-in Pop's own format, since it doubles as a live demo of what they are installing:
+For both browsers, the HTTPS example is:
 
 ```markdown
-[Mobile → Chrome](googlechromes://tryusual.com) · [Mobile → Safari](x-safari-https://tryusual.com) · [Desktop](https://tryusual.com) · `https://tryusual.com`
-```
-
-If they answer Yes, finish the Pop install first, then follow `https://tryusual.com/learn.md`.
-
-## 3. Append the matching block, verbatim
-
-Paraphrasing loses the platform split and the limitation, which are the parts that matter. Copy one
-block exactly as written.
-
-### If they chose Chrome
-
-```markdown
-## Usual Pop
-
-When handing the user a URL that is the point of the message, give three affordances on one line
-rather than guessing what device they are on:
-
-[Mobile → Chrome](googlechromes://example.com) · [Desktop](https://example.com) · `https://example.com`
-
-- Mobile link: swap the scheme. `https://` becomes `googlechromes://`, `http://` becomes
-  `googlechrome://`. Keep host, path, query, and fragment unchanged. This forces Chrome on iOS.
-- Desktop link: the ordinary `https://` URL. It opens their default browser; no clickable link can
-  force a browser on macOS, so never claim it does.
-- Plain text: the written-out URL in backticks, for copy-paste.
-
-If they are on desktop, Chrome is not their default, and I have shell access, run
-`open -a "Google Chrome" "<url>"` — the only reliable way to force it there.
-
-Apply this only to the link the user is meant to act on. Citations and passing references stay
-ordinary links.
-```
-
-### If they chose Safari
-
-```markdown
-## Usual Pop
-
-When handing the user a URL that is the point of the message, give three affordances on one line
-rather than guessing what device they are on:
-
-[Mobile → Safari](x-safari-https://example.com) · [Desktop](https://example.com) · `https://example.com`
-
-- Mobile link: swap the scheme. `https://` becomes `x-safari-https://`. Keep host, path, query, and
-  fragment unchanged. This forces Safari on iOS 17+. There is no `x-safari-http://`, so omit the
-  mobile link for plain `http://` URLs.
-- Desktop link: the ordinary `https://` URL. It opens their default browser; no clickable link can
-  force a browser on macOS, so never claim it does.
-- Plain text: the written-out URL in backticks, for copy-paste.
-
-If they are on desktop, Safari is not their default, and I have shell access, run
-`open -a "Safari" "<url>"` — the only reliable way to force it there. Safari is macOS and iOS only;
-on Linux or Windows say so rather than substituting another browser.
-
-Apply this only to the link the user is meant to act on. Citations and passing references stay
-ordinary links.
-```
-
-### If they chose Both
-
-```markdown
-## Usual Pop
-
-When handing the user a URL that is the point of the message, give four affordances on one line
-rather than guessing what device or browser they are on:
-
 [Chrome](googlechromes://example.com) · [Safari](x-safari-https://example.com) · [Desktop](https://example.com) · `https://example.com`
-
-- Chrome link: `https://` becomes `googlechromes://`, `http://` becomes `googlechrome://`. Forces
-  Chrome on iOS.
-- Safari link: `https://` becomes `x-safari-https://`. Forces Safari on iOS 17+. No
-  `x-safari-http://` exists, so omit it for plain `http://` URLs.
-- Keep host, path, query, and fragment unchanged in both; only the scheme changes.
-- Desktop link: the ordinary `https://` URL. It opens their default browser; no clickable link can
-  force a browser on macOS, so never claim it does.
-- Plain text: the written-out URL in backticks, for copy-paste.
-
-If they are on desktop and I have shell access, `open -a "Google Chrome" "<url>"` or
-`open -a "Safari" "<url>"` is the only reliable way to force a specific browser there.
-
-Apply this only to the link the user is meant to act on. Citations and passing references stay
-ordinary links.
 ```
 
-## 4. Optionally allowlist, then verify and report
+For one browser omit the other mobile link. Pop changes **agent output**. [Escape](https://tryusual.com/menu/escape/) is a separate website widget.
 
-The links need no permissions. The desktop shell fallback does. Offer it; do not add it silently.
+## Use and inspect the receipt
 
-Claude Code, in `~/.claude/settings.json`:
-
-```json
-{
-  "permissions": {
-    "allow": ["Bash(open -a \"Google Chrome\":*)", "Bash(open -a \"Safari\":*)"]
-  }
-}
+```sh
+python3 /path/to/usual/scripts/usual.py pop use 'https://example.com' --browser both
+python3 /path/to/usual/scripts/usual.py pop verify 'https://example.com'
+python3 /path/to/usual/scripts/usual.py setup inspect
 ```
 
-Codex has no per-command allowlist; the command falls under the existing `approval_policy` in
-`~/.codex/config.toml`.
+A formatter check verifies emitted links and the installed block. It does **not** prove that a fresh coding-agent session follows the instruction or that a real device opens the requested browser. Tell the user whether the rule was installed, whether a new session was checked, and which device navigation was actually observed. Do not turn one kind of test into another.
 
-Then confirm the rule landed in the file, and demonstrate it once by sending the user a real link in
-the installed format. Tell them the rule takes effect in a new session if the client caches
-instructions.
+## Adjust or remove
 
----
+Run `pop install` again with the new browser to update an unchanged managed block. Use `pop disable` or `pop remove` to remove only the owned block and preserve unrelated instructions and receipts. For a manually installed block, remove only the inspected Pop section; preserve everything else.
 
-# Reference: what actually works
+## Verification limits
 
-Do not rediscover this. Verified on macOS 15 (Darwin 25.6) by checking LaunchServices registration
-*and* firing each URL at a server whose access log was readable.
+The current local release verifies deterministic formatting, file targets, repeated installation, conflicting edits and removal under isolated homes. Fresh Codex/Claude behavior and physical-device navigation remain separate checks. Prior source notes report a macOS browser experiment, but those historical notes are not new cross-platform verification. The release does not claim universal iOS or desktop scheme behavior.
 
-| Scheme | iOS | macOS |
-| --- | --- | --- |
-| `googlechromes://` (https), `googlechrome://` (http) | Opens Chrome | No handler; silently does nothing |
-| `x-safari-https://` | Opens Safari, iOS 17+ | Registered to Safari.app but delivers zero requests |
-| `google-chrome://` | — | Registered to Chrome.app but delivers zero requests |
-| `open -a "<Browser>" "<url>"` | — | Works |
-
-Two traps behind that table. Registration is not navigation: `google-chrome://` and
-`x-safari-https://` both resolve to a real app on macOS via
-`NSWorkspace.urlForApplication(toOpen:)` and still navigate nowhere, so a LaunchServices hit proves
-nothing on its own. And a negative result on one platform says nothing about the other — the Chrome
-schemes are dead on macOS and work fine on iPhone. That asymmetry is the entire reason Pop ships
-multiple links instead of picking one.
-
-A bare host works in the mobile schemes; `www.` is not required.
-
----
-
-Pop on the web, with a live example: https://tryusual.com/pop/
-Source: https://github.com/pauljump/usual
-Chrome for iOS scheme reference: https://chromium.googlesource.com/chromium/src/+/lkgr/docs/ios/opening_links.md
+Human page: https://tryusual.com/pop/ · Menu: https://tryusual.com/#menu · Source: https://github.com/pauljump/usual

@@ -5,6 +5,29 @@ description: Learn Usual, analyze past decisions, or build with Usual. Guide fir
 
 # Usual
 
+Usual is a menu of independently useful local tools: **Vibecheck, Choices, Recall,
+Loops, Pop, and Escape**. Existing decision-memory commands below are Choices;
+the Usual invocation and database remain compatible. If the user asks for a
+specific menu item or to find their usual, use [the collection guide](references/collection.md)
+and [selected-history guide](references/history.md). Do not require history or
+Choices before using another item. `menu` describes each item; `setup inspect`
+shows private selected tools, scopes, installation and verification state.
+
+For "Find my usual," establish the selected history scope, run `vibecheck scan
+--source PATH`, read the generated bounded handoff, interpret the cited human
+evidence with this session model, and import a validated report. Retain exceptions
+and uncertainty; findings never authorize installation or execution. Help the user
+select one current in-scope improvement, use it, inspect its receipt, and optionally
+export an explicitly reviewed safe setup. Public website examples are synthetic;
+they cannot read the visitor's files or start an agent.
+
+The maintained first Loops method is `file-check-v1`; inspect its inputs and
+scope before invocation. It checks selected files and never runs arbitrary shell
+commands. Pop changes link output; Escape changes a website. An installed rule,
+a scripted formatter check, and a real live-agent/device check are separate states.
+Never call one proof of another. Sharing uses `setup export --reviewed` with only
+allowlisted fields; private reports, routines and transcript evidence are not recipes.
+
 Keep the coding task moving while making implementation choices grounded in the user's actual history. Usual stores and retrieves evidence; **the current session model supplies the reasoning**. It does not launch a second model or train weights.
 
 ## Find the tool
