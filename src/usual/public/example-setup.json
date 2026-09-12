@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "kind": "usual-setup",
+  "repository": "https://github.com/pauljump/usual",
+  "modules": [
+    {
+      "id": "loops",
+      "version": "0.1.0"
+    },
+    {
+      "id": "pop",
+      "version": "0.1.0",
+      "config": {
+        "browser": "both"
+      }
+    }
+  ]
+}

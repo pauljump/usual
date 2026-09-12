@@ -71,16 +71,16 @@ def test_public_site_never_accepts_or_exposes_private_data():
     try:
         with urllib.request.urlopen(base) as response:
             page=response.read().decode()
-            assert 'LOCAL MEMORY FOR CODING AGENTS' in page
-            assert 'Local Memory for Claude Code and Codex' in page
+            assert 'Your AI,' in page
+            assert 'how you like it.' in page
+            assert 'SYNTHETIC EXAMPLE' in page
             assert 'application/ld+json' in page
             assert 'href="/claude-code-memory/"' in page
             assert 'https://github.com/pauljump/usual' in page
-            assert 'https://www.googletagmanager.com/gtag/js?id=G-Q5Z4208WNC' in page
-            assert "gtag('config','G-Q5Z4208WNC')" in page
-            assert 'https://pulse.polyfeeds.dev/api/ingest' in page
-            assert "property:P" in page
-            assert 'pulse_visitor_id' in page
+            assert 'data-demo-step="scope"' in page
+            assert 'id="handoff-prompt"' in page
+            assert 'transcript upload' in page
+            assert 'googletagmanager.com' not in page
         for path, marker in [
             ('/claude-code-memory/', 'Claude Code memory'),
             ('/codex-memory/', 'Codex memory'),

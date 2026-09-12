@@ -1,0 +1,13 @@
+{
+  "upstream": "Transcript Mine",
+  "license": "MIT",
+  "snapshot": "2026-09-12",
+  "files": {
+    "src/transcript_mine/models.py": "be913db2e4d749c116eadbf487274b243b5c71dc31cc1e9a290159bc9d867c1c",
+    "src/transcript_mine/adapters.py": "b3d99244bc0cbbfe7582ad81a4742fd984e02d8d770c00baeb2623dfbf3a4447",
+    "src/transcript_mine/database.py": "1af97e532bd0d2d7c2428781cfdf5689531837be0e2b47a3b79f510bcbef9b08",
+    "src/transcript_mine/indexer.py": "ef796406ded9d9a109d312d6560756444ff7c0398488d832ea693a5676572e00",
+    "scripts/build_zipapp.py": "0f90d4d7dfd14a58e8056d7c430225e13d31e90a4f805358839ba9c6307dc1f3",
+    "LICENSE": "737e0652ed9037e576109ce586fe7d763df804c850b67af3ba57f9044e32cd7b"
+  }
+}

@@ -1,0 +1,293 @@
+{
+  "schema_version": 1,
+  "version": "0.1.0",
+  "repository": "https://github.com/pauljump/usual",
+  "promise": "Your AI, how you like it.",
+  "items": [
+    {
+      "id": "vibecheck",
+      "number": "01",
+      "name": "Vibecheck",
+      "benefit": "Find useful patterns in the history you choose.",
+      "maturity": "Evidence beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "macOS and Linux (POSIX), Python 3.11+; macOS locally tested"
+      ],
+      "requirements": [
+        "Python 3.11+; standard library only"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py setup install vibecheck --scope /path/to/project"
+      ],
+      "use": [
+        "python3 scripts/usual.py vibecheck scan --source /path/to/selected-history",
+        "python3 scripts/usual.py vibecheck handoff REPORT_ID",
+        "python3 scripts/usual.py vibecheck import REPORT_ID --file report.json",
+        "python3 scripts/usual.py vibecheck inspect REPORT_ID"
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable vibecheck",
+        "python3 scripts/usual.py setup remove vibecheck"
+      ],
+      "storage": "Reads only selected history. Private findings and sources stay under ~/.usual/vibecheck.",
+      "network": "No Usual model calls or CLI telemetry. Evidence supplied to your coding agent uses its normal provider handling and quota.",
+      "example": "A repeated link correction suggests trying Pop; an exception stays attached.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Deterministic synthetic fixtures on macOS; exact cases in references/verification.md."
+        ],
+        "pending": [
+          "Fresh live-agent sessions on Codex and Claude Code."
+        ]
+      }
+    },
+    {
+      "id": "choices",
+      "number": "02",
+      "name": "Choices",
+      "benefit": "Carry past decisions into the next build, with a review.",
+      "maturity": "Local beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "macOS and Linux (POSIX), Python 3.11+; macOS locally tested"
+      ],
+      "requirements": [
+        "Python 3.11+; standard library only"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py setup install choices --scope /path/to/project"
+      ],
+      "use": [
+        "python3 scripts/usual.py onboard",
+        "python3 scripts/usual.py start --task \"Build a small local tool\" --scope /path/to/project",
+        "Use the installed skill: $usual in Codex, /usual in Claude Code. The current agent consults, records and gives a review."
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable choices",
+        "python3 scripts/usual.py setup remove choices"
+      ],
+      "storage": "Private decision database at ~/.usual/judgment.sqlite3; existing records and commands remain intact.",
+      "network": "No Usual model calls or CLI telemetry. Evidence supplied to your coding agent uses its normal provider handling and quota.",
+      "example": "Consult a past storage decision, record a contextual choice, then review it.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Deterministic synthetic fixtures on macOS; exact cases in references/verification.md."
+        ],
+        "pending": [
+          "Fresh live-agent sessions on Codex and Claude Code."
+        ]
+      }
+    },
+    {
+      "id": "recall",
+      "number": "03",
+      "name": "Recall",
+      "benefit": "Find what was said, with the source attached.",
+      "maturity": "Adapter beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "macOS and Linux (POSIX), Python 3.11+; macOS locally tested"
+      ],
+      "requirements": [
+        "Python 3.11+; standard library only"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py setup install recall --scope /path/to/project"
+      ],
+      "use": [
+        "python3 scripts/usual.py recall index --source /path/to/selected-history",
+        "python3 scripts/usual.py recall search browser",
+        "python3 scripts/usual.py recall show CITATION_ID"
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable recall",
+        "python3 scripts/usual.py setup remove recall"
+      ],
+      "storage": "Reads original sources without changing them; derived search index stays under ~/.usual/recall.",
+      "network": "No Usual model calls or CLI telemetry. Evidence supplied to your coding agent uses its normal provider handling and quota.",
+      "example": "Search \u201cbrowser\u201d and open the cited source. Recall finds words; Choices applies decisions.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Deterministic synthetic fixtures on macOS; exact cases in references/verification.md."
+        ],
+        "pending": [
+          "Fresh live-agent sessions on Codex and Claude Code."
+        ]
+      }
+    },
+    {
+      "id": "loops",
+      "number": "04",
+      "name": "Loops",
+      "benefit": "Make one recurring method easy to run again.",
+      "maturity": "Scoped routine beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "macOS and Linux (POSIX), Python 3.11+; macOS locally tested"
+      ],
+      "requirements": [
+        "Python 3.11+; standard library only"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py setup install loops --scope /path/to/project"
+      ],
+      "use": [
+        "python3 scripts/usual.py loops create release-files --scope /path/to/project --file README.md --file manifest.json",
+        "python3 scripts/usual.py loops preview release-files --label \"Release review\"",
+        "python3 scripts/usual.py loops run release-files --label \"Release review\"",
+        "python3 scripts/usual.py loops inspect release-files"
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable loops",
+        "python3 scripts/usual.py setup remove loops"
+      ],
+      "storage": "Private editable routines and receipts under ~/.usual/loops. Checks read explicitly named files within their scope.",
+      "network": "No Usual model calls or CLI telemetry. Evidence supplied to your coding agent uses its normal provider handling and quota.",
+      "example": "Check required release files, JSON validity and expected hashes; run again with a new label.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Deterministic synthetic fixtures on macOS; exact cases in references/verification.md."
+        ],
+        "pending": [
+          "Fresh live-agent sessions on Codex and Claude Code."
+        ]
+      }
+    },
+    {
+      "id": "pop",
+      "number": "05",
+      "name": "Pop",
+      "benefit": "Get links in the format and browser you prefer.",
+      "maturity": "Rule beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned adaptation"
+      },
+      "supported_environments": [
+        "macOS and Linux (POSIX), Python 3.11+; macOS locally tested",
+        "Codex and Claude instruction file formats; live session/device behavior pending"
+      ],
+      "requirements": [
+        "Python 3.11+; standard library only"
+      ],
+      "configuration": {
+        "browser": {
+          "type": "enum",
+          "values": [
+            "chrome",
+            "safari",
+            "both"
+          ],
+          "default": "both",
+          "shareable": true
+        }
+      },
+      "install": [
+        "python3 scripts/usual.py pop install --client codex --browser both"
+      ],
+      "use": [
+        "python3 scripts/usual.py pop use https://example.com --browser both",
+        "python3 scripts/usual.py pop verify https://example.com"
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable pop",
+        "python3 scripts/usual.py setup remove pop"
+      ],
+      "storage": "The independent rule stores no history. Managed installation metadata and receipts are optional local setup state.",
+      "network": "No Usual model calls or CLI telemetry. Evidence supplied to your coding agent uses its normal provider handling and quota.",
+      "example": "Chrome \u00b7 Safari \u00b7 Desktop \u00b7 a copyable URL. Ordinary desktop links use the default browser.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Deterministic synthetic fixtures on macOS; exact cases in references/verification.md."
+        ],
+        "pending": [
+          "Fresh live-agent sessions on Codex and Claude Code."
+        ]
+      }
+    },
+    {
+      "id": "escape",
+      "number": "06",
+      "name": "Escape",
+      "benefit": "Help website visitors leave an in-app browser.",
+      "maturity": "Pinned upstream widget",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/escape-webview",
+        "license": "MIT",
+        "version": "1.0.0+usual.1",
+        "revision": "8ded426d530638ea334bfd137345114973f3d602",
+        "kind": "pinned upstream dependency",
+        "upstream_version": "1.0.0",
+        "distribution_version": "1.0.0+usual.1"
+      },
+      "supported_environments": [
+        "Websites with JavaScript; scripted browser checks, limited physical-device evidence"
+      ],
+      "requirements": [
+        "A website you can edit; JavaScript enabled"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py setup install escape --scope /path/to/project"
+      ],
+      "use": [
+        "Add to the selected website: <script src=\"/escape-webview.js\" data-auto data-analytics=\"off\" defer></script>",
+        "Inspect /escape/demo/ for a forced demonstration. Test on the actual target app/device before claiming support."
+      ],
+      "remove": [
+        "python3 scripts/usual.py setup disable escape",
+        "python3 scripts/usual.py setup remove escape"
+      ],
+      "storage": "A self-hosted widget reads browser context. Install explicitly into your website; Usual never deploys it.",
+      "network": "Self-hosted script; provided snippet disables analytics. User actions may navigate to the selected URL. No Usual backend or model calls.",
+      "example": "Show a visitor browser-menu instructions and a copyable link. iOS needs a user action.",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Synthetic browser user agents and DOM; explicit upstream patch hash; no new physical-device checks."
+        ],
+        "pending": [
+          "Real device coverage is limited; synthetic user agents do not prove device behavior."
+        ]
+      }
+    }
+  ]
+}

@@ -1292,8 +1292,7 @@ class ConsumerUsualHandler(UsualHandler):
 class PublicAutopilotHandler(BaseHTTPRequestHandler):
     """A public product demo and code download. No private store is opened here."""
     ASSETS = {
-        "/": ("autopilot.html", "text/html; charset=utf-8"),
-        "/index.html": ("autopilot.html", "text/html; charset=utf-8"),
+        "/choices/legacy/": ("autopilot.html", "text/html; charset=utf-8"),
         "/claude-code-memory/": ("claude-code-memory.html", "text/html; charset=utf-8"),
         "/codex-memory/": ("codex-memory.html", "text/html; charset=utf-8"),
         "/local-ai-coding-memory/": ("local-ai-coding-memory.html", "text/html; charset=utf-8"),
@@ -1301,27 +1300,105 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/examples/reading-list/": ("examples-reading-list.html", "text/html; charset=utf-8"),
         "/privacy/": ("privacy.html", "text/html; charset=utf-8"),
         "/install/": ("install.html", "text/html; charset=utf-8"),
+        "/pop/": ("pop.html", "text/html; charset=utf-8"),
+        "/demo/interactive/": ("interactive-demo.html", "text/html; charset=utf-8"),
         "/seo.css": ("public/seo.css", "text/css; charset=utf-8"),
         "/robots.txt": ("public/robots.txt", "text/plain; charset=utf-8"),
         "/sitemap.xml": ("public/sitemap.xml", "application/xml; charset=utf-8"),
         "/learn.md": ("public/learn.md", "text/plain; charset=utf-8"),
-        "/pop": ("public/pop.md", "text/plain; charset=utf-8"),
+        "/pop/install": ("public/pop.md", "text/plain; charset=utf-8"),
         "/demo.json": ("public/demo.json", "application/json"),
         "/build.json": ("public/build.json", "application/json"),
         "/reading-list.zip": ("public/reading-list.zip", "application/zip"),
         "/release.json": ("public/release.json", "application/json"),
         "/usual.zip": ("public/usual.zip", "application/zip"),
         "/og.png": ("public/og.png", "image/png"),
+        "/demo/video": ("public/demo-video.mp4", "video/mp4"),
+        "/demo/video.mp4": ("public/demo-video.mp4", "video/mp4"),
+        "/collection.css": ("public/collection.css", "text/css; charset=utf-8"),
+        "/collection.js": ("public/collection.js", "text/javascript; charset=utf-8"),
+        "/mark.svg": ("public/mark.svg", "image/svg+xml"),
+        "/collection-og.svg": ("public/collection-og.svg", "image/svg+xml"),
+        "/collection-og.png": ("public/collection-og.png", "image/png"),
+        "/catalog.json": ("catalog.json", "application/json"),
+        "/flagship.json": ("public/flagship.json", "application/json"),
+        "/example-setup.json": ("public/example-setup.json", "application/json"),
+        "/example-setup.html": ("public/example-setup.html", "text/html; charset=utf-8"),
+        "/escape/escape-webview.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
+        "/escape-widget.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
+    }
+
+    # A plain-text URL carries no markup, so sharing one produces a bare link with no
+    # preview. Known social crawlers get a small card describing the same content; every
+    # other client — agents, curl, browsers, search engines — still receives the text.
+    # The allowlist is deliberately narrow so an unrecognized crawler fails to plain text.
+    SOCIAL_CRAWLERS = (
+        "facebookexternalhit", "twitterbot", "slackbot", "slack-imgproxy", "discordbot",
+        "linkedinbot", "whatsapp", "telegrambot", "pinterest", "redditbot", "applebot",
+        "skypeuripreview", "embedly", "iframely", "mastodon", "bluesky", "vkshare",
+    )
+    PREVIEW_CARDS = {
+        "/pop/install": (
+            "Usual Pop: Open Agent Links in the Browser You Actually Want",
+            "The standalone Pop install guide. Choose a browser-link format and inspect "
+            "its local changes and verification limits.",
+            "/pop/",
+        ),
     }
 
     # Usual Pop replaced the per-browser pages; keep already-shared links working.
     PATH_REDIRECTS = {
-        "/chrome": "/pop",
-        "/safari": "/pop",
+        "/chrome": "/pop/",
+        "/safari": "/pop/",
+        "/a-la-carte": "/pop/",
+        "/a-la-carte/": "/pop/",
     }
+
+    def _is_social_crawler(self):
+        agent = self.headers.get("User-Agent", "").lower()
+        return any(bot in agent for bot in self.SOCIAL_CRAWLERS)
+
+    def _preview_card(self, path):
+        """Minimal shareable HTML for a plain-text asset. Content is fixed in code."""
+        title, description, human_page = self.PREVIEW_CARDS[path]
+        site = "https://tryusual.com"
+        return (
+            "<!doctype html>\n<html lang=\"en\">\n<head>\n"
+            "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+            f"<title>{title}</title>\n"
+            f"<meta name=\"description\" content=\"{description}\">\n"
+            f"<link rel=\"canonical\" href=\"{site}{human_page}\">\n"
+            "<meta property=\"og:site_name\" content=\"Usual\">"
+            f"<meta property=\"og:title\" content=\"{title}\">"
+            f"<meta property=\"og:description\" content=\"{description}\">"
+            "<meta property=\"og:type\" content=\"article\">"
+            f"<meta property=\"og:url\" content=\"{site}{path}\">"
+            f"<meta property=\"og:image\" content=\"{site}/og.png\">"
+            "<meta property=\"og:image:width\" content=\"1200\">"
+            "<meta property=\"og:image:height\" content=\"630\">"
+            "<meta property=\"og:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
+            "<meta name=\"twitter:card\" content=\"summary_large_image\">"
+            f"<meta name=\"twitter:title\" content=\"{title}\">"
+            f"<meta name=\"twitter:description\" content=\"{description}\">"
+            f"<meta name=\"twitter:image\" content=\"{site}/og.png\">"
+            "<meta name=\"twitter:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
+            "</head>\n<body>\n"
+            f"<h1>{title}</h1>\n<p>{description}</p>\n"
+            f"<p><a href=\"{human_page}\">Read it on the web</a> "
+            f"or fetch the plain text at <code>{site}{path}</code>.</p>\n"
+            "</body>\n</html>\n"
+        ).encode("utf-8")
 
     def _serve(self, head=False):
         path = urllib.parse.urlparse(self.path).path
+        # Only the six packaged catalog IDs may select a generated route. No
+        # request path is used to open a local file or a private runtime store.
+        from . import website
+        try:
+            catalog_ids = {item["id"] for item in website.items()}
+        except (OSError, ValueError, KeyError, TypeError):
+            self.send_error(503, "The public catalog is unavailable")
+            return
         slash_pages = {
             "/claude-code-memory",
             "/codex-memory",
@@ -1330,7 +1407,13 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/examples/reading-list",
             "/privacy",
             "/install",
+            "/pop",
+            "/demo/interactive",
+            "/escape/demo",
+            "/choices/legacy",
         }
+        slash_pages.update("/" + item_id for item_id in catalog_ids)
+        slash_pages.update("/menu/" + item_id for item_id in catalog_ids)
         if path in slash_pages:
             query = urllib.parse.urlparse(self.path).query
             destination = path + "/"
@@ -1365,8 +1448,11 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         if path == "/health":
-            data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.0.0b2"}'
+            data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.1.0b1","collection":"six"}'
             mime = "application/json"
+        elif path in self.PREVIEW_CARDS and self._is_social_crawler():
+            data = self._preview_card(path)
+            mime = "text/html; charset=utf-8"
         elif path in self.ASSETS:
             asset, mime = self.ASSETS[path]
             try:
@@ -1374,6 +1460,20 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             except OSError:
                 self.send_error(503, "Release assets are not built yet")
                 return
+        elif path in ("/", "/index.html"):
+            data = website.homepage()
+            mime = "text/html; charset=utf-8"
+        elif path == "/escape/demo/":
+            data = website.escape_demo()
+            mime = "text/html; charset=utf-8"
+        elif any(path in {f"/{item_id}/", f"/menu/{item_id}/"} for item_id in catalog_ids):
+            data = website.item_page(path.strip("/").split("/")[-1])
+            mime = "text/html; charset=utf-8"
+        elif any(path in {f"/{item_id}/{action}", f"/menu/{item_id}/{action}"}
+                 for item_id in catalog_ids for action in ("install", "use")):
+            item_id, action = path.strip("/").split("/")[-2:]
+            data = website.agent_guide(item_id, action)
+            mime = "text/plain; charset=utf-8"
         else:
             self.send_error(404, "Not Found")
             return
@@ -1386,9 +1486,11 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/build.json",
             "/demo.json",
             "/learn.md",
+            "/pop/install",
             "/reading-list.zip",
             "/release.json",
             "/usual.zip",
+            "/flagship.json",
         }:
             self.send_header("X-Robots-Tag", "noindex, nofollow")
         if path in ("/usual.zip", "/reading-list.zip"):
@@ -1417,9 +1519,15 @@ def run_server(host: str = "127.0.0.1", port: int = 8780, consumer_only: bool = 
     httpd = ThreadingHTTPServer(server_address, handler)
     print(f"============================================================")
     print(f"  ⚖️  Usual Server Running at http://{host}:{port}")
-    print(f"  🌐  Web Studio:     http://{host}:{port}/")
-    print(f"  🔌  WebMCP (SSE):   http://{host}:{port}/sse")
-    print(f"  📋  OpenAPI Spec:   http://{host}:{port}/openapi.json")
+    if autopilot_public:
+        print(f"  Public collection: http://{host}:{port}/")
+        print("  Public examples and downloads only; no private history API.")
+    elif consumer_only:
+        print(f"  Consumer preview: http://{host}:{port}/")
+    else:
+        print(f"  🌐  Web Studio:     http://{host}:{port}/")
+        print(f"  🔌  WebMCP (SSE):   http://{host}:{port}/sse")
+        print(f"  📋  OpenAPI Spec:   http://{host}:{port}/openapi.json")
     print(f"============================================================")
     try:
         httpd.serve_forever()

@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "mode": "synthetic-fixture-replay",
+  "sample_label": "Synthetic example \u00b7 real local code paths \u00b7 no live model calls",
+  "scope_summary": "3 selected synthetic history files \u00b7 3 sessions \u00b7 September 1\u20133, 2026",
+  "finding": {
+    "title": "Make the release file check one reusable routine",
+    "interpretation": "Two independent human requests specify the same release-review method: check README.md and manifest.json, nonempty files, valid JSON and recorded hashes. A later note-only handoff explicitly skips it.",
+    "sources": [
+      {
+        "quote": "Before reviewing this release, check README.md and manifest.json, confirm both files are nonempty, validate the JSON, and record their SHA256 hashes.",
+        "date": "2026-09-02T10:00:00Z",
+        "file": "sample-flagship-b.jsonl",
+        "line": 1,
+        "context": [
+          {
+            "role": "assistant",
+            "quote": "I will inspect the chosen directory before doing the local checks.",
+            "date": "2026-09-02T10:01:00Z",
+            "line": 2,
+            "truncated": false
+          },
+          {
+            "role": "user",
+            "quote": "When you send me a browser link, format it as a clickable Markdown link with a descriptive label and the full destination.",
+            "date": "2026-09-02T10:02:00Z",
+            "line": 3,
+            "truncated": false
+          }
+        ]
+      },
+      {
+        "quote": "Before reviewing this release, check README.md and manifest.json, confirm both files are nonempty, validate the JSON, and record their SHA256 hashes.",
+        "date": "2026-09-01T10:01:00Z",
+        "file": "sample-flagship-a.jsonl",
+        "line": 2,
+        "context": [
+          {
+            "role": "assistant",
+            "quote": "What local file evidence would make this release review useful?",
+            "date": "2026-09-01T10:00:00Z",
+            "line": 1,
+            "truncated": false
+          },
+          {
+            "role": "assistant",
+            "quote": "I can collect this file evidence; it will not prove the release passes its tests.",
+            "date": "2026-09-01T10:02:00Z",
+            "line": 3,
+            "truncated": false
+          }
+        ]
+      }
+    ],
+    "scope": "This synthetic release review only. The note-only handoff is excluded.",
+    "exceptions": [
+      {
+        "quote": "Do not check README.md and manifest.json, validate the JSON, or record their SHA256 hashes for this note-only handoff.",
+        "date": "2026-09-03T10:00:00Z",
+        "file": "sample-flagship-exception.jsonl",
+        "line": 1,
+        "context": [
+          {
+            "role": "user",
+            "quote": "For this terminal transcript, do not format the browser link as a clickable Markdown link with a descriptive label; show the full destination as plain text.",
+            "date": "2026-09-03T10:01:00Z",
+            "line": 2,
+            "truncated": false
+          }
+        ]
+      }
+    ],
+    "uncertainty": "Useful for the selected release-review scope; not a general preference or a release approval. File checks cannot establish that application tests passed. The note-only exception remains excluded."
+  },
+  "action": {
+    "title": "Use the release file check",
+    "command": "python3 scripts/usual.py loops run release-files --label 'Release review 2'",
+    "steps": [
+      "Validate the explicit directory and relative file inputs; reject symlinks and scope escapes.",
+      "Read each named regular file, at most 10 MiB each, without modifying the source.",
+      "Check nonempty content, compute SHA-256, parse .json files, and compare supplied expected digests.",
+      "Record each passing or failing check in a private JSON and HTML receipt outside the source directory."
+    ],
+    "variables": [
+      "Selected local directory",
+      "Explicit filenames",
+      "Expected SHA-256 values",
+      "Run label"
+    ]
+  },
+  "receipt": {
+    "outcome": "Both selected files passed the scoped checks. The routine ran again with a new label.",
+    "checks": [
+      {
+        "file": "README.md",
+        "status": "passed",
+        "bytes": 69,
+        "sha256": "c86136481a8f4acc792d9ce9448eb36550935fbb69cb73a96211e6d74eb86712",
+        "expected_sha256_matches": true
+      },
+      {
+        "file": "manifest.json",
+        "status": "passed",
+        "bytes": 47,
+        "sha256": "56d186b23fa496ffc2ff78c67f7a41c10b2d846fe9d61fdc1e8ed249914c3c23",
+        "json_valid": true,
+        "expected_sha256_matches": true
+      }
+    ],
+    "limitation": "Deterministic file checks only. This does not verify application behavior, approve a release, or prove live-agent behavior.",
+    "verification": {
+      "status": "passed",
+      "kind": "deterministic-local-routine",
+      "method": "file-check-v1",
+      "checked_inputs": {
+        "required": [
+          "README.md",
+          "manifest.json"
+        ],
+        "expected_sha256": {
+          "README.md": "c86136481a8f4acc792d9ce9448eb36550935fbb69cb73a96211e6d74eb86712",
+          "manifest.json": "56d186b23fa496ffc2ff78c67f7a41c10b2d846fe9d61fdc1e8ed249914c3c23"
+        },
+        "label": "Release review 1"
+      },
+      "limits": [
+        "Checks only the named files and the conditions shown; passing is not application or release correctness.",
+        "No project commands, tests, hooks, network calls, publication, or background work are executed.",
+        "A historical receipt describes that invocation; files can change afterward."
+      ]
+    }
+  },
+  "recipe": {
+    "schema_version": 1,
+    "kind": "usual-setup",
+    "repository": "https://github.com/pauljump/usual",
+    "modules": [
+      {
+        "id": "loops",
+        "version": "0.1.0"
+      },
+      {
+        "id": "pop",
+        "version": "0.1.0",
+        "config": {
+          "browser": "both"
+        }
+      }
+    ]
+  },
+  "empty": {
+    "findings": [],
+    "reason": "No supported recurring request found in the selected scope. Short approvals, assistant suggestions, metadata, and duplicate forks do not establish an endorsed preference. An agent may inspect this bounded packet or you may choose another scope."
+  },
+  "pop_example": "[Chrome](googlechromes://example.com/release?view=review#files) \u00b7 [Safari](x-safari-https://example.com/release?view=review#files) \u00b7 [Desktop](https://example.com/release?view=review#files) \u00b7 `https://example.com/release?view=review#files`",
+  "recipient": {
+    "outcome": "Recipe imported into a separate home; Pop installed and formatter checks passed.",
+    "installed": true,
+    "verification": "scripted-format-checked",
+    "live_agent": false
+  },
+  "repository": "https://github.com/pauljump/usual"
+}

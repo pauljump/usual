@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f5f2e9"/>
+  <g font-family="Helvetica, Arial, sans-serif" fill="#262820">
+    <rect x="55" y="46" width="45" height="45" rx="11" fill="#cc482b"/>
+    <path d="M66 58v15a11 11 0 0 0 22 0V58" fill="none" stroke="#fffdf7" stroke-width="3.5"/>
+    <text x="112" y="81" font-size="41" font-weight="600" letter-spacing="-3">usual<tspan fill="#cc482b">.</tspan></text>
+    <text x="1144" y="75" text-anchor="end" font-family="monospace" font-size="12" letter-spacing="1.4">SIX USEFUL TOOLS / OPEN SOURCE</text>
+    <path d="M55 117h1090" stroke="#d5d3c5"/>
+    <text x="53" y="249" font-size="106" font-weight="600" letter-spacing="-7">Your AI,</text>
+    <text x="53" y="358" font-size="106" font-weight="600" letter-spacing="-7">how you <tspan font-family="Georgia, serif" font-weight="400" font-style="italic">like it</tspan><tspan fill="#cc482b">.</tspan></text>
+    <path d="M488 379q155-17 304-4M520 390q149-15 245-4" fill="none" stroke="#cc482b" stroke-width="3" stroke-linecap="round"/>
+    <text x="59" y="433" font-size="21" letter-spacing="-.35">Pick your favorites. Discover what fits. Make them your usual.</text>
+    <g font-family="monospace" font-size="14" letter-spacing=".35">
+      <text x="59" y="503"><tspan fill="#cc482b">01</tspan> Vibecheck</text><text x="254" y="503"><tspan fill="#cc482b">02</tspan> Choices</text><text x="434" y="503"><tspan fill="#cc482b">03</tspan> Recall</text><text x="605" y="503"><tspan fill="#cc482b">04</tspan> Loops</text><text x="763" y="503"><tspan fill="#cc482b">05</tspan> Pop</text><text x="901" y="503"><tspan fill="#cc482b">06</tspan> Escape</text>
+    </g>
+    <path d="M55 545h1090" stroke="#d5d3c5"/>
+    <text x="58" y="586" font-family="monospace" font-size="13" fill="#64675b">tryusual.com</text>
+    <text x="1144" y="586" text-anchor="end" font-family="monospace" font-size="13" fill="#385744">github.com/pauljump/usual ↗</text>
+  </g>
+</svg>
