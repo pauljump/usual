@@ -13,6 +13,21 @@
     clearTimeout(noticeTimer);
     noticeTimer = setTimeout(() => notice.classList.remove('visible'), 6500);
   }
+  async function loadGithubStars() {
+    const targets = document.querySelectorAll('[data-github-stars]');
+    if (!targets.length) return;
+    try {
+      const response = await fetch('/github-stars.json', {credentials: 'omit', cache: 'no-store'});
+      if (!response.ok) return;
+      const payload = await response.json();
+      const stars = Number(payload.stars);
+      if (!Number.isInteger(stars) || stars < 0 || stars > 100000000) return;
+      const label = `${stars.toLocaleString()} ${stars === 1 ? 'star' : 'stars'}`;
+      targets.forEach(target => { target.textContent = label; });
+      document.querySelectorAll('.github-link').forEach(link => link.setAttribute('aria-label', `Usual on GitHub, ${label}`));
+    } catch (_) { /* The server-rendered count remains useful if GitHub is unavailable. */ }
+  }
+  loadGithubStars();
   async function copyTarget(button) {
     const target = byId(button.dataset.copyTarget);
     if (!target) return;

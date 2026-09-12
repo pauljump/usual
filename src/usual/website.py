@@ -60,7 +60,7 @@ def navigation() -> str:
             '<span class="brand-mark" aria-hidden="true">u</span>usual<span class="brand-period">.</span></a>'
             '<nav aria-label="Main navigation"><a href="/#menu">Menu</a>'
             '<a href="/#example">Example</a>'
-            f'<a class="github-link" href="{REPO}">GitHub <span aria-hidden="true">↗</span></a>'
+            f'<a class="github-link" href="{REPO}" aria-label="Usual on GitHub, 16 stars"><span>GitHub</span> <span class="github-stars" data-github-stars>16 stars</span> <span aria-hidden="true">↗</span></a>'
             '</nav></header></div>')
 
 

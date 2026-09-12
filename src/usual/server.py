@@ -16,6 +16,8 @@ import queue
 import re
 import sys
 import threading
+import time
+import urllib.request
 import urllib.parse
 import uuid
 from importlib.resources import files
@@ -1345,6 +1347,31 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/pop/",
         ),
     }
+    GITHUB_REPOSITORY = "pauljump/usual"
+    GITHUB_STARS_FALLBACK = 16
+    _github_stars_cache: tuple[float, int] | None = None
+    _github_stars_lock = threading.Lock()
+
+    @classmethod
+    def _github_stars(cls) -> int:
+        now = time.time()
+        with cls._github_stars_lock:
+            if cls._github_stars_cache and now - cls._github_stars_cache[0] < 600:
+                return cls._github_stars_cache[1]
+            try:
+                request = urllib.request.Request(
+                    f"https://api.github.com/repos/{cls.GITHUB_REPOSITORY}",
+                    headers={"Accept": "application/vnd.github+json", "User-Agent": "usual-web"},
+                )
+                with urllib.request.urlopen(request, timeout=3) as response:
+                    payload = json.loads(response.read(512 * 1024).decode("utf-8"))
+                stars = int(payload["stargazers_count"])
+                if stars < 0:
+                    raise ValueError("negative star count")
+                cls._github_stars_cache = (now, stars)
+                return stars
+            except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+                return cls._github_stars_cache[1] if cls._github_stars_cache else cls.GITHUB_STARS_FALLBACK
 
     # Usual Pop replaced the per-browser pages; keep already-shared links working.
     PATH_REDIRECTS = {
@@ -1449,6 +1476,9 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             return
         if path == "/health":
             data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.1.0b1","collection":"six"}'
+            mime = "application/json"
+        elif path == "/github-stars.json":
+            data = json.dumps({"repository": self.GITHUB_REPOSITORY, "stars": self._github_stars()}, separators=(",", ":")).encode("utf-8")
             mime = "application/json"
         elif path in self.PREVIEW_CARDS and self._is_social_crawler():
             data = self._preview_card(path)
