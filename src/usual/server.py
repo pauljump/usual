@@ -1301,24 +1301,83 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/examples/reading-list/": ("examples-reading-list.html", "text/html; charset=utf-8"),
         "/privacy/": ("privacy.html", "text/html; charset=utf-8"),
         "/install/": ("install.html", "text/html; charset=utf-8"),
+        "/pop/": ("pop.html", "text/html; charset=utf-8"),
+        "/demo/interactive/": ("interactive-demo.html", "text/html; charset=utf-8"),
         "/seo.css": ("public/seo.css", "text/css; charset=utf-8"),
         "/robots.txt": ("public/robots.txt", "text/plain; charset=utf-8"),
         "/sitemap.xml": ("public/sitemap.xml", "application/xml; charset=utf-8"),
         "/learn.md": ("public/learn.md", "text/plain; charset=utf-8"),
-        "/pop": ("public/pop.md", "text/plain; charset=utf-8"),
+        "/pop/install": ("public/pop.md", "text/plain; charset=utf-8"),
         "/demo.json": ("public/demo.json", "application/json"),
         "/build.json": ("public/build.json", "application/json"),
         "/reading-list.zip": ("public/reading-list.zip", "application/zip"),
         "/release.json": ("public/release.json", "application/json"),
         "/usual.zip": ("public/usual.zip", "application/zip"),
         "/og.png": ("public/og.png", "image/png"),
+        "/demo/video": ("public/demo-video.mp4", "video/mp4"),
+        "/demo/video.mp4": ("public/demo-video.mp4", "video/mp4"),
+    }
+
+    # A plain-text URL carries no markup, so sharing one produces a bare link with no
+    # preview. Known social crawlers get a small card describing the same content; every
+    # other client — agents, curl, browsers, search engines — still receives the text.
+    # The allowlist is deliberately narrow so an unrecognized crawler fails to plain text.
+    SOCIAL_CRAWLERS = (
+        "facebookexternalhit", "twitterbot", "slackbot", "slack-imgproxy", "discordbot",
+        "linkedinbot", "whatsapp", "telegrambot", "pinterest", "redditbot", "applebot",
+        "skypeuripreview", "embedly", "iframely", "mastodon", "bluesky", "vkshare",
+    )
+    PREVIEW_CARDS = {
+        "/pop/install": (
+            "Usual Pop: Open Agent Links in the Browser You Actually Want",
+            "The install script for Usual Pop. Hand it to Claude Code or Codex and every "
+            "link it gives you arrives ready for Chrome, Safari, or your desktop.",
+            "/pop/",
+        ),
     }
 
     # Usual Pop replaced the per-browser pages; keep already-shared links working.
     PATH_REDIRECTS = {
-        "/chrome": "/pop",
-        "/safari": "/pop",
+        "/chrome": "/pop/",
+        "/safari": "/pop/",
+        "/a-la-carte": "/pop/",
+        "/a-la-carte/": "/pop/",
     }
+
+    def _is_social_crawler(self):
+        agent = self.headers.get("User-Agent", "").lower()
+        return any(bot in agent for bot in self.SOCIAL_CRAWLERS)
+
+    def _preview_card(self, path):
+        """Minimal shareable HTML for a plain-text asset. Content is fixed in code."""
+        title, description, human_page = self.PREVIEW_CARDS[path]
+        site = "https://tryusual.com"
+        return (
+            "<!doctype html>\n<html lang=\"en\">\n<head>\n"
+            "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
+            f"<title>{title}</title>\n"
+            f"<meta name=\"description\" content=\"{description}\">\n"
+            f"<link rel=\"canonical\" href=\"{site}{human_page}\">\n"
+            "<meta property=\"og:site_name\" content=\"Usual\">"
+            f"<meta property=\"og:title\" content=\"{title}\">"
+            f"<meta property=\"og:description\" content=\"{description}\">"
+            "<meta property=\"og:type\" content=\"article\">"
+            f"<meta property=\"og:url\" content=\"{site}{path}\">"
+            f"<meta property=\"og:image\" content=\"{site}/og.png\">"
+            "<meta property=\"og:image:width\" content=\"1200\">"
+            "<meta property=\"og:image:height\" content=\"630\">"
+            "<meta property=\"og:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
+            "<meta name=\"twitter:card\" content=\"summary_large_image\">"
+            f"<meta name=\"twitter:title\" content=\"{title}\">"
+            f"<meta name=\"twitter:description\" content=\"{description}\">"
+            f"<meta name=\"twitter:image\" content=\"{site}/og.png\">"
+            "<meta name=\"twitter:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
+            "</head>\n<body>\n"
+            f"<h1>{title}</h1>\n<p>{description}</p>\n"
+            f"<p><a href=\"{human_page}\">Read it on the web</a> "
+            f"or fetch the plain text at <code>{site}{path}</code>.</p>\n"
+            "</body>\n</html>\n"
+        ).encode("utf-8")
 
     def _serve(self, head=False):
         path = urllib.parse.urlparse(self.path).path
@@ -1330,6 +1389,8 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/examples/reading-list",
             "/privacy",
             "/install",
+            "/pop",
+            "/demo/interactive",
         }
         if path in slash_pages:
             query = urllib.parse.urlparse(self.path).query
@@ -1367,6 +1428,9 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         if path == "/health":
             data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.0.0b2"}'
             mime = "application/json"
+        elif path in self.PREVIEW_CARDS and self._is_social_crawler():
+            data = self._preview_card(path)
+            mime = "text/html; charset=utf-8"
         elif path in self.ASSETS:
             asset, mime = self.ASSETS[path]
             try:
@@ -1386,6 +1450,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/build.json",
             "/demo.json",
             "/learn.md",
+            "/pop/install",
             "/reading-list.zip",
             "/release.json",
             "/usual.zip",

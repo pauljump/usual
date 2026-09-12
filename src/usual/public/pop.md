@@ -6,7 +6,7 @@ phone or on desktop.
 To install, tell Claude Code or Codex:
 
 ```
-read https://tryusual.com/pop and install it
+read https://tryusual.com/pop/install and install it
 ```
 
 ---
@@ -170,5 +170,6 @@ A bare host works in the mobile schemes; `www.` is not required.
 
 ---
 
+Pop on the web, with a live example: https://tryusual.com/pop/
 Source: https://github.com/pauljump/usual
 Chrome for iOS scheme reference: https://chromium.googlesource.com/chromium/src/+/lkgr/docs/ios/opening_links.md

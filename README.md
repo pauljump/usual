@@ -108,6 +108,21 @@ transcripts. Reports expose exclusions, malformed/oversized records, cancelled q
 and import errors. Deterministic secret redaction runs before storage; it does not remove
 all potentially private information. See [runtime semantics](references/runtime.md).
 
+## Experiment: portable thinking profile
+
+Analyze how you decide in a selected chat, combine that evidence into a private thinking profile, and let another assistant look it up:
+
+```bash
+python3 experiments/portable-memory/app.py
+```
+
+The private pilot now offers a remote MCP connection at
+`https://testing.polyfeeds.dev/mcp`. Connect once with OAuth, then say **Add to my
+Usual** to save decisions directly and **Use my Usual** to retrieve them in another
+connected session. The website provides optional review and export; manual transfer
+is a fallback. The invited testers have separate private links and databases. The experiment does not
+read all your chat history. [Setup, tools, and limitations](experiments/portable-memory/README.md).
+
 ## Usual Pop (à la carte)
 
 Pop the links your coding agent hands you into the browser you actually want. Pop is independent of
@@ -115,7 +130,7 @@ the rest of Usual: it installs on its own, stores nothing, and needs no account,
 history. Install it without Usual if that is all you want.
 
 ```
-read https://tryusual.com/pop and install it
+read https://tryusual.com/pop/install and install it
 ```
 
 Your agent works out whether it is Claude Code or Codex, asks which browser you prefer, and writes
@@ -132,7 +147,8 @@ clickable link can force a browser on macOS, and Pop does not pretend otherwise.
 shell access, `open -a "Google Chrome" "<url>"` is the reliable desktop path.
 
 Full rule, install steps, and a table of which schemes actually work on which platform:
-[tryusual.com/pop](https://tryusual.com/pop).
+[tryusual.com/pop](https://tryusual.com/pop/), where the à la carte menu lists Pop and anything
+else that stands on its own, with a live example you can tap.
 
 ## From Itchy to Usual
 
