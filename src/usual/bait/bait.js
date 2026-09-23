@@ -677,7 +677,7 @@ header.top{display:flex;justify-content:space-between;align-items:center;padding
 .eyebrow{font:11px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
 .intro{display:grid;grid-template-columns:1.25fr 1fr;gap:60px;align-items:end;padding:56px 0 44px;border-bottom:1px solid var(--line)}
 h1{font:400 clamp(46px,6.6vw,88px)/.98 var(--serif);letter-spacing:-.055em;margin:0 0 24px}
-h1 em{font-style:normal;font-family:var(--mono);font-size:.82em;letter-spacing:-.02em;color:var(--accent)}.lede{font-size:18px;line-height:1.5;margin:0;max-width:560px}
+h1 em{font-style:italic;color:var(--accent)}.lede{font-size:18px;line-height:1.5;margin:0;max-width:560px}
 .hero{text-align:right}.hero .n{font-size:clamp(56px,8vw,112px);font-weight:600;letter-spacing:-.05em;line-height:1}.hero p{margin:10px 0 0;color:var(--muted)}
 .notice{margin:22px 0 0;padding:14px 18px;border:1px solid var(--accent);border-left-width:4px;background:var(--card);font-size:13px}
 .notice b{font-family:var(--mono);font-size:11px;letter-spacing:.07em;margin-right:8px;color:var(--accent)}
@@ -783,7 +783,7 @@ fill("wanted",table([{t:"#",rank:1,f:function(r,i){return String(i+1)}},{t:"Cred
 {t:"Scraped from",f:function(r){return two(r.site,"asked for "+r.file+", "+ago(r.scrapedAt))}},{t:"Scraped by",f:function(r){return net(r.scrapedBy)}},
 {t:"First used by",f:function(r){return net(r.firstUsedBy)}},{t:"Scrape → use",num:1,f:function(r){return dur(r.secondsToFirstUse)}},
 {t:"Uses",num:1,f:function(r){return n(r.uses)}},{t:"Networks",num:1,f:function(r){return n(r.networks)}},{t:"Countries",f:function(r){return r.countries.map(flag).join(" ")||"–"}}],
-s.mostWanted,"No poisoned credential has come back yet. "+n(t.credentialsHandedOut)+" are out there. The first one to return will lead this table."));
+s.mostWanted,"No poisoned credential has come back yet."+(t.credentialsHandedOut?" "+n(t.credentialsHandedOut)+" are out there.":"")+" The first one to return will lead this table."));
 fill("scrapers",table([{t:"#",rank:1,f:function(r,i){return String(i+1)}},{t:"Network",f:function(r){return net(r)}},{t:"Scans",num:1,f:function(r){return n(r.scrapes)}},
 {t:"Share",f:function(r){var v=t.scrapes?r.scrapes/t.scrapes:0;return h("span",{cls:"meter"},[h("span",{},[h("i",{style:"width:"+(v*100).toFixed(1)+"%;background:var(--scrape)"})]),document.createTextNode(v<.01?"<1%":pct(v))])}},
 {t:"Came back",num:1,f:function(r){return n(r.credentialsLeaked)}}],s.scrapers,"No scans yet."));
