@@ -178,3 +178,57 @@ def escape_demo() -> bytes:
                footer(), '<script src="/escape/escape-webview.js"></script>',
                '<script>document.getElementById("show-escape").addEventListener("click",function(){if(!window.EscapeWebview){document.getElementById("escape-status").textContent="The widget could not load. Reload this page to try again.";return;}window.EscapeWebview.init({force:true,auto:false,url:location.href,name:"Usual demo",analytics:false,telemetry:false});document.getElementById("escape-status").textContent="Forced example opened. This is not device verification.";});</script>', '</body></html>']
     return "".join(content).encode("utf-8")
+
+
+def bait_page() -> bytes:
+    """Bait stands apart from the menu: a website tool, not an agent preference."""
+    example = files("usual").joinpath("public/bait-example.txt").read_text(encoding="utf-8")
+    prompt = ("Read https://tryusual.com/bait/install and add Bait to my website. Check how the site is hosted, "
+              "show me every change, keep normal traffic untouched, and tell me how to remove it.")
+    content = [head("Bait: poison the .env scanners · Usual",
+                    "Answer secret scanners with a fake .env where every credential is unique. See who scraped it, who used it, and how fast.",
+                    "/bait/"),
+               '<body>', navigation(), '<main id="main" class="wrap item-main">',
+               '<div class="breadcrumbs"><a href="/">Usual</a><span>/</span>Bait</div>',
+               '<section class="item-hero"><div>',
+               '<p class="eyebrow">From the Usual kitchen / Bait</p>',
+               '<h1>Poison the .env scanners<span class="orange">.</span></h1>',
+               '<p class="item-lede">Bots ask every website for its secrets. Bait answers with a fake <code>.env</code> in which every credential is unique, so when one comes back you know who scraped it, who used it, and how fast.</p>',
+               '<div class="actions"><a class="button primary" href="/bait/live/">See the live leaderboard <span aria-hidden="true"></span></a>',
+               '<a class="button secondary" href="#install">Put it on your site</a></div>',
+               '<p class="micro" id="bait-live" data-bait-live>Across our own sites, scanners ask for secrets thousands of times a week.</p></div>',
+               '<aside class="item-example"><div class="receipt-top"><span>WHAT A SCANNER GETS</span><span>GET /.env</span></div>',
+               f'<h2>Every value is a tripwire.</h2><pre>{esc(example)}</pre>',
+               '<div class="receipt-bottom">EXAMPLE · EVERY REQUEST GETS FRESH, UNIQUE VALUES</div></aside></section>',
+               '<div class="item-layout"><div class="item-body">',
+               '<section><p class="eyebrow">01 / How it works</p><h2>Like a 409A with a different number for every reader.</h2>',
+               '<p>Each fake credential is sealed with the scanner\'s address, network and country, and with which file and which line it came from. '
+               'The credentials that matter point back at your own site: an admin URL, an internal API token, a git remote, a database password. '
+               'When any of them shows up in a later request, Bait opens it, answers 401, and records the scrape, the use, and the time between them.</p>'
+               '<p>Nothing is stored when bait is handed out. The credential carries its own history, so Bait needs no database to catch a thief. The database is only for the leaderboard.</p></section>',
+               '<section id="install"><p class="eyebrow">02 / Put it on your site</p><h2>One file. Your agent can do it.</h2>',
+               '<p>Paste this into the coding agent that works on your website.</p>',
+               f'<div class="prompt-box"><textarea id="bait-prompt" readonly aria-label="Install prompt">{esc(prompt)}</textarea>',
+               '<button class="button primary" data-copy-target="bait-prompt">Copy install prompt </button></div>',
+               '<details class="instruction-details"><summary>Or do it by hand</summary>',
+               '<p>Cloudflare Worker: use <a href="/bait/bait.js">bait.js</a> as the Worker, route it at <code>example.com/*</code>, set a <code>BAIT_SECRET</code>, and optionally bind a D1 database as <code>BAIT_DB</code> for a leaderboard. '
+               'Node: <code>app.use(baitMiddleware(createBait({ secret })))</code>. The full guide, including verification and removal, is at <a href="/bait/install">/bait/install</a>.</p></details></section>',
+               '<section><p class="eyebrow">03 / The fine print</p><h2>What it does and doesn\'t do.</h2>',
+               '<p>Bait only answers requests sent to your own site. It never contacts the scanners, publishes no IP addresses, and fails open: if it breaks, your site serves the request as usual.</p>',
+               '<p>Stripe, OpenAI, GitHub and SendGrid keys in the bait look real, but they get tested at those companies, where you can\'t see it. '
+               'To catch AWS keys, add one from <a href="https://canarytokens.org">canarytokens.org</a>.</p></section>',
+               '</div><aside class="tool-facts"><p class="eyebrow">The particulars</p><h3>At a glance.</h3><dl>',
+               '<dt>Runs on</dt><dd>Cloudflare Workers, Node (Express/Connect), or anything with web Request/Response.</dd>',
+               '<dt>Requirements</dt><dd>A website you control. Node 22+ or a Cloudflare Worker. No dependencies.</dd>',
+               '<dt>Storage</dt><dd>None needed to catch a credential. Optional D1 (or compatible) database for the leaderboard.</dd>',
+               '<dt>Network</dt><dd>Answers requests to your site only. Optional reporting to a URL you choose, off by default.</dd>',
+               '<dt>Verification</dt><dd>Scripted checks of bait, every trip path, attribution and the leaderboard store. Live scanner behaviour varies.</dd>',
+               '</dl><div class="source-note"><p class="eyebrow">Source</p>',
+               f'<a href="{REPO}/blob/main/src/usual/bait/bait.js">pauljump/usual · bait.js </a><p>MIT · 0.1.0</p></div></aside></div>',
+               '</main>', footer(),
+               '<script>fetch("/bait/live/stats.json").then(function(r){return r.ok?r.json():null}).then(function(s){if(!s)return;'
+               'var el=document.getElementById("bait-live");var t=s.totals;el.textContent="Live across our sites: "+t.scrapes.toLocaleString("en-US")+'
+               '" requests for our secrets, "+t.credentialsHandedOut.toLocaleString("en-US")+" poisoned credentials handed out, "+'
+               't.credentialsCameBack.toLocaleString("en-US")+" came back.";}).catch(function(){});</script>',
+               '</body></html>']
+    return "".join(content).encode("utf-8")

@@ -1328,6 +1328,8 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/example-setup.html": ("public/example-setup.html", "text/html; charset=utf-8"),
         "/escape/escape-webview.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
         "/escape-widget.js": ("vendor/escape_webview/escape-webview.js", "text/javascript; charset=utf-8"),
+        "/bait/bait.js": ("bait/bait.js", "text/javascript; charset=utf-8"),
+        "/bait/install": ("public/bait.md", "text/plain; charset=utf-8"),
     }
 
     # A plain-text URL carries no markup, so sharing one produces a bare link with no
@@ -1340,6 +1342,12 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "skypeuripreview", "embedly", "iframely", "mastodon", "bluesky", "vkshare",
     )
     PREVIEW_CARDS = {
+        "/bait/install": (
+            "Usual Bait: Poison the .env Scanners",
+            "Answer secret scanners with a fake .env where every credential is unique, "
+            "and see who scraped it, who used it, and how fast.",
+            "/bait/",
+        ),
         "/pop/install": (
             "Usual Pop: Open Agent Links in the Browser You Actually Want",
             "The standalone Pop install guide. Choose a browser-link format and inspect "
@@ -1438,6 +1446,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/demo/interactive",
             "/escape/demo",
             "/choices/legacy",
+            "/bait",
         }
         slash_pages.update("/" + item_id for item_id in catalog_ids)
         slash_pages.update("/menu/" + item_id for item_id in catalog_ids)
@@ -1496,6 +1505,9 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         elif path == "/escape/demo/":
             data = website.escape_demo()
             mime = "text/html; charset=utf-8"
+        elif path == "/bait/":
+            data = website.bait_page()
+            mime = "text/html; charset=utf-8"
         elif any(path in {f"/{item_id}/", f"/menu/{item_id}/"} for item_id in catalog_ids):
             data = website.item_page(path.strip("/").split("/")[-1])
             mime = "text/html; charset=utf-8"
@@ -1517,6 +1529,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/demo.json",
             "/learn.md",
             "/pop/install",
+            "/bait/install",
             "/reading-list.zip",
             "/release.json",
             "/usual.zip",

@@ -18,7 +18,7 @@ pythonpath = ["src"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-usual = ["*.html", "catalog.json", "public/*", "recall_core/LICENSE", "vendor/escape_webview/*"]
+usual = ["*.html", "catalog.json", "public/*", "recall_core/LICENSE", "vendor/escape_webview/*", "bait/*"]
 
 [project.scripts]
 usual = "usual.cli:main"

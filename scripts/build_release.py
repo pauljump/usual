@@ -57,6 +57,8 @@ def build(output=None):
     source_files += [ROOT / 'src/usual/recall_core/LICENSE']
     source_files += [ROOT / 'src/usual/vendor/escape_webview' / name for name in
                      ['escape-webview.js', 'escape-webview.upstream.js', 'LICENSE', 'source.json']]
+    source_files += [ROOT / 'src/usual/bait/bait.js', ROOT / 'src/usual/public/bait.md', ROOT / 'src/usual/public/bait-example.txt']
+    source_files += sorted((ROOT / 'scripts/bait').glob('*.mjs'))
     source_files += [ROOT / 'src/usual/public' / name for name in
                      ['og.svg', 'og.png', 'collection-og.svg', 'collection-og.png', 'collection.css', 'collection.js', 'mark.svg', 'pop.md', 'seo.css', 'robots.txt', 'sitemap.xml']]
     source_files += sorted((ROOT / 'examples/catalog').glob('*'))
