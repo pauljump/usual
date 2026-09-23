@@ -42,7 +42,9 @@ const SLOTS = [
   "database-password", "database-url", "redis-url", "stripe-secret", "openai-key",
   "aws-secret", "admin-url", "internal-api-token", "jwt-secret", "github-token",
   "sendgrid-key", "git-remote", "npm-token", "docker-auth", "mail-password",
+  "aws-access-key", "anthropic-key",
 ];
+// Append only: a credential's slot number is sealed into every token already handed out.
 const slot = (name) => SLOTS.indexOf(name);
 
 // A random high part fills the leading character, so tokens don't all start with 0-7.
@@ -101,6 +103,62 @@ function ipText(bytes) {
   return groups.join(":").replace(/(^|:)0(:0)+(:|$)/, "::");
 }
 
+// AWS access key ids are 20 characters, too short for a sealed token. They carry the
+// minute and file they were served in, 12 random bits and a 32-bit HMAC tag instead.
+// SigV4 sends the key id (never the secret) with every request, so it is the part
+// that can come back when a tool honours AWS_ENDPOINT_URL.
+const BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+const ACCESS_KEY_PATTERN = /(?<![A-Z0-9])AKIA[A-Z2-7]{16}(?![A-Z0-9])/g;
+
+async function hmacFrom(secret) {
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode("usual-bait/aws-key/v1\0" + secret));
+  return crypto.subtle.importKey("raw", digest, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+}
+
+async function accessKeyTag(hmac, payload) {
+  return new Uint8Array(await crypto.subtle.sign("HMAC", hmac, payload)).slice(0, 4);
+}
+
+// The minute's leading bits barely change, so the payload is masked with a keystream
+// derived from the tag. Otherwise every key id would start with the same characters.
+async function accessKeyMask(hmac, tag) {
+  const input = new Uint8Array(5);
+  input.set(tag, 0);
+  input[4] = 0x6d;
+  return new Uint8Array(await crypto.subtle.sign("HMAC", hmac, input)).slice(0, 6);
+}
+
+async function sealAccessKey(hmac, visit, kind) {
+  const bytes = new Uint8Array(10);
+  const random = crypto.getRandomValues(new Uint8Array(2));
+  new DataView(bytes.buffer).setUint32(0, Math.floor(visit.at / 60000));
+  bytes[4] = (KINDS.indexOf(kind) << 4) | (random[0] & 15);
+  bytes[5] = random[1];
+  const tag = await accessKeyTag(hmac, bytes.slice(0, 6));
+  const mask = await accessKeyMask(hmac, tag);
+  for (let i = 0; i < 6; i++) bytes[i] ^= mask[i];
+  bytes.set(tag, 6);
+  let value = 0n;
+  for (const byte of bytes) value = (value << 8n) | BigInt(byte);
+  let text = "";
+  for (let i = 0; i < 16; i++, value >>= 5n) text = BASE32[Number(value & 31n)] + text;
+  return "AKIA" + text;
+}
+
+async function openAccessKey(hmac, keyId) {
+  let value = 0n;
+  for (const char of keyId.slice(4)) value = (value << 5n) | BigInt(BASE32.indexOf(char));
+  const bytes = new Uint8Array(10);
+  for (let i = 9; i >= 0; i--, value >>= 8n) bytes[i] = Number(value & 0xffn);
+  const mask = await accessKeyMask(hmac, bytes.slice(6, 10));
+  for (let i = 0; i < 6; i++) bytes[i] ^= mask[i];
+  const tag = await accessKeyTag(hmac, bytes.slice(0, 6));
+  if (tag.some((byte, i) => byte !== bytes[6 + i])) return null;
+  const minute = new DataView(bytes.buffer).getUint32(0);
+  return { servedAtMs: minute * 60000, servedAt: new Date(minute * 60000).toISOString(), ip: null, asn: null,
+    country: null, file: KINDS[bytes[4] >> 4] || "unknown", slot: "aws-access-key" };
+}
+
 async function keyFrom(secret) {
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode("usual-bait/v1\0" + secret));
   return crypto.subtle.importKey("raw", digest, "AES-GCM", false, ["encrypt", "decrypt"]);
@@ -155,12 +213,11 @@ function base64(text) {
 
 // Credentials that point back at your own host are the ones you can watch get used.
 // Third-party formats (Stripe, OpenAI, GitHub) are realistic decoration.
-async function render(kind, visit, key, options) {
+async function render(kind, visit, key, options, hmac) {
   const t = (name) => seal(key, visit, kind, slot(name));
   const host = visit.host;
   const app = (host.split(".").slice(-2, -1)[0] || "app").replace(/[^a-z0-9]/gi, "").toLowerCase() || "app";
-  const aws = options.awsCanary || { accessKeyId: "AKIA" + randomText(16, "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"),
-    secretAccessKey: randomText(40) };
+  const aws = options.awsCanary || { accessKeyId: await sealAccessKey(hmac, visit, kind), secretAccessKey: randomText(40) };
   const wink = options.wink ? `# hello, reader. every value below is a tripwire (${randomText(6)}).\n` : "";
   if (kind === "git") {
     return `[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n\tlogallrefupdates = true\n` +
@@ -168,7 +225,8 @@ async function render(kind, visit, key, options) {
       `\tfetch = +refs/heads/*:refs/remotes/origin/*\n[branch "main"]\n\tremote = origin\n\tmerge = refs/heads/main\n`;
   }
   if (kind === "aws") {
-    return `[default]\naws_access_key_id = ${aws.accessKeyId}\naws_secret_access_key = ${aws.secretAccessKey}\nregion = us-east-1\n`;
+    return `[default]\naws_access_key_id = ${aws.accessKeyId}\naws_secret_access_key = ${aws.secretAccessKey}\nregion = us-east-1\n` +
+      (options.awsCanary ? "" : `endpoint_url = https://${host}/_s3\n`);
   }
   if (kind === "npmrc") {
     return `registry=https://${host}/_npm/\n//${host}/_npm/:_authToken=${await t("npm-token")}\nalways-auth=true\n`;
@@ -203,10 +261,14 @@ async function render(kind, visit, key, options) {
     `MAIL_HOST=smtp.${host}\nMAIL_PORT=587\nMAIL_USERNAME=noreply@${host}\nMAIL_PASSWORD=${await t("mail-password")}\n\n` +
     `STRIPE_SECRET_KEY=sk_live_${await t("stripe-secret")}\n` +
     `OPENAI_API_KEY=sk-proj-${await t("openai-key")}\n` +
+    `OPENAI_BASE_URL=https://${host}/_internal/openai/v1\n` +
+    `ANTHROPIC_API_KEY=sk-ant-api03-${await t("anthropic-key")}\n` +
+    `ANTHROPIC_BASE_URL=https://${host}/_internal/anthropic\n` +
     `SENDGRID_API_KEY=SG.${await t("sendgrid-key")}\n` +
     `GITHUB_TOKEN=ghp_${await t("github-token")}\n\n` +
     `AWS_ACCESS_KEY_ID=${aws.accessKeyId}\nAWS_SECRET_ACCESS_KEY=${options.awsCanary ? aws.secretAccessKey : await t("aws-secret")}\n` +
-    `AWS_DEFAULT_REGION=us-east-1\nAWS_BUCKET=${app}-prod-uploads\n`;
+    `AWS_DEFAULT_REGION=us-east-1\nAWS_BUCKET=${app}-prod-uploads\n` +
+    (options.awsCanary ? "" : `AWS_ENDPOINT_URL=https://${host}/_s3\n`);
 }
 
 function slowly(text, seconds) {
@@ -270,6 +332,7 @@ function dashboardMatch(dashboard, host, path) {
  * awsCanary  { accessKeyId, secretAccessKey } from canarytokens.org, to catch AWS use.
  * onEvent    Called with every event. Defaults to one JSON log line.
  * store      Where events are counted for the leaderboard, e.g. d1Store(env.BAIT_DB).
+ * owner      Public ID the leaderboard credits instead of your hostnames (e.g. a GitHub handle).
  * dashboard  Path ("/_bait") or host+path ("example.com/bait/live") for the public
  *            leaderboard. Needs a store. Off when unset.
  */
@@ -280,6 +343,7 @@ export function createBait(options = {}) {
     console.warn("[usual-bait] No secret set: tokens are only recognised until this process restarts.");
   }
   const keyPromise = keyFrom(secret);
+  const hmacPromise = hmacFrom(secret);
   const drip = Math.max(0, Math.min(Number(options.drip) || 0, 60));
   const emit = options.onEvent || ((event) => console.log(JSON.stringify({ usual_bait: event })));
 
@@ -304,31 +368,41 @@ export function createBait(options = {}) {
   /** Inspect a plain visit. Returns a Response for bait or a tripped token, else null. */
   async function inspect(visit, waitUntil) {
     const key = await keyPromise;
+    const hmac = await hmacPromise;
     visit = { at: Date.now(), ...visit };
     const file = FILES.find((f) => f.pattern.test(visit.path));
     if (file) {
-      const body = await render(file.kind, visit, key, options);
-      publish({ type: "served", at: new Date(visit.at).toISOString(), site: visit.host, file: file.kind, path: visit.path,
-        credentials: (body.match(TOKEN_PATTERN) || []).length + (file.kind === "docker" ? 1 : 0),
-        ip: visit.ip, asn: visit.asn || null, asOrg: visit.asOrg || null, country: visit.country || null,
-        userAgent: visit.userAgent || null }, waitUntil);
+      const body = await render(file.kind, visit, key, options, hmac);
+      const accessKeys = options.awsCanary ? [] : [...new Set(body.match(ACCESS_KEY_PATTERN) || [])];
+      publish({ type: "served", at: new Date(visit.at).toISOString(), site: visit.host, owner: options.owner || null,
+        file: file.kind, path: visit.path,
+        credentials: (body.match(TOKEN_PATTERN) || []).length + accessKeys.length + (file.kind === "docker" ? 1 : 0),
+        accessKeys, ip: visit.ip, asn: visit.asn || null, asOrg: visit.asOrg || null, country: visit.country || null,
+        userAgent: visit.userAgent || null, fingerprint: visit.fingerprint || null }, waitUntil);
       const headers = { "content-type": file.kind === "docker" || file.kind === "json" ? "application/json" : "text/plain; charset=utf-8",
         "cache-control": "no-store", "x-robots-tag": "noindex" };
       return new Response(drip ? slowly(body, drip) : body, { status: 200, headers });
     }
     const haystack = [visit.url, safeDecode(visit.url), visit.headerText, visit.bodyText].filter(Boolean).join("\n");
-    const candidates = [...new Set(haystack.match(TOKEN_PATTERN) || [])].slice(0, MAX_CANDIDATES);
-    for (const token of candidates) {
-      const served = await open(key, token);
+    const candidates = [...new Set(haystack.match(TOKEN_PATTERN) || [])].slice(0, MAX_CANDIDATES)
+      .map((token) => ({ token, opener: () => open(key, token) }))
+      .concat([...new Set(haystack.match(ACCESS_KEY_PATTERN) || [])].slice(0, 2).map((token) => ({ token,
+        opener: async () => {
+          const served = await openAccessKey(hmac, token);
+          const known = served && options.store?.lookupAccessKey ? await options.store.lookupAccessKey(token).catch(() => null) : null;
+          return served && known ? { ...served, ...known } : served;
+        } })));
+    for (const { token, opener } of candidates) {
+      const served = await opener();
       if (!served) continue;
       const where = visit.bodyText?.includes(token) ? "body" : visit.headerText?.includes(token) ? "header" : "url";
       const { servedAtMs, ...scraped } = served;
-      publish({ type: "tripped", at: new Date(visit.at).toISOString(), site: visit.host,
+      publish({ type: "tripped", at: new Date(visit.at).toISOString(), site: visit.host, owner: options.owner || null,
         credentialId: await credentialId(token), credential: scraped.slot, file: scraped.file,
         secondsSinceServed: Math.max(0, Math.round((visit.at - servedAtMs) / 1000)),
         sameIp: Boolean(visit.ip && visit.ip === scraped.ip), where, method: visit.method, path: redact(visit.path, [token]),
         ip: visit.ip, asn: visit.asn || null, asOrg: visit.asOrg || null, country: visit.country || null,
-        userAgent: visit.userAgent || null, served: scraped }, waitUntil);
+        userAgent: visit.userAgent || null, fingerprint: visit.fingerprint || null, served: scraped }, waitUntil);
       return typeof options.respond === "function" ? options.respond(scraped)
         : new Response(JSON.stringify({ error: "invalid_token" }), { status: 401,
           headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -346,7 +420,7 @@ export function createBait(options = {}) {
         "content-security-policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src data:" } });
     }
     if (view === "stats") {
-      return new Response(JSON.stringify(await options.store.stats({ awsCanary: Boolean(options.awsCanary) })), {
+      return new Response(JSON.stringify(await options.store.stats({ awsCanary: Boolean(options.awsCanary), owner: options.owner })), {
         headers: { "content-type": "application/json", "cache-control": "public, max-age=30",
           "access-control-allow-origin": "*" } });
     }
@@ -369,10 +443,20 @@ export function createBait(options = {}) {
       ip: context.ip ?? request.headers.get("cf-connecting-ip") ?? null,
       asn: context.asn ?? cf.asn ?? null, asOrg: context.asOrg ?? cf.asOrganization ?? null,
       country: context.country ?? cf.country ?? null, userAgent: request.headers.get("user-agent"),
+      fingerprint: fingerprintOf(request.headers, cf),
     }, context.waitUntil);
   }
 
   return { handle, inspect, dashboard, version: VERSION };
+}
+
+// Connection details that survive a scanner rotating its IPs and clouds. Grouping by
+// them (with the wordlist it tries) is how networks become operators.
+function fingerprintOf(headers, cf = {}) {
+  const names = [...headers.keys()].filter((n) => !n.startsWith("cf-") && !["x-forwarded-for", "x-forwarded-proto", "x-real-ip", "cdn-loop"].includes(n));
+  return JSON.stringify({ tls: cf.tlsVersion || null, cipher: cf.tlsCipher || null, http: cf.httpProtocol || null,
+    headers: names.sort().join(","), accept: headers.get("accept") || null, lang: headers.get("accept-language") || null,
+    encoding: headers.get("accept-encoding") || null });
 }
 
 function safeDecode(text) {
@@ -400,6 +484,7 @@ export function baitMiddleware(bait, { trustProxy = false } = {}) {
         headerText: headerText(headers), bodyText: body && body.length <= MAX_BODY_BYTES ? body : null,
         ip: forwarded || req.socket?.remoteAddress || null, asn: null,
         country: trustProxy ? req.headers["cf-ipcountry"] || null : null, userAgent: req.headers["user-agent"] || null,
+        fingerprint: fingerprintOf(headers, { httpProtocol: "HTTP/" + req.httpVersion }),
       });
       if (!response) return next();
       res.statusCode = response.status;
@@ -420,14 +505,16 @@ export function baitMiddleware(bait, { trustProxy = false } = {}) {
 
 const FILE_SLOTS = {
   env: ["database-password", "database-url", "redis-url", "admin-url", "internal-api-token", "jwt-secret",
-    "mail-password", "stripe-secret", "openai-key", "sendgrid-key", "github-token", "aws-secret"],
-  git: ["git-remote"], aws: [], npmrc: ["npm-token"], docker: ["docker-auth"],
+    "mail-password", "stripe-secret", "openai-key", "anthropic-key", "sendgrid-key", "github-token", "aws-secret",
+    "aws-access-key"],
+  git: ["git-remote"], aws: ["aws-access-key"], npmrc: ["npm-token"], docker: ["docker-auth"],
   wordpress: ["database-password", "jwt-secret"],
   json: ["database-password", "internal-api-token", "admin-url", "stripe-secret"],
 };
 // Credentials that point at the site itself. Only these can be seen when used;
 // the rest get tested against Stripe, OpenAI, GitHub or SendGrid, out of sight.
-const WATCHABLE = new Set(["database-password", "database-url", "redis-url", "admin-url", "internal-api-token",
+const WATCHABLE = new Set(["openai-key", "anthropic-key", "aws-access-key",
+  "database-password", "database-url", "redis-url", "admin-url", "internal-api-token",
   "jwt-secret", "mail-password", "git-remote", "npm-token", "docker-auth"]);
 const LABELS = {
   "database-password": "DB_PASSWORD", "database-url": "DATABASE_URL", "redis-url": "REDIS_URL",
@@ -435,7 +522,14 @@ const LABELS = {
   "admin-url": "ADMIN_URL", "internal-api-token": "INTERNAL_API_TOKEN", "jwt-secret": "JWT_SECRET",
   "github-token": "GITHUB_TOKEN", "sendgrid-key": "SENDGRID_API_KEY", "git-remote": ".git/config remote",
   "npm-token": ".npmrc auth token", "docker-auth": ".docker registry auth", "mail-password": "MAIL_PASSWORD",
+  "aws-access-key": "AWS_ACCESS_KEY_ID", "anthropic-key": "ANTHROPIC_API_KEY",
 };
+// Hosting networks read as the product people know. These are where scanners rent
+// servers, not who runs them.
+const CLOUDS = { 396982: "Google Cloud", 15169: "Google", 19527: "Google Cloud", 16509: "Amazon AWS", 14618: "Amazon AWS",
+  8075: "Microsoft Azure", 14061: "DigitalOcean", 24940: "Hetzner", 213230: "Hetzner Cloud", 16276: "OVHcloud",
+  63949: "Akamai Linode", 20473: "Vultr", 45102: "Alibaba Cloud", 132203: "Tencent Cloud", 31898: "Oracle Cloud",
+  13335: "Cloudflare", 51167: "Contabo" };
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS bait_totals (id INTEGER PRIMARY KEY CHECK (id = 1), since INTEGER,
@@ -464,6 +558,14 @@ const SCHEMA = [
     trips INTEGER NOT NULL DEFAULT 0)`,
   `CREATE TABLE IF NOT EXISTS bait_cache (key TEXT PRIMARY KEY, at INTEGER, body TEXT)`,
   `CREATE TABLE IF NOT EXISTS bait_meta (key TEXT PRIMARY KEY, value TEXT)`,
+  `CREATE TABLE IF NOT EXISTS bait_access_key (id TEXT PRIMARY KEY, at INTEGER, site TEXT, file TEXT, ip TEXT,
+    asn INTEGER, country TEXT)`,
+];
+// Columns added after first release. Each may already exist; failures are expected.
+const MIGRATIONS = [
+  `ALTER TABLE bait_serve ADD COLUMN fingerprint TEXT`,
+  `ALTER TABLE bait_trip ADD COLUMN fingerprint TEXT`,
+  `ALTER TABLE bait_site ADD COLUMN owner TEXT`,
 ];
 
 const clip = (text, length) => (text == null ? null : String(text).slice(0, length));
@@ -481,10 +583,12 @@ const BUCKETS = [["<1m", 60], ["1-10m", 600], ["10-60m", 3600], ["1-6h", 21600],
 
 export function d1Store(db, { cacheSeconds = 60 } = {}) {
   let ready = null;
-  const ensure = () => (ready ||= db.batch(SCHEMA.map((sql) => db.prepare(sql))).catch((error) => {
-    ready = null;
-    throw error;
-  }));
+  const ensure = () => (ready ||= db.batch(SCHEMA.map((sql) => db.prepare(sql)))
+    .then(() => Promise.all(MIGRATIONS.map((sql) => db.prepare(sql).run().catch(() => null))))
+    .catch((error) => {
+      ready = null;
+      throw error;
+    }));
   const run = (sql, ...args) => db.prepare(sql).bind(...args);
 
   async function record(event) {
@@ -493,9 +597,12 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
     const asn = Number(event.asn) || 0;
     if (event.type === "served") {
       await db.batch([
-        run(`INSERT INTO bait_serve (at, site, path, file, credentials, ip, asn, org, country, user_agent)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, at, clip(event.site, 120), clip(event.path, 200), event.file,
-          event.credentials || 0, event.ip || null, asn, clip(event.asOrg, 80), event.country || null, clip(event.userAgent, 300)),
+        run(`INSERT INTO bait_serve (at, site, path, file, credentials, ip, asn, org, country, user_agent, fingerprint)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, at, clip(event.site, 120), clip(event.path, 200), event.file,
+          event.credentials || 0, event.ip || null, asn, clip(event.asOrg, 80), event.country || null, clip(event.userAgent, 300),
+          clip(event.fingerprint, 1000)),
+        ...(event.accessKeys || []).map((id) => run(`INSERT OR IGNORE INTO bait_access_key (id, at, site, file, ip, asn, country)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`, id, at, clip(event.site, 120), event.file, event.ip || null, asn, event.country || null)),
         run(`UPDATE bait_totals SET served = served + 1, minted = minted + ?, backfilled = backfilled + ?,
           since = min(coalesce(since, ?), ?) WHERE id = 1`, event.credentials || 0, event.backfilled ? 1 : 0, at, at),
         run(`INSERT INTO bait_network (asn, org, country, scrapes, last_at) VALUES (?, ?, ?, 1, ?)
@@ -507,8 +614,9 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
           event.file, event.credentials > 0 ? 1 : 0),
         run(`INSERT INTO bait_path (path, hits) VALUES (?, 1) ON CONFLICT(path) DO UPDATE SET hits = hits + 1`,
           clip(String(event.path).toLowerCase(), 80)),
-        run(`INSERT INTO bait_site (site, served) VALUES (?, 1) ON CONFLICT(site) DO UPDATE SET served = served + 1`,
-          clip(event.site, 120)),
+        run(`INSERT INTO bait_site (site, owner, served) VALUES (?, ?, 1)
+          ON CONFLICT(site) DO UPDATE SET served = served + 1, owner = coalesce(excluded.owner, owner)`,
+          clip(event.site, 120), clip(event.owner, 40)),
         run(`INSERT INTO bait_day (day, served) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET served = served + 1`, day(at)),
       ]);
       return;
@@ -526,11 +634,12 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
     if (event.country && !countries.includes(event.country) && countries.length < 50) countries.push(event.country);
     await db.batch([
       run(`INSERT INTO bait_trip (at, site, token_id, slot, file, where_found, method, path, ip, asn, org, country,
-          user_agent, seconds, served_at, served_ip, served_asn, served_country)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          user_agent, seconds, served_at, served_ip, served_asn, served_country, fingerprint)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         at, clip(event.site, 120), event.credentialId, event.credential, event.file, event.where, clip(event.method, 10),
         clip(event.path, 200), event.ip || null, asn, clip(event.asOrg, 80), event.country || null,
-        clip(event.userAgent, 300), event.secondsSinceServed, servedAt, served.ip || null, servedAsn, served.country || null),
+        clip(event.userAgent, 300), event.secondsSinceServed, servedAt, served.ip || null, servedAsn, served.country || null,
+        clip(event.fingerprint, 1000)),
       run(`UPDATE bait_totals SET trips = trips + 1, came_back = came_back + ? WHERE id = 1`, first ? 1 : 0),
       first
         ? run(`INSERT INTO bait_token (id, slot, file, site, served_at, served_asn, served_country, first_used_at,
@@ -551,13 +660,15 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
       run(`INSERT INTO bait_slot (slot, uses, came_back) VALUES (?, 1, ?)
           ON CONFLICT(slot) DO UPDATE SET uses = uses + 1, came_back = came_back + excluded.came_back`,
         event.credential, first ? 1 : 0),
-      run(`INSERT INTO bait_site (site, trips) VALUES (?, 1) ON CONFLICT(site) DO UPDATE SET trips = trips + 1`,
-        clip(event.site, 120)),
+      run(`INSERT INTO bait_site (site, owner, trips) VALUES (?, ?, 1)
+          ON CONFLICT(site) DO UPDATE SET trips = trips + 1, owner = coalesce(excluded.owner, owner)`,
+        clip(event.site, 120), clip(event.owner, 40)),
       run(`INSERT INTO bait_day (day, trips) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET trips = trips + 1`, day(at)),
     ]);
   }
 
-  async function compute({ awsCanary = false } = {}) {
+  // Hostnames stay private. Public stats credit each site's owner ID instead.
+  async function compute({ awsCanary = false, owner: defaultOwner = "anonymous" } = {}) {
     const now = Math.floor(Date.now() / 1000);
     const [totals, files, slots, tokens, scrapers, users, networkCount, paths, sites, days, recent, notice] = await Promise.all([
       run(`SELECT * FROM bait_totals WHERE id = 1`).first(),
@@ -570,18 +681,27 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
         ORDER BY uses DESC, credentials_used DESC LIMIT 12`).all(),
       run(`SELECT count(*) AS n FROM bait_network WHERE scrapes > 0 OR uses > 0`).first(),
       run(`SELECT path, hits, (SELECT count(*) FROM bait_path) AS distinct_paths FROM bait_path ORDER BY hits DESC LIMIT 12`).all(),
-      run(`SELECT site, served, trips FROM bait_site ORDER BY served DESC LIMIT 40`).all(),
+      run(`SELECT site, owner, served, trips FROM bait_site`).all(),
       run(`SELECT day, served, trips FROM bait_day WHERE day >= ? ORDER BY day`, day(now - 29 * 86400)).all(),
-      run(`SELECT r.at, r.slot, r.site, r.where_found, r.method, r.path, r.org, r.country, r.user_agent, r.seconds,
-        r.served_country, r.token_id, n.org AS served_org FROM bait_trip r
+      run(`SELECT r.at, r.slot, r.site, r.where_found, r.method, r.path, r.asn, r.org, r.country, r.user_agent, r.seconds,
+        r.served_asn, r.served_country, r.token_id, n.org AS served_org FROM bait_trip r
         LEFT JOIN bait_network n ON n.asn = r.served_asn ORDER BY r.at DESC, r.id DESC LIMIT 20`).all(),
       run(`SELECT value FROM bait_meta WHERE key = 'notice'`).first(),
     ]);
-    const network = (asn, org, country) => ({ asn: asn || null, org: org || (asn ? `AS${asn}` : "Unknown network"), country: country || null });
+    const ownerOf = Object.fromEntries(sites.results.map((row) => [row.site, row.owner || defaultOwner]));
+    const members = {};
+    for (const row of sites.results) {
+      const member = (members[ownerOf[row.site]] ||= { owner: ownerOf[row.site], sites: 0, scans: 0, uses: 0 });
+      member.sites += 1;
+      member.scans += row.served;
+      member.uses += row.trips;
+    }
+    const network = (asn, org, country) => ({ asn: asn || null, org: CLOUDS[asn] || org || (asn ? `AS${asn}` : "Unknown network"),
+      country: country || null });
     const minted = {};
     for (const { file, minted: serves } of files.results) {
       for (const name of FILE_SLOTS[file] || []) {
-        if (name === "aws-secret" && awsCanary) continue;
+        if ((name === "aws-secret" || name === "aws-access-key") && awsCanary) continue;
         minted[name] = (minted[name] || 0) + serves;
       }
     }
@@ -591,7 +711,7 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
     const fastest = firstUse.reduce((best, t) => (!best || t.seconds < best.seconds ? t : best), null);
     const seconds = firstUse.map((t) => t.seconds);
     const card = (t) => ({
-      id: t.id, credential: t.slot, label: LABELS[t.slot] || t.slot, file: t.file, site: t.site,
+      id: t.id, credential: t.slot, label: LABELS[t.slot] || t.slot, file: t.file, owner: ownerOf[t.site] || defaultOwner,
       scrapedAt: new Date(t.served_at * 1000).toISOString(), scrapedBy: network(t.served_asn, t.served_org, t.served_country),
       firstUsedBy: network(t.first_asn, t.first_org, t.first_country), secondsToFirstUse: t.seconds, uses: t.uses,
       networks: t.networkCount, countries: t.countries ? t.countries.split(",").filter(Boolean) : [],
@@ -606,7 +726,7 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
       totals: {
         scrapes: totals?.served || 0, backfilledScrapes: totals?.backfilled || 0, credentialsHandedOut: totals?.minted || 0,
         credentialsCameBack: totals?.came_back || 0, timesUsed: totals?.trips || 0,
-        networks: networkCount?.n || 0, sites: sites.results.length, distinctPaths: paths.results[0]?.distinct_paths || 0,
+        networks: networkCount?.n || 0, sites: sites.results.length, members: Object.keys(members).length, distinctPaths: paths.results[0]?.distinct_paths || 0,
       },
       speed: {
         medianSecondsToFirstUse: median(seconds),
@@ -626,14 +746,14 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
         .filter((row) => row.handedOut || row.timesUsed)
         .sort((a, b) => b.timesUsed - a.timesUsed || b.handedOut - a.handedOut),
       paths: paths.results.map(({ path, hits }) => ({ path, hits })),
-      sites: sites.results,
+      members: Object.values(members).sort((a, b) => b.scans - a.scans),
       daily: Array.from({ length: 30 }, (_, i) => {
         const date = day(now - (29 - i) * 86400);
         return { day: date, scrapes: dayRows[date]?.served || 0, uses: dayRows[date]?.trips || 0 };
       }),
       recent: recent.results.map((row) => ({ at: new Date(row.at * 1000).toISOString(), credential: row.slot,
-        label: LABELS[row.slot] || row.slot, id: row.token_id, site: row.site, where: row.where_found, method: row.method,
-        path: row.path, usedBy: network(null, row.org, row.country), scrapedBy: network(null, row.served_org, row.served_country),
+        label: LABELS[row.slot] || row.slot, id: row.token_id, owner: ownerOf[row.site] || defaultOwner, where: row.where_found, method: row.method,
+        path: row.path, usedBy: network(row.asn, row.org, row.country), scrapedBy: network(row.served_asn, row.served_org, row.served_country),
         secondsSinceScrape: row.seconds, userAgent: clip(row.user_agent, 80) })),
     };
   }
@@ -649,7 +769,13 @@ export function d1Store(db, { cacheSeconds = 60 } = {}) {
     return fresh;
   }
 
-  return { record, stats, compute };
+  async function lookupAccessKey(id) {
+    await ensure();
+    const row = await run(`SELECT ip, asn, country, site FROM bait_access_key WHERE id = ?`, id).first();
+    return row ? { ip: row.ip, asn: row.asn || null, country: row.country } : null;
+  }
+
+  return { record, stats, compute, lookupAccessKey };
 }
 
 // ---------------------------------------------------------------------------
@@ -719,12 +845,12 @@ footer h3{color:var(--ink);font:400 28px var(--serif);letter-spacing:-.035em;mar
 <div class="tiles" id="tiles"></div>
 <section id="thief-section"><p class="eyebrow">The fastest thief</p><div id="thief"></div></section>
 <section><h2>Most wanted credentials</h2><p class="sub">Each row is one unique fake credential, followed from the scan that took it to every attempt to use it.</p><div id="wanted"></div></section>
-<section class="pair"><div><h3>Who scrapes</h3><p class="sub">Networks that asked for our secrets, and how many of their haul came back.</p><div id="scrapers"></div></div>
+<section class="pair"><div><h3>Who scrapes</h3><p class="sub">Where the scanners' servers are rented, not who runs them. And how much of their haul came back.</p><div id="scrapers"></div></div>
 <div><h3>Who comes back</h3><p class="sub">Networks that tried a poisoned credential. Often not the one that scraped it.</p><div id="users"></div></div></section>
-<section><h2>What they try</h2><p class="sub">Only credentials that point back at our own sites can be seen when used. Stripe, OpenAI, GitHub and SendGrid keys get tested at those companies, out of our sight.</p><div id="credentials"></div></section>
+<section><h2>What they try</h2><p class="sub">We see a credential used when it points back at our own sites. The OpenAI, Anthropic and AWS keys come with a base URL that sends SDKs to us. Stripe, GitHub and SendGrid keys get tested at those companies, out of our sight.</p><div id="credentials"></div></section>
 <section><h2>Over time</h2><p class="sub">The last 30 days. Hover a column for its value.</p><div class="charts" id="charts"></div></section>
 <section><h2>Latest uses</h2><p class="sub">The most recent times a poisoned credential came back.</p><div id="feed"></div></section>
-<section class="pair"><div><h3>Our sites</h3><p class="sub">Every site running Bait.</p><div id="sites"></div></div><div><h3>Most requested files</h3><p class="sub" id="paths-sub">What the scanners asked for.</p><div id="paths"></div></div></section>
+<section class="pair"><div><h3>Members</h3><p class="sub">Everyone running Bait into this leaderboard. Sites stay private.</p><div id="members"></div></div><div><h3>Most requested files</h3><p class="sub" id="paths-sub">What the scanners asked for.</p><div id="paths"></div></div></section>
 <footer><div><h3>Put Bait on your site.</h3>One file, no dependencies. Runs as a Cloudflare Worker or Node middleware, and gives you a leaderboard like this one.<br><a class="button" href="https://tryusual.com/bait/">Install Bait →</a></div>
 <div><b>How to read this.</b> Every credential is fake and points back at one of our sites. We publish networks and countries, never IP addresses. A credential "came back" when it showed up in a later request to one of our sites. Open source under MIT at <a href="https://github.com/pauljump/usual">pauljump/usual</a>. <a href="stats.json" id="json">Raw stats JSON</a>.</div></footer>
 </div><div class="tip" id="tip" role="tooltip"></div>
@@ -769,7 +895,7 @@ return h("div",{cls:"chart"},[h("h3",{text:title}),h("p",{text:note}),svg,detail
 function render(s){
 var t=s.totals,since=s.since?new Date(s.since).toLocaleDateString("en-US",{month:"short",day:"numeric"}):"";
 fill("hero",document.createTextNode(n(t.scrapes)));
-fill("hero-sub",document.createTextNode("requests for our secrets across "+n(t.sites)+" sites"+(since?" since "+since:"")));
+fill("hero-sub",document.createTextNode("requests for secrets across "+n(t.sites)+" sites"+(since?" since "+since:"")));
 fill("notice",s.notice?h("div",{cls:"notice"},[h("b",{text:s.notice.indexOf("SIMULATED")===0?"SIMULATED":"NOTE"}),s.notice.replace(/^SIMULATED[:.]?\\s*/,"")]):null);
 var tiles=[["Poisoned credentials handed out",n(t.credentialsHandedOut)],["Credentials that came back",n(t.credentialsCameBack)],["Times they were used",n(t.timesUsed)],
 ["Median time from scrape to first use",dur(s.speed.medianSecondsToFirstUse)],["First used by a different network",pct(s.speed.handoffShare)],["Scanner networks seen",n(t.networks)]];
@@ -778,9 +904,9 @@ var f=s.speed.fastest;document.getElementById("thief-section").hidden=!f;
 if(f)fill("thief",h("div",{cls:"thief"},[h("div",{},[h("p",{cls:"eyebrow",text:"Scraped by"}),h("div",{cls:"who",text:net(f.scrapedBy)}),h("div",{cls:"when",text:new Date(f.scrapedAt).toUTCString().replace(" GMT"," UTC")})]),
 h("div",{cls:"arrow"},[document.createTextNode(dur(f.secondsToFirstUse)),h("small",{text:"then used"})]),
 h("div",{},[h("p",{cls:"eyebrow",text:"Used by"}),h("div",{cls:"who",text:net(f.firstUsedBy)}),h("div",{cls:"when",text:"tried "+n(f.uses)+(f.uses===1?" time":" times")})]),
-h("div",{cls:"what"},[document.createTextNode("Credential "),h("code",{text:"#"+f.id}),document.createTextNode(" · "+f.label+" from "),h("code",{text:f.file}),document.createTextNode(" on "+f.site)])]));
+h("div",{cls:"what"},[document.createTextNode("Credential "),h("code",{text:"#"+f.id}),document.createTextNode(" · "+f.label+" from "),h("code",{text:f.file}),document.createTextNode(" on a site run by "+f.owner)])]));
 fill("wanted",table([{t:"#",rank:1,f:function(r,i){return String(i+1)}},{t:"Credential",f:function(r){return two(h("code",{text:"#"+r.id}),r.label)}},
-{t:"Scraped from",f:function(r){return two(r.site,"asked for "+r.file+", "+ago(r.scrapedAt))}},{t:"Scraped by",f:function(r){return net(r.scrapedBy)}},
+{t:"Scraped from",f:function(r){return two(r.owner,"asked for "+r.file+", "+ago(r.scrapedAt))}},{t:"Scraped by",f:function(r){return net(r.scrapedBy)}},
 {t:"First used by",f:function(r){return net(r.firstUsedBy)}},{t:"Scrape → use",num:1,f:function(r){return dur(r.secondsToFirstUse)}},
 {t:"Uses",num:1,f:function(r){return n(r.uses)}},{t:"Networks",num:1,f:function(r){return n(r.networks)}},{t:"Countries",f:function(r){return r.countries.map(flag).join(" ")||"–"}}],
 s.mostWanted,"No poisoned credential has come back yet."+(t.credentialsHandedOut?" "+n(t.credentialsHandedOut)+" are out there.":"")+" The first one to return will lead this table."));
@@ -798,9 +924,9 @@ fill("charts",h("div",{style:"display:contents"},[columns("Scans per day","Reque
 columns("Uses per day","Poisoned credentials coming back",s.daily,day,function(r){return r.uses},css.getPropertyValue("--use").trim(),n),
 columns("Scrape to first use","How long a credential sat before its first use",s.speed.histogram,function(r){return r.label},function(r){return r.count},css.getPropertyValue("--use").trim(),function(v){return n(v)+" credentials"})]));
 fill("feed",s.recent.length?h("ul",{cls:"feed"},s.recent.map(function(r){return h("li",{},[h("time",{datetime:r.at,text:ago(r.at)}),
-h("span",{},[h("code",{text:"#"+r.id}),document.createTextNode(" "+r.label+" · scraped by "+net(r.scrapedBy)+", used by "+net(r.usedBy)+" via "+r.where+" on "+r.site+" "),h("code",{text:r.method+" "+r.path})]),
+h("span",{},[h("code",{text:"#"+r.id}),document.createTextNode(" "+r.label+" · scraped by "+net(r.scrapedBy)+", used by "+net(r.usedBy)+" via "+r.where+" on "+r.owner+"'s site "),h("code",{text:r.method+" "+r.path})]),
 h("span",{cls:"fast",text:dur(r.secondsSinceScrape)+" later"})])})):h("div",{cls:"empty",text:"Waiting for the first poisoned credential to come back."}));
-fill("sites",table([{t:"Site",f:function(r){return r.site}},{t:"Scans",num:1,f:function(r){return n(r.served)}},{t:"Uses",num:1,f:function(r){return n(r.trips)}}],s.sites,"No sites yet."));
+fill("members",table([{t:"Member",f:function(r){return r.owner}},{t:"Sites",num:1,f:function(r){return n(r.sites)}},{t:"Scans",num:1,f:function(r){return n(r.scans)}},{t:"Uses",num:1,f:function(r){return n(r.uses)}}],s.members,"No members yet."));
 fill("paths-sub",document.createTextNode(t.distinctPaths>12?n(t.distinctPaths)+" different paths so far. The most requested:":"What the scanners asked for."));
 fill("paths",table([{t:"Path",f:function(r){return h("code",{text:r.path})}},{t:"Requests",num:1,f:function(r){return n(r.hits)}}],s.paths,"No requests yet."));
 var live=document.getElementById("live").lastChild;live.textContent="Live · updated "+new Date(s.generatedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
@@ -816,7 +942,7 @@ let workerBait = null;
 export default {
   async fetch(request, env, ctx) {
     workerBait ||= createBait({
-      secret: env.BAIT_SECRET, store: env.BAIT_DB ? d1Store(env.BAIT_DB) : undefined,
+      secret: env.BAIT_SECRET, store: env.BAIT_DB ? d1Store(env.BAIT_DB) : undefined, owner: env.BAIT_OWNER || undefined,
       dashboard: env.BAIT_DASHBOARD || undefined, report: env.BAIT_REPORT || undefined, shareIps: env.BAIT_SHARE_IPS === "true",
       drip: Number(env.BAIT_DRIP || 0), wink: env.BAIT_WINK === "true",
       awsCanary: env.BAIT_AWS_KEY_ID && env.BAIT_AWS_SECRET

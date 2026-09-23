@@ -5,8 +5,13 @@
   "main": "src/usual/bait/bait.js",
   "compatibilityDate": "2026-09-01",
   "d1Database": "usual-bait",
-  "secrets": ["BAIT_SECRET"],
-  "vars": { "BAIT_DASHBOARD": "tryusual.com/bait/live" },
+  "secrets": [
+    "BAIT_SECRET"
+  ],
+  "vars": {
+    "BAIT_DASHBOARD": "tryusual.com/bait/live",
+    "BAIT_OWNER": "pauljump"
+  },
   "failOpen": true,
   "notes": "Bait answers secret scanners on every portfolio site and serves the shared leaderboard at https://tryusual.com/bait/live/. All other requests pass through to the origin unchanged. Zones marked paths already have a catch-all Worker, so Bait takes only its own, more specific paths there. BAIT_SECRET lives in /Users/mini-home/.secrets/monorepo.env; rotating it orphans every credential already handed out.",
   "zones": {
@@ -20,7 +25,21 @@
     "walkie.cc": "all",
     "polyfeeds.dev": "paths"
   },
-  "pathRoutes": ["/.env*", "/.git/*", "/.aws/*", "/.npmrc", "/.docker/*", "/wp-config.php*", "/secrets.json",
-    "/credentials.json", "/appsettings*", "/_internal/*", "/api/internal*", "/_git/*", "/_npm/*"],
+  "pathRoutes": [
+    "/.env*",
+    "/.git/*",
+    "/.aws/*",
+    "/.npmrc",
+    "/.docker/*",
+    "/wp-config.php*",
+    "/secrets.json",
+    "/credentials.json",
+    "/appsettings*",
+    "/_internal/*",
+    "/api/internal*",
+    "/_git/*",
+    "/_npm/*",
+    "/_s3/*"
+  ],
   "deploymentCommand": "node scripts/bait/deploy.mjs --apply"
 }

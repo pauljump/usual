@@ -33,13 +33,14 @@ database_id = "<from: wrangler d1 create usual-bait>"
 
 [vars]
 BAIT_DASHBOARD = "/_bait"       # or "example.com/bait/live"; leave unset for no public page
+BAIT_OWNER = "your-handle"      # the leaderboard credits this ID; hostnames are never shown
 ```
 
 3. Set the sealing secret: `openssl rand -hex 32 | wrangler secret put BAIT_SECRET`. Without it, tokens stop being recognised whenever the Worker restarts.
 4. `wrangler deploy`. Tables are created on first use.
-5. If another Worker already owns `example.com/*`, don't take that route. Add path routes instead, which are more specific and win: `example.com/.env*`, `example.com/.git/*`, `example.com/.aws/*`, `example.com/.npmrc`, `example.com/.docker/*`, `example.com/wp-config.php*`, `example.com/secrets.json`, `example.com/credentials.json`, `example.com/appsettings*`, `example.com/_internal/*`, `example.com/api/internal*`, `example.com/_git/*`, `example.com/_npm/*`. Nested paths like `/app/.env`, and credentials submitted to other pages, are then missed.
+5. If another Worker already owns `example.com/*`, don't take that route. Add path routes instead, which are more specific and win: `example.com/.env*`, `example.com/.git/*`, `example.com/.aws/*`, `example.com/.npmrc`, `example.com/.docker/*`, `example.com/wp-config.php*`, `example.com/secrets.json`, `example.com/credentials.json`, `example.com/appsettings*`, `example.com/_internal/*`, `example.com/api/internal*`, `example.com/_git/*`, `example.com/_npm/*`, `example.com/_s3/*`. Nested paths like `/app/.env`, and credentials submitted to other pages, are then missed.
 
-Optional Worker variables: `BAIT_DRIP` (seconds to trickle each bait file out, max 60), `BAIT_WINK=true` (adds a comment telling human readers the file is a tripwire), `BAIT_AWS_KEY_ID` + `BAIT_AWS_SECRET` (an AWS key from canarytokens.org, the only way to see AWS keys get used), `BAIT_REPORT` (a URL to POST events to), `BAIT_SHARE_IPS=true` (include IPs in those reports).
+Optional Worker variables: `BAIT_DRIP` (seconds to trickle each bait file out, max 60), `BAIT_WINK=true` (adds a comment telling human readers the file is a tripwire), `BAIT_AWS_KEY_ID` + `BAIT_AWS_SECRET` (an AWS key from canarytokens.org, an alternative to Bait's own AWS key ids, which only come back when a tool honours `AWS_ENDPOINT_URL`), `BAIT_REPORT` (a URL to POST events to), `BAIT_SHARE_IPS=true` (include IPs in those reports).
 
 On the Workers free plan, every request to a `/*` route counts toward the daily request allowance. Check the site's traffic first, and prefer the path routes for busy sites.
 

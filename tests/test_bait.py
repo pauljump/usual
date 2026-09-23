@@ -16,5 +16,5 @@ def test_bait_scripted_client():
     assert result.returncode == 0, result.stderr
     receipt = json.loads(result.stdout.strip().splitlines()[-1])
     assert receipt["status"] == "passed"
-    assert len(receipt["checks"]) == 9
+    assert len(receipt["checks"]) == 10
     assert receipt["live_cloudflare"] is False

@@ -9,7 +9,7 @@ const checks = [];
 const check = async (name, fn) => { await fn(); checks.push(name); };
 const events = [];
 const store = d1Store(sqliteD1(), { cacheSeconds: 0 });
-const bait = createBait({ secret: "test-secret", store, dashboard: "shop.example.com/bait/live",
+const bait = createBait({ secret: "test-secret", store, dashboard: "shop.example.com/bait/live", owner: "tester",
   onEvent: (e) => events.push(e) });
 const req = (path, init = {}) => new Request("https://shop.example.com" + path, init);
 const scanner = { ip: "203.0.113.9", asn: 14061, asOrg: "DigitalOcean, LLC", country: "NL" };
@@ -72,13 +72,35 @@ await check("leaderboard counts and attribution", async () => {
   assert.equal(s.totals.timesUsed, 5);
   assert.equal(s.mostWanted[0].credential, "admin-url");
   assert.equal(s.mostWanted[0].uses, 2);
-  assert.equal(s.mostWanted[0].scrapedBy.org, "DigitalOcean, LLC");
-  assert.equal(s.mostWanted[0].firstUsedBy.org, "Hetzner Online GmbH");
+  assert.equal(s.mostWanted[0].scrapedBy.org, "DigitalOcean", "known clouds read by product name");
+  assert.equal(s.mostWanted[0].firstUsedBy.org, "Hetzner");
+  assert.equal(s.mostWanted[0].owner, "tester");
+  assert.deepEqual(s.members, [{ owner: "tester", sites: 1, scans: 12, uses: 5 }]);
+  assert.ok(!JSON.stringify(s).includes("shop.example.com"), "no hostnames in public stats");
   assert.equal(s.speed.handoffShare, 0.75);
   assert.equal(s.scrapers[0].credentialsLeaked, 4);
   assert.equal(s.users.find((u) => u.asn === 24940).credentials, 3);
   assert.equal(s.credentials.find((c) => c.credential === "stripe-secret").watchable, false);
   assert.ok(!JSON.stringify(s).includes("203.0.113.9") && !JSON.stringify(s).includes("198.51.100.7"), "no IPs in public stats");
+});
+await check("SDK base URLs and AWS SigV4 key ids trip", async () => {
+  const fresh = await (await bait.handle(req("/.env.local"), scanner)).text();
+  assert.match(fresh, /^OPENAI_BASE_URL=https:\/\/shop\.example\.com\/_internal\/openai\/v1$/m);
+  assert.match(fresh, /^AWS_ENDPOINT_URL=https:\/\/shop\.example\.com\/_s3$/m);
+  const openai = fresh.match(/OPENAI_API_KEY=(\S+)/)[1];
+  const anthropic = fresh.match(/ANTHROPIC_API_KEY=(\S+)/)[1];
+  const awsKey = fresh.match(/AWS_ACCESS_KEY_ID=(AKIA[A-Z2-7]{16})$/m)[1];
+  await settle();
+  const before = events.length;
+  assert.equal((await bait.handle(req("/_internal/openai/v1/models", { headers: { authorization: "Bearer " + openai } }), user)).status, 401);
+  assert.equal((await bait.handle(req("/_internal/anthropic/v1/messages", { method: "POST", headers: { "x-api-key": anthropic } }), user)).status, 401);
+  const sigv4 = `AWS4-HMAC-SHA256 Credential=${awsKey}/20260923/us-east-1/s3/aws4_request, SignedHeaders=host, Signature=abc`;
+  assert.equal((await bait.handle(req("/_s3/bucket", { headers: { authorization: sigv4 } }), user)).status, 401);
+  const trips = events.slice(before).filter((e) => e.type === "tripped");
+  assert.deepEqual(trips.map((t) => t.credential), ["openai-key", "anthropic-key", "aws-access-key"]);
+  assert.equal(trips[2].served.asn, 14061, "AWS key id resolves to its scrape through the store");
+  const forged = "AKIA" + awsKey.slice(4, 19) + (awsKey.endsWith("A") ? "B" : "A");
+  assert.equal(await bait.handle(req("/_s3/x", { headers: { authorization: sigv4.replace(awsKey, forged) } })), null);
 });
 await check("backfilled scans count but mint nothing", async () => {
   const s0 = await store.stats();
@@ -96,7 +118,7 @@ await check("dashboard only on its host and path", async () => {
   assert.match(page.headers.get("content-security-policy"), /default-src 'none'/);
   assert.match(await page.text(), /We poison the/);
   const json = await (await bait.handle(req("/bait/live/stats.json"))).json();
-  assert.equal(json.totals.credentialsCameBack, 4);
+  assert.equal(json.totals.credentialsCameBack, 7, "4 web traps + OpenAI, Anthropic, AWS");
   assert.equal(await bait.handle(new Request("https://other.example.com/bait/live/")), null);
 });
 await check("drip spreads the response", async () => {
