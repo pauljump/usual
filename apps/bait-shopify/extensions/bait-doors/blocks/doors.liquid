@@ -1,0 +1,40 @@
+{% comment %}
+  No JavaScript, tracking pixel, customer data, fetch, or edits to real products.
+  A static link can be discovered in source. Fetching it is not proof of a bot.
+  The app independently requires authenticated merchant activation before serving.
+{% endcomment %}
+{% assign bait_prefix = block.settings.proxy_path | default: '/apps/bait' %}
+{% assign bait_slug = bait_prefix | split: '/' | last | handleize %}
+{% assign bait_apps = '/apps/' | append: bait_slug %}
+{% assign bait_tools = '/tools/' | append: bait_slug %}
+{% assign bait_a = '/a/' | append: bait_slug %}
+{% assign bait_community = '/community/' | append: bait_slug %}
+{% if bait_slug != blank and bait_prefix == bait_apps or bait_prefix == bait_tools or bait_prefix == bait_a or bait_prefix == bait_community %}
+  <div hidden aria-hidden="true" data-bait-door>
+    <a href="{{ bait_prefix | escape }}/catalog" tabindex="-1" rel="nofollow">{{ 'bait.catalog_archive' | t | escape }}</a>
+  </div>
+{% endif %}
+{% if request.design_mode %}
+  <div style="position:fixed;bottom:16px;right:16px;padding:12px;background:#18181b;color:white;z-index:9999;font:14px sans-serif;max-width:280px;border-radius:8px">
+    {{ 'bait.editor_note' | t | escape }}
+  </div>
+{% endif %}
+{% schema %}
+{
+  "name": "Bait catalog door",
+  "target": "body",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Leaves a hidden catalog link for curious crawlers. No shopper tracking or changes to your products. Activate the traps in the Bait app after saving."
+    },
+    {
+      "type": "text",
+      "id": "proxy_path",
+      "label": "Bait app proxy path",
+      "default": "/apps/bait",
+      "info": "Only change this if you customized the app proxy URL in Shopify. Use the same path shown there."
+    }
+  ]
+}
+{% endschema %}

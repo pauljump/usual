@@ -116,7 +116,7 @@ await check("dashboard only on its host and path", async () => {
   const page = await bait.handle(req("/bait/live/"));
   assert.equal(page.status, 200);
   assert.match(page.headers.get("content-security-policy"), /default-src 'none'/);
-  assert.match(await page.text(), /We poison the/);
+  assert.match(await page.text(), /Help yourself/);
   const json = await (await bait.handle(req("/bait/live/stats.json"))).json();
   assert.equal(json.totals.credentialsCameBack, 7, "4 web traps + OpenAI, Anthropic, AWS");
   assert.equal(await bait.handle(new Request("https://other.example.com/bait/live/")), null);

@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync,readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {DatabaseSync} from 'node:sqlite';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {createHmac} from 'node:crypto';
+const directory=mkdtempSync(join(tmpdir(),'bait-built-server-')),path=join(directory,'test.sqlite');
+const db=new DatabaseSync(path);db.exec(readFileSync('prisma/migrations/202609280001_initial/migration.sql','utf8'));
+const shop='http-fixture.myshopify.com',secret='synthetic-shopify-secret';
+db.prepare('INSERT INTO Session (id,shop,state,isOnline,scope,accessToken) VALUES (?,?,?,0,?,?)').run('offline_'+shop,shop,'fixture','write_app_proxy','synthetic-token');
+db.prepare('INSERT INTO BaitShop (shop,enabled,secret) VALUES (?,1,?)').run(shop,'synthetic-install-secret');
+const tripwire=join(directory,'deny-network.mjs');writeFileSync(tripwire,"globalThis.fetch=async()=>{throw Error('Outbound network forbidden in test')};");
+const child=spawn(process.execPath,['--import',tripwire,'scripts/server.mjs'],{env:{...process.env,PORT:'0',DATABASE_URL:'file:'+path,SHOPIFY_API_KEY:'synthetic-key',SHOPIFY_API_SECRET:secret,SHOPIFY_APP_URL:'https://fixture.example'},stdio:['ignore','pipe','pipe']});
+let logs='',error='';child.stderr.on('data',b=>error+=b);
+try {
+  const base=await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error('Server did not start: '+error)),10000);child.stdout.on('data',b=>{logs+=b;const m=logs.match(/http:\/\/127\.0\.0\.1:\d+/);if(m){clearTimeout(timeout);resolve(m[0])}});child.on('exit',code=>{clearTimeout(timeout);reject(Error('Server exited '+code+': '+error))})});
+  const data={shop,path_prefix:'/apps/bait',timestamp:String(Math.floor(Date.now()/1000)),logged_in_customer_id:'DO_NOT_LOG_CUSTOMER'};
+  const message=Object.entries(data).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join('');
+  const query=new URLSearchParams({...data,signature:createHmac('sha256',secret).update(message).digest('hex')});
+  const response=await fetch(`${base}/proxy/catalog?${query}`);assert.equal(response.status,200);assert.equal((await response.json()).items.length,12);
+  assert.equal((await fetch(`${base}/proxy/catalog?${query}`,{method:'HEAD'})).status,200);
+  assert.equal(db.prepare('SELECT requests FROM BaitShop WHERE shop=?').get(shop).requests,1);
+  assert.equal((await fetch(`${base}/proxy/catalog?${query}&tampered=1`)).status,400);
+  assert.equal((await fetch(`${base}/webhooks/privacy`,{method:'POST',body:'x'.repeat(65537)})).status,413);
+  const asset=readdirSync('build/client/assets').find(n=>n.endsWith('.css'));
+  assert.equal((await fetch(`${base}/assets/${asset}`)).status,200);
+  const receipt=await fetch(`${base}/app/receipt`);assert(!receipt.headers.get('content-type')?.includes('image/svg+xml'));
+  assert(!logs.includes('DO_NOT_LOG_CUSTOMER'));assert(!error.includes('DO_NOT_LOG_CUSTOMER'));
+  console.log(JSON.stringify({status:'passed',live_shopify:false,checks:['built HTTP proxy signature','HEAD no-count','tamper rejection','body limit','built assets','receipt authentication','no sensitive URL access logging']}));
+}finally{child.kill('SIGTERM');if(child.exitCode===null)await once(child,'exit');db.close()}

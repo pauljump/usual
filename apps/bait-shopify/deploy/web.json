@@ -1,0 +1,26 @@
+{
+  "project": "usual-bait-shopify",
+  "canonicalRoot": "/Users/mini-home/projects/itchy",
+  "packageRoot": "/Users/mini-home/projects/itchy/apps/bait-shopify",
+  "hostnames": [
+    "bait-shopify.polyfeeds.dev"
+  ],
+  "surface": "cloudflare-tunnel",
+  "tunnel": "mini-dev",
+  "stage": "development-published-install-pending",
+  "service": "http://127.0.0.1:3087",
+  "process": "bait-shopify",
+  "processOwner": "pm2",
+  "healthCheck": "https://bait-shopify.polyfeeds.dev/auth/login",
+  "deploymentCommand": "node /Users/mini-home/projects/_factory/control-plane/scripts/migrate-pm2-fleet.mjs --apply --only bait-shopify",
+  "shopify": {
+    "clientId": "27297a7de66ce583214e00bb0dcfc8da",
+    "store": "draft-documents-test-store.myshopify.com",
+    "scopes": [
+      "write_app_proxy"
+    ],
+    "version": "bait-dev-20260928",
+    "versionUrl": "https://dev.shopify.com/dashboard/129038148/apps/429247987713/versions/1147491942401"
+  },
+  "notes": "Backend online through fleet/vault runner and existing mini-dev Tunnel. Canonical public login returned HTTP 200. Shopify configuration and theme extension released; development-store installation awaits the displayed access grant. No end-to-end Admin/proxy verification or real Shopify bot interactions claimed. Existing Bait Worker stays separate."
+}

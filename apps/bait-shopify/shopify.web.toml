@@ -1,0 +1,7 @@
+name = "Bait"
+roles = ["frontend", "backend"]
+webhooks_path = "/webhooks/app/uninstalled"
+[commands]
+build = "npm run build"
+predev = "npx prisma generate"
+dev = "npx react-router dev"

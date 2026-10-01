@@ -1,0 +1,33 @@
+# Registered development app. Canonical URL published through the existing Mini/Tunnel.
+client_id = "27297a7de66ce583214e00bb0dcfc8da"
+name = "Bait"
+application_url = "https://bait-shopify.polyfeeds.dev"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = false
+dev_store_url = "draft-documents-test-store.myshopify.com"
+include_config_on_deploy = true
+
+[access_scopes]
+scopes = "write_app_proxy"
+
+[auth]
+redirect_urls = ["https://bait-shopify.polyfeeds.dev/auth/callback"]
+
+[app_proxy]
+url = "/proxy"
+prefix = "apps"
+subpath = "bait"
+
+[webhooks]
+api_version = "2026-07"
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhooks/app/uninstalled"
+[[webhooks.subscriptions]]
+topics = ["app/scopes_update"]
+uri = "/webhooks/app/scopes-update"
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "/webhooks/privacy"

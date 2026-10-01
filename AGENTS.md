@@ -15,6 +15,10 @@
 - Build public downloads with `python3 scripts/build_release.py`. The allowlist excludes private data and research artifacts.
 - Public deployment is declared in `deploy/web.json`; use the control-plane fleet registry and vault runner.
 - Bait (`src/usual/bait/bait.js`) is a standalone website tool at `/bait/`, not a menu item. It runs as the `usual-bait` Cloudflare Worker on every zone in `deploy/bait-worker.json` and serves the shared leaderboard at `tryusual.com/bait/live/`. Deploy with `node scripts/bait/deploy.mjs` (dry run) then `--apply`; `BAIT_SECRET` lives in `/Users/mini-home/.secrets/monorepo.env`. Public counts must be real: simulated trips (`backfill.mjs --simulate-trips`) are local previews only.
+- Bait continuation state, latest traffic evidence and outstanding Shopify installation are in [STATE.md](src/usual/bait/STATE.md).
+- Bait tarpit generation, measurement semantics, quota use and verification are documented in [TARPIT.md](src/usual/bait/TARPIT.md).
+- Bait's traffic-driven learning loop, origin-404 gating, local report and resource limits are documented in [LEARNING.md](src/usual/bait/LEARNING.md).
+- Shopify Bait is a native app package at `apps/bait-shopify/`; its [product/runtime contract](apps/bait-shopify/README.md) defines proxy-only coverage, private observations, tests and the published development backend and pending store installation. It is not part of the existing Bait Worker deployment.
 - `archive/` preserves the original Itchy research and intermediate experiments. These are historical sources, not current product instructions or validated Usual accuracy results.
 - Keep old human decision records intact during migrations. Runtime data belongs outside this repository.
 

@@ -5,15 +5,21 @@
   "main": "src/usual/bait/bait.js",
   "compatibilityDate": "2026-09-01",
   "d1Database": "usual-bait",
+  "snapshotCron": "*/15 * * * *",
   "secrets": [
     "BAIT_SECRET"
   ],
   "vars": {
     "BAIT_DASHBOARD": "tryusual.com/bait/live",
-    "BAIT_OWNER": "pauljump"
+    "BAIT_OWNER": "usual",
+    "BAIT_TARPIT": "true",
+    "BAIT_TARPIT_SECONDS": "120",
+    "BAIT_LEARNING": "true",
+    "BAIT_SNAPSHOTS": "true",
+    "BAIT_MAX_ACTIVE_TARPITS": "16"
   },
   "failOpen": true,
-  "notes": "Bait answers secret scanners on every portfolio site and serves the shared leaderboard at https://tryusual.com/bait/live/. All other requests pass through to the origin unchanged. Zones marked paths already have a catch-all Worker, so Bait takes only its own, more specific paths there. BAIT_SECRET lives in /Users/mini-home/.secrets/monorepo.env; rotating it orphans every credential already handed out.",
+  "notes": "Bait serves known secret traps and the shared leaderboard at https://tryusual.com/bait/live/. Learning adds reviewed probe families only after the current origin response is 404; other traffic passes through. All-mode zones cover proxied hosts. Polyfeeds has another catch-all Worker, so only the listed paths on proxied subdomains reach Bait there. BAIT_SECRET lives in /Users/mini-home/.secrets/monorepo.env; rotating it orphans credentials and stable doors. Slow streams are capped per isolate, not account-wide.",
   "zones": {
     "tryusual.com": "all",
     "tryslopify.com": "all",
@@ -39,7 +45,24 @@
     "/api/internal*",
     "/_git/*",
     "/_npm/*",
-    "/_s3/*"
+    "/_s3/*",
+    "/_archive/*",
+    "/.gitconfig",
+    "/.git-credentials",
+    "/.gitlab-ci.yml",
+    "/.dockerenv",
+    "/env.bak",
+    "/env.old",
+    "/wp-login.php*",
+    "/xmlrpc.php*",
+    "/wp-content/*",
+    "/actuator/*",
+    "/debug/*",
+    "/phpinfo.php*",
+    "/info.php*",
+    "/backup.sql",
+    "/database.sql",
+    "/dump.sql"
   ],
   "deploymentCommand": "node scripts/bait/deploy.mjs --apply"
 }

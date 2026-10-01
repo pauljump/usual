@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
+// enough when changing adapters.
+// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+model BaitShop {
+  shop          String   @id
+  enabled       Boolean  @default(false)
+  consentAt     DateTime?
+  consentVersion String?
+  secret        String
+  createdAt     DateTime @default(now())
+  lastRecordedAt DateTime?
+  requests      Int      @default(0)
+  records       Int      @default(0)
+  bytes         BigInt   @default(0)
+  deepRequests  Int      @default(0)
+  deepest       Int      @default(0)
+}
+
+// One row per scope per day, pruned by the local maintenance command.
+model BaitBudget {
+  id       String @id
+  day      String
+  requests Int    @default(0)
+  @@index([day])
+}
+
+// Fixed-size ring: at most 200 event rows per installation. No client identity.
+model BaitEvent {
+  shop       String
+  slot       Int
+  at         DateTime
+  journey    String
+  kind       String
+  depth      Int
+  records    Int
+  bytes      Int
+  client     String
+  version    String
+  @@id([shop, slot])
+  @@index([shop, at])
+  @@index([at])
+}

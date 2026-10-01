@@ -6,6 +6,7 @@
 //   … --apply --only tryusual.com                   limit route changes to some zones
 //   … --wipe                                        empty every Bait table (after a live test)
 //   … --seed backfill.sqlite                        merge a real backfill into D1 (see backfill.mjs)
+//   … --quota-fix /private/receipts [--apply]       patch only deployed cleanup; preserve all live settings/routes
 //
 // Needs CLOUDFLARE_API_KEY, CLOUDFLARE_EMAIL and BAIT_SECRET in the environment.
 // Existing routes that belong to another Worker are reported, never replaced.
@@ -23,6 +24,13 @@ const only = flag("only") ? value("only").split(",") : null;
 const { CLOUDFLARE_API_KEY: key, CLOUDFLARE_EMAIL: email, BAIT_SECRET: secret } = process.env;
 if (!key || !email) throw new Error("Load CLOUDFLARE_API_KEY and CLOUDFLARE_EMAIL from /Users/mini-home/.secrets first.");
 const auth = { "X-Auth-Key": key, "X-Auth-Email": email };
+
+if (flag("quota-fix")) {
+  if (argv.some(arg => ["--wipe", "--seed", "--only"].includes(arg))) throw new Error('Quota fix cannot be combined with route/data options');
+  const { deployQuotaFix } = await import('./quota-hotfix.mjs');
+  await deployQuotaFix({ auth, worker: config.worker, directory: value('quota-fix'), apply });
+  process.exit(0);
+}
 
 async function cf(path, init = {}) {
   const response = await fetch("https://api.cloudflare.com/client/v4" + path, { ...init,
@@ -62,11 +70,15 @@ if (flag("wipe") || flag("seed")) {
       bait_meta: { key: ["key"], replace: ["value"] },
     };
     const local = new DatabaseSync(value("seed"), { readOnly: true });
+    // Stream measurements and stable-token attribution belong to the live Worker.
+    // Neither preview traffic nor historical scan imports can seed these counters.
+    const liveOnly = new Set(["bait_tarpit", "bait_tarpit_connection", "bait_maze_token", "bait_hosting_experiment"]);
     const quote = (v) => v === null || v === undefined ? "NULL" : typeof v === "number" || typeof v === "bigint" ? String(v)
       : "'" + String(v).replace(/'/g, "''") + "'";
     let statements = [];
     const flush = async () => { if (statements.length) await query(statements.join(";\n")); statements = []; };
     for (const { name } of local.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'bait_%' AND name != 'bait_cache'").all()) {
+      if (liveOnly.has(name) || name.startsWith("bait_learning_")) continue;
       if (!tables.includes(name)) throw new Error(`D1 is missing ${name}; request any page through the Worker first so it creates its tables.`);
       const rows = local.prepare(`SELECT * FROM ${name}`).all();
       const rule = MERGE[name];
@@ -100,6 +112,20 @@ if (flag("wipe") || flag("seed")) {
 const plan = [];
 if (!database) plan.push(`create D1 database ${config.d1Database}`);
 plan.push(`upload Worker ${config.worker} from ${config.main}`);
+plan.push(`bindings: ${Object.entries(config.vars).map(([name, val]) => `${name}=${val}`).join(", ")}`);
+if (config.vars.BAIT_SNAPSHOTS === "true") {
+  if (config.snapshotCron !== "*/15 * * * *") throw new Error("Snapshots require the supported 15-minute schedule");
+  plan.push("score: save bounded counters/latest 20 uses every 15 minutes; public refresh reads one saved row on edge-cache miss; preserve unrelated cron triggers");
+}
+plan.push("initialize additive tarpit + learning tables on first request; preserve existing counters; import no measurements");
+plan.push("learning: origin-404 probes, stable recipe assignments, local synthetic APIs, private 7-day / 20,000-row traces");
+plan.push("investigation: additive private evidence column, visible ASN/country and keyed daily egress/transport groups; no enrichment API or public identity claims");
+plan.push("company: signed fake-credential logins, fictional workspace + X note, cursor-based slow exports, three-commit Git history");
+plan.push("replays: additive session columns + index; up to 6 real recorded sessions / 12 steps, no private request data or invented visits");
+plan.push(`hosting experiment: ${config.vars.BAIT_LOGIN_EXPERIMENT_UNTIL && config.vars.BAIT_LOGIN_EXPERIMENT_HOSTS
+  ? `requested on ${config.vars.BAIT_LOGIN_EXPERIMENT_HOSTS} until ${config.vars.BAIT_LOGIN_EXPERIMENT_UNTIL}; runtime validates a future deadline within 7 days; 100 total enrollments`
+  : "disabled (requires explicit host allowlist and end time); additive bounded session table and method column only"}`);
+plan.push("limits: 16 slow connections per isolate, 120s per response, 64 KiB per body, 1,000 observed paths / 10,000 plans; no account-wide spend cap");
 const zones = (await cf("/zones?per_page=50")).filter((z) => config.zones[z.name] && (!only || only.includes(z.name)));
 const wanted = [];
 for (const zone of zones) {
@@ -135,6 +161,17 @@ form.append("metadata", JSON.stringify({
 form.append("bait.js", new Blob([readFileSync(new URL(config.main, ROOT))], { type: "application/javascript+module" }), "bait.js");
 await cf(`/accounts/${account}/workers/scripts/${config.worker}`, { method: "PUT", body: form });
 console.log(`uploaded ${config.worker} (D1 ${database.uuid})`);
+if (config.vars.BAIT_SNAPSHOTS === "true") {
+  const path = `/accounts/${account}/workers/scripts/${config.worker}/schedules`;
+  const existing = await cf(path);
+  if (!Array.isArray(existing.schedules)) throw new Error("Unexpected schedules response; refusing replacement");
+  const crons = [...new Set([...existing.schedules.map(s => s.cron), config.snapshotCron])];
+  if (!existing.schedules.some(s => s.cron === config.snapshotCron))
+    await cf(path, { method: "PUT", body: JSON.stringify(crons.map(cron => ({ cron }))) });
+  const verified = await cf(path);
+  if (!crons.every(cron => verified.schedules?.some(s => s.cron === cron))) throw new Error("Snapshot schedule verification failed");
+  console.log("snapshot schedule verified (15 minutes); prior triggers preserved");
+}
 for (const { zone, pattern, remove } of wanted) {
   if (remove) {
     await cf(`/zones/${zone.id}/workers/routes/${remove}`, { method: "DELETE" });
