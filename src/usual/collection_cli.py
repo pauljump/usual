@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 
-COMMANDS = {"menu", "setup", "pop", "recall", "vibecheck", "loops"}
+COMMANDS = {"menu", "setup", "pop", "recall", "vibecheck", "loops", "learn", "playbook"}
 
 
 def dispatch(argv):
@@ -28,6 +28,9 @@ def dispatch(argv):
     if command == "loops":
         from . import loops
         return loops.main(tail, home)
+    if command in ("learn", "playbook"):
+        from . import learn_cli
+        return learn_cli.main(command, tail, home)
     parser = argparse.ArgumentParser(prog="usual " + command)
     if command == "menu":
         parser.add_argument("id", nargs="?")

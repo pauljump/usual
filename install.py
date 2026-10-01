@@ -80,7 +80,9 @@ def install(root, target, account_home=None):
                     conflicts.append(relative)
                 elif dest.exists():
                     old_hash = hashlib.sha256(dest.read_bytes()).hexdigest()
-                    if old_hash not in {new_hash, previous.get(relative), legacy.get(relative)}:
+                    known = legacy.get(relative)
+                    known = set(known) if isinstance(known, list) else {known}
+                    if old_hash not in {new_hash, previous.get(relative)} | known:
                         conflicts.append(relative)
             if conflicts:
                 raise ValueError('Installation preserved local edits. Reconcile these files before updating: ' + ', '.join(conflicts))

@@ -183,9 +183,12 @@ def filter_human(text):
     from ..transcripts import human_text
     # Additional provider-owned wrappers, including incomplete metadata tails.
     for tag in ("environment_context", "system-reminder", "instructions", "INSTRUCTIONS",
-                "recommended_plugins", "skills_instructions", "user_instructions", "collaboration_mode"):
+                "recommended_plugins", "skills_instructions", "user_instructions", "collaboration_mode",
+                "codex_internal_context", "codex_delegation", "in-app-browser-context", "skill"):
         text = re.sub(rf"<{re.escape(tag)}\b[^>]*>[\s\S]*?(?:</{re.escape(tag)}>|$)", "", text)
     if text.lstrip().startswith(("This session is being continued from a previous conversation",
-                                "<task-notification", "<subagent", "<turn_aborted")):
+                                "<task-notification", "<subagent", "<turn_aborted",
+                                # Codex's automatic approval reviewer is logged as a user message.
+                                "The following is the Codex agent history")):
         return ""
     return human_text(text)

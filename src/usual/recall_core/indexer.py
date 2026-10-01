@@ -81,7 +81,8 @@ def index_sources(conn, sources, *, host='local') -> IndexReport:
     return report
 
 
-def index_file(conn, spec, *, host) -> IndexReport:
+def index_file(conn, spec, *, host, skip_oversized=False) -> IndexReport:
+    """skip_oversized counts a >4 MiB line (e.g. an embedded image) as malformed instead of failing the file."""
     path = Path(spec.path)
     stat = path.stat()
     report = IndexReport(source_bytes=stat.st_size)
@@ -111,7 +112,17 @@ def index_file(conn, spec, *, host) -> IndexReport:
             if not raw:
                 break
             if len(raw) > MAX_LINE_BYTES:
-                raise ValueError('JSONL line exceeds the 4 MiB limit')
+                if not skip_oversized:
+                    raise ValueError('JSONL line exceeds the 4 MiB limit')
+                while raw and not raw.endswith(b'\n'):
+                    raw = handle.readline(MAX_LINE_BYTES + 1)
+                if not raw:
+                    break
+                offset = handle.tell()
+                line_number += 1
+                report.complete_lines += 1
+                malformed += 1
+                continue
             if not raw.endswith(b'\n'):
                 break
             offset = handle.tell()

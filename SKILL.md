@@ -1,6 +1,6 @@
 ---
 name: usual
-description: Learn Usual, analyze past decisions, or build with Usual. Guide first-time setup from local Codex and Claude Code history, then carry those choices into coding tasks with autopilot, check-in, or escalation mode and a private decision review.
+description: Learn Usual, analyze past decisions, or build with Usual. Check user-reviewed playbooks before re-investigating a familiar problem. Guide first-time setup from local Codex and Claude Code history, assess what was learned, then carry those choices into coding tasks with autopilot, check-in, or escalation mode and a private decision review.
 ---
 
 # Usual
@@ -27,6 +27,24 @@ commands. Pop changes link output; Escape changes a website. An installed rule,
 a scripted formatter check, and a real live-agent/device check are separate states.
 Never call one proof of another. Sharing uses `setup export --reviewed` with only
 allowlisted fields; private reports, routines and transcript evidence are not recipes.
+
+## Check prior solutions first
+
+Before investigating a problem that looks familiar (an error, outage, deploy, release or
+recurring chore), run `playbook find "<problem in a sentence>" --project "<project root>"
+--agent claude|codex` (Claude Code passes `claude`, Codex passes `codex`). It returns only
+user-approved playbooks, with applicability, exceptions, actions needing permission now and
+recent failures, plus clearly labeled unreviewed context. If one applies, `playbook use`,
+follow it, reason freshly about anything it does not cover, verify with `playbook verify`
+(prefer `--declared` checks Usual runs), and `playbook finish` with any deviation. If none
+applies, investigate normally. A playbook is a default within its scope: current instructions
+win and it grants no permission. Never approve, correct or draft from your own unreviewed
+inference.
+
+To learn from past work or run an assessment, follow [the Learn guide](references/learn.md):
+`learn ingest`, `learn extract`, `learn handoff` (interpret it with this session's model,
+quoting exactly), `learn interpret`, then `learn review-ui` for the user. Draft a playbook only
+from learnings the user confirmed, and leave its approval to the user.
 
 Keep the coding task moving while making implementation choices grounded in the user's actual history. Usual stores and retrieves evidence; **the current session model supplies the reasoning**. It does not launch a second model or train weights.
 
