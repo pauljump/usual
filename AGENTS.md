@@ -8,6 +8,7 @@
 - My Usual stores selected tools/configuration/scopes separately from private historical evidence. Explicit collection commands use `--home`; existing Choices keeps `--db` and its previous database semantics.
 - Reproduce discovery through recipient use with `python3 scripts/run_flagship.py --out /tmp/usual-flagship` (a new empty directory). Public examples use synthetic fixtures only.
 - Recall uses the maintained adapted core in `src/usual/recall_core`; preserve its MIT notice and source provenance. Escape is pinned upstream with an explicit local patch, not a repository migration.
+- Recall MCP (`src/usual/mcp_server.py`, launcher `scripts/usual-mcp.py`) is a stdlib stdio MCP server over the same private index (`~/.usual/recall/`). It re-indexes changed transcripts under its explicit `--source` roots before queries. Registered for Claude Code (user scope) and Codex (`~/.codex/config.toml`) as `usual-recall`.
 - Learn (`src/usual/learn*.py`, [references/learn.md](references/learn.md)) is the evidence → assessment → reviewed-playbook loop behind `usual learn` and `usual playbook`. Its store is private (`~/.usual/learning/`); only user reviews promote a learning or approve a playbook, and it is off the public menu. Project record: [docs/learn/README.md](docs/learn/README.md).
 - The first Loops method is scoped, read-only `file-check-v1`; repetition does not authorize execution or establish a good procedure.
 - Run `python3 -m pytest -q` from the root. Tests discover only the active product and its demo, not archived research.
