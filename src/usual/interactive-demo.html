@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Usual — Interactive decision-memory demo</title>
+<meta name="description" content="Try Usual's decision-memory workflow for coding agents: find context, make the call, and review it afterward.">
+<link rel="canonical" href="https://tryusual.com/demo/interactive/">
+<style>
+:root{--paper:#f6f4eb;--ink:#252920;--muted:#686b60;--line:#d6d8cb;--green:#315130;--pale:#e9edde;--orange:#e7502d;--amber:#e0b35c;--terminal:#161a20;--terminal-top:#252c36;--terminal-muted:#7e8995;--white:#fffdf7}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:18px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--green);text-underline-offset:4px}.wrap{max-width:1040px;margin:auto;padding:0 30px}header{height:92px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font:800 25px Georgia,serif;letter-spacing:-1px;text-decoration:none}.mark{width:31px;height:31px}.header-link{font-size:14px;color:var(--green)}main{padding:70px 0 90px}.eyebrow{color:var(--orange);font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase}.intro{max-width:680px;margin-bottom:42px}.intro h1{font:400 clamp(42px,6vw,66px)/1.06 Georgia,"Times New Roman",serif;letter-spacing:-2px;margin:18px 0 20px}.intro p{max-width:610px;color:var(--muted);font-size:19px;margin:0}.demo{display:grid;grid-template-columns:290px 1fr;gap:28px;align-items:stretch}.controls{background:var(--white);border:1px solid var(--line);padding:24px;border-radius:12px}.controls h2{font:400 27px/1.1 Georgia,serif;margin:0 0 10px}.controls p{font-size:15px;color:var(--muted);margin:0 0 24px}.tabs{display:grid;gap:10px}.tab{border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--ink);padding:14px;text-align:left;font:600 15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;min-height:50px}.tab:hover{border-color:var(--green)}.tab[aria-pressed=true]{background:var(--pale);border:2px solid var(--green);padding:13px;color:var(--green)}.boundary{border-top:1px solid var(--line);margin-top:25px;padding-top:18px;color:var(--muted);font-size:13px}.terminal{background:var(--terminal);border:4px solid #46505d;border-radius:5px;min-height:485px;overflow:hidden;display:flex;flex-direction:column}.terminal-top{height:60px;background:var(--terminal-top);display:flex;align-items:center;gap:10px;padding:0 20px;color:#aeb7c2;font:14px SFMono-Regular,Menlo,monospace}.dot{width:10px;height:10px;border-radius:50%;display:inline-block}.red{background:var(--orange)}.yellow{background:var(--amber)}.green-dot{background:#78a878}.terminal-title{margin-left:8px}.illustrative{margin-left:auto;color:var(--terminal-muted);font-size:11px;letter-spacing:1px;text-transform:uppercase}.terminal-body{padding:32px 32px 26px;flex:1;font:16px/1.85 SFMono-Regular,Menlo,monospace}.label{font-size:12px;color:var(--orange);letter-spacing:1.5px}.session{color:var(--terminal-muted);margin-top:15px}.question{color:var(--amber);margin-top:20px}.evidence{color:#8fc39a;margin-top:13px}.answer{color:#f6f4eb;font-size:20px;margin-top:18px}.status{color:#8fc39a;font-size:13px;margin-top:16px}.terminal-foot{display:flex;justify-content:space-between;border-top:1px solid #303946;padding:16px 32px;color:var(--terminal-muted);font:12px SFMono-Regular,Menlo,monospace}.prompt-dot{color:var(--orange)}.explain{margin:34px 0 0;padding:22px 24px;border-left:3px solid var(--orange);background:var(--pale);color:var(--green);font-size:16px}.cta{display:flex;gap:20px;align-items:center;margin-top:32px}.button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:11px 18px;border:1px solid var(--green);border-radius:7px;background:var(--green);color:white;font-weight:700;text-decoration:none}.button.secondary{background:transparent;color:var(--green)}footer{border-top:1px solid var(--line);padding:25px 0 35px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;gap:20px}
+@media(max-width:760px){.wrap{padding:0 20px}header{height:74px}.brand{font-size:23px}.header-link{font-size:12px}main{padding:44px 0 60px}.intro h1{letter-spacing:-1.5px}.intro p{font-size:17px}.demo{grid-template-columns:1fr;gap:20px}.controls{padding:20px}.tabs{grid-template-columns:repeat(3,1fr)}.tab{padding:11px 8px;text-align:center;font-size:13px}.tab[aria-pressed=true]{padding:10px 7px}.boundary{display:none}.terminal-body{padding:24px 20px;font-size:13px}.answer{font-size:17px}.terminal-foot{padding:14px 20px;font-size:10px}.illustrative{display:none}.cta{flex-wrap:wrap}footer{display:block}footer span{display:block;margin-top:8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/" aria-label="Usual home"><svg class="mark" viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="8" fill="#e7502d"/><path d="M10 10v12a8 8 0 0 0 16 0V10" fill="none" stroke="#fff8eb" stroke-width="2.8" stroke-linejoin="round"/></svg>usual</a>
+    <a class="header-link" href="/install/">Install Usual ↗</a>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <div class="eyebrow">Usual / interactive demo</div>
+      <h1 id="title">See a coding agent make a call with your context.</h1>
+      <p>Usual carries the decisions you have already made into the next build. Choose a mode below to see how much distance you want between your agent and the call.</p>
+    </section>
+
+    <section class="demo" aria-label="Interactive Usual decision workflow">
+      <aside class="controls">
+        <h2>You set the distance.</h2>
+        <p>Same context. Different way to move forward.</p>
+        <div class="tabs" role="group" aria-label="Usual modes">
+          <button class="tab" data-mode="autopilot" aria-pressed="true">Autopilot</button>
+          <button class="tab" data-mode="check-in" aria-pressed="false">Check-in</button>
+          <button class="tab" data-mode="escalation" aria-pressed="false">Escalation</button>
+        </div>
+        <div class="boundary">Every mode still requires current permission for deletion, spending, publishing, and sharing.</div>
+      </aside>
+
+      <div class="terminal" aria-live="polite">
+        <div class="terminal-top"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green-dot"></span><span class="terminal-title" id="mode-title">usual / autopilot</span><span class="illustrative">illustrative session</span></div>
+        <div class="terminal-body">
+          <div class="label">LOCAL DECISION MEMORY</div>
+          <div class="session">claude / reading-list</div>
+          <div class="question" id="question">? Which storage fits this little app?</div>
+          <div class="evidence" id="evidence">found “You chose SQLite for personal tools before.”</div>
+          <div class="answer" id="answer">-&gt; SQLite. Carrying on.</div>
+          <div class="status" id="status">● Routine choice made. Review it afterward.</div>
+        </div>
+        <div class="terminal-foot"><span><span class="prompt-dot">●</span> context attached</span><span id="foot">decision recorded</span></div>
+      </div>
+    </section>
+
+    <p class="explain" id="explain">Find the relevant history. Make the everyday call. Review it afterward.</p>
+    <div class="cta"><a class="button" href="/install/">Build with Usual ↗</a><a class="button secondary" href="/">Back to tryusual.com</a></div>
+  </main>
+
+  <footer><span>usual / local decision memory for coding agents</span><span><a href="https://github.com/pauljump/usual">Open source · MIT</a></span></footer>
+</div>
+<script>
+const modes={
+  autopilot:{title:'usual / autopilot',question:'? Which storage fits this little app?',evidence:'found “You chose SQLite for personal tools before.”',answer:'-> SQLite. Carrying on.',status:'● Routine choice made. Review it afterward.',foot:'decision recorded',explain:'Find the relevant history. Make the everyday call. Review it afterward.'},
+  'check-in':{title:'usual / check-in',question:'? Should I use a local database?',evidence:'found “Personal tools should stay local.”',answer:'-> SQLite looks like the fit. Want me to use it?',status:'● Waiting for your check-in.',foot:'your call',explain:'Usual brings the evidence forward, then waits for you before the material call.'},
+  escalation:{title:'usual / escalation',question:'? Delete the old data folder?',evidence:'rule “Old approval is not permission now.”',answer:'-> Pausing here. Your call.',status:'● Guarded action — nothing deleted.',foot:'permission required',explain:'When evidence is weak or the action is consequential, Usual keeps the boundary visible.'}
+};
+const els={title:document.getElementById('mode-title'),question:document.getElementById('question'),evidence:document.getElementById('evidence'),answer:document.getElementById('answer'),status:document.getElementById('status'),foot:document.getElementById('foot'),explain:document.getElementById('explain')};
+function select(mode){const value=modes[mode];for(const [key,element] of Object.entries(els))element.textContent=value[key];document.querySelectorAll('.tab').forEach(button=>{const selected=button.dataset.mode===mode;button.setAttribute('aria-pressed',String(selected));});}
+document.querySelectorAll('.tab').forEach(button=>button.addEventListener('click',()=>select(button.dataset.mode)));
+</script>
+</body>
+</html>

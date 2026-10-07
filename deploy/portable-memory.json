@@ -1,0 +1,31 @@
+{
+  "project": "usual-portable",
+  "canonicalRoot": "/Users/mini-home/projects/itchy",
+  "hostnames": [
+    "testing.polyfeeds.dev"
+  ],
+  "surface": "cloudflare-tunnel",
+  "tunnel": "mini-dev",
+  "stage": "private-pilot",
+  "service": "http://127.0.0.1:8242",
+  "process": "usual-portable",
+  "processOwner": "pm2",
+  "healthCheck": "https://testing.polyfeeds.dev/",
+  "deploymentCommand": "node /Users/mini-home/projects/_factory/control-plane/scripts/migrate-pm2-fleet.mjs --apply --only usual-portable",
+  "notes": "Invite-only isolated profiles. Each has a separate database and vault-managed invitation token. Review APIs require the matching invitation; MCP uses profile-bound OAuth with DCR and S256 PKCE. No inference calls.",
+  "mcpEndpoint": "https://testing.polyfeeds.dev/mcp",
+  "profiles": {
+    "paul": {
+      "path": "/paul/",
+      "mcp": "/mcp"
+    },
+    "coxy": {
+      "path": "/coxy/",
+      "mcp": "/coxy/mcp"
+    },
+    "bradford": {
+      "path": "/bradford/",
+      "mcp": "/bradford/mcp"
+    }
+  }
+}

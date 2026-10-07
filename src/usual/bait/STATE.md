@@ -1,9 +1,36 @@
 # Bait — session handoff, 2026-10-01
 
+## Business execution update, 2026-10-05 ET
+
+Paul asked the agent to turn Bait's evidence into a business without routine input.
+The first local commercial experiment is [Bait Lab](../../../products/bait-lab/BUSINESS.md):
+a $29 self-serve developer download, 12 synthetic verification cases, three-case
+free sample, runner, tests, draft listing and launch copy. No demand or revenue
+is established. The existing public server has disabled-by-default asset routes;
+no service restart, checkout, publication or outreach occurred. Raw traffic is not
+included in the product; observed inspiration is distinguished from invented cases.
+
+A user-authorized single stats fetch at 2026-10-06T01:50:12Z is saved privately in
+`~/.usual/bait/captures/20261006T015012Z/`. Totals: 8,948 probes, 124 reused
+credentials, 380 uses, 3,789 tarpit requests, zero deep-maze requests. Since October 2:
++1,876 probes, +39 reused credentials, +62 uses. Latest bounded sample: 20 Git-remote
+submissions across three credential identifiers, 8–10 days after first collection.
+This is evidence of submission, not successful verification or operator identity.
+
 Read [SPITE.md](SPITE.md) first. Canonical root: `/Users/mini-home/projects/itchy`,
 repository `pauljump/usual`, branch `main`. Bait should be fun to run and generate
 real, shareable numbers. The business goal is meaningful low-touch revenue;
 traffic is evidence of behavior, not evidence that anyone will buy the data.
+
+## Local reporting update, 2026-10-03
+
+The owner activity-report direction and next receipt design are in
+[INVESTIGATION.md](INVESTIGATION.md#owner-activity-report-what-did-they-actually-do).
+`scripts/bait/activity-report.mjs` now narrates saved stats or investigation JSON
+with evidence references, interpretations and gaps. This is offline reporting,
+not new live instrumentation or a deployment. The October 2 23:05 UTC snapshot
+and its `activity.json` are private in
+`/Users/mini-home/.usual/bait/captures/20261002T230514Z/`.
 
 ## Current state
 

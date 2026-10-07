@@ -64,5 +64,9 @@
     "/database.sql",
     "/dump.sql"
   ],
-  "deploymentCommand": "node scripts/bait/deploy.mjs --apply"
+  "deploymentCommand": "node scripts/bait/deploy.mjs --apply",
+  "posthogInstrumentation": {
+    "module": "../_factory/pulse/scripts/posthog/edge-injection.mjs",
+    "sites": "../_factory/pulse/scripts/posthog/fleet-sites.json"
+  }
 }

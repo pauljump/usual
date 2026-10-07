@@ -5,6 +5,13 @@ customer commitments, or evidence of willingness to pay. Bait's public product r
 the spite tool described in [SPITE.md](SPITE.md). Data licensing or a separate product
 must not quietly turn its public experience into an enterprise console.
 
+For the later builder/free-tier competitor comparison, deployment economics and
+validation gates, see [October 4 research](BUILDER-RESEARCH-2026-10.md). That review
+finds direct free serverless competitors and does not assume a paid-data business.
+
+For the broader analytics market, current Google/Cloudflare capabilities and a read-only
+Pulse diagnosis, see [site analytics research](SITE-ANALYTICS-RESEARCH-2026-10.md).
+
 ## Conclusion
 
 Charging for installation or an endless maze is not yet supported by buyer evidence.

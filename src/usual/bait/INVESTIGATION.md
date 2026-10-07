@@ -6,6 +6,78 @@ and what their requests can actually reveal about their origin. Public Bait keep
 the revenge and delight in [SPITE.md](SPITE.md). Its private evidence must earn our
 confidence. A busy trap is not automatically a valuable business.
 
+## Owner activity report: what did they actually do?
+
+Product direction, 2026-10-03: the owner should be able to understand observed
+client behavior, not just traffic totals. The report answers: what was exposed,
+which credential returned, which operation was requested, how our decoy replied,
+and what request followed. Each statement must point to recorded evidence.
+The objective is a useful explanation for the person running Bait; commercial
+packaging is a separate, unvalidated question.
+
+A first offline implementation is `scripts/bait/activity-report.mjs`. It reads
+saved public stats or the JSON output of `investigation-report.mjs` and produces
+plain-language Markdown or `--json`. It performs no network calls or inference.
+
+```sh
+node scripts/bait/activity-report.mjs /private/stats.json
+node scripts/bait/activity-report.mjs /private/investigation.json --json
+```
+
+The output has three layers: observed actions with source JSON pointers, labelled
+interpretations, and explicit gaps. Public stats support credential-submission
+trails only; the bounded recent list is not a full history. Private reports also
+support verified-session sequences and response-stream endings. Those two views
+may overlap and must not be summed. Synthetic provenance and truncated displays
+remain visible. Neither mode identifies an operator or assumes authentication
+success from a credential match.
+
+For example, the October 2 saved snapshot records four Redis credentials in HTTP
+login submissions. The report describes that literally and offers generic
+credential replay as an interpretation. It does not claim a Redis connection,
+successful intrusion, resale or four independent bots. Snapshot source times stay
+visible; a generated report does not turn old data into fresh observations.
+
+### Next collection increment (designed, not implemented or deployed)
+
+Use one versioned action receipt for each supported decoy request:
+
+| Field | Purpose |
+| --- | --- |
+| Event ID, observation time, source | Evidence reference and separation of runtime/owner/synthetic traffic |
+| Credential/exposure reference and signed session reference | Link only what the evidence supports; retain shared-reader ambiguity |
+| Method, normalized route class, operation label | Say what was requested without arbitrary URL/query content |
+| Classification basis and parser version | Distinguish a route match from a validated operation shape |
+| Bounded request features | AI model allowlist class, stream flag, body-size bucket; hosting operation and presence flags |
+| Response status, response recipe/version, stream end | Show what our emulator returned, including rejection or incomplete replies |
+| Experiment assignment and timing policy | Explain whether response behavior could affect the next step |
+| Retention/window status | Distinguish missing, pruned and still-open observation windows |
+
+Do not retain raw prompts, passwords, authorization headers, uploaded contents or
+arbitrary destination URLs for this feature. Unknown model names become an
+`other` class, not copied text. Parsing remains bounded and never triggers remote
+lookups, execution or outbound operations. An AI route match is not proof of a
+valid completion request; current AI handler labels are therefore described as
+handler selection in the first report.
+
+The owner view should lead with a short observed sequence, then show evidence,
+our response, interpretation and unknowns. For example: configuration requested
+→ credential submitted 32 hours later → file list requested → upload attempted.
+Only display steps actually retained. A stream ending is not acknowledgement
+that a client consumed it. Never fill missing steps using a model narrative.
+
+Acceptance for a future live rollout: a normal local client completes each
+supported protocol sequence; every narrative claim resolves to a receipt;
+retries and shared credentials cannot inflate unique-client claims; parser and
+response errors are visible; collection cost and retention are measured. Compare
+fast and slow replies with the same protocol payload in a separately identified
+cohort before deciding how much slowing preserves useful observation.
+
+The first offline report is implemented locally. The richer receipt fields,
+automated capture/delivery and an owner-facing live view remain future work.
+No deployment, production export, experiment activation or scheduled job is
+included in this change. Verify deployment state separately from local source.
+
 ## What changed locally
 
 Measured learning streams now retain a small private evidence object alongside

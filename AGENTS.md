@@ -18,6 +18,7 @@
 - Bait continuation state, latest traffic evidence and outstanding Shopify installation are in [STATE.md](src/usual/bait/STATE.md).
 - Bait tarpit generation, measurement semantics, quota use and verification are documented in [TARPIT.md](src/usual/bait/TARPIT.md).
 - Bait's traffic-driven learning loop, origin-404 gating, local report and resource limits are documented in [LEARNING.md](src/usual/bait/LEARNING.md).
+- Bait Lab is the local downloadable verification-test experiment in `products/bait-lab/`; [BUSINESS.md](products/bait-lab/BUSINESS.md) owns the offer, evidence, launch gates and distribution decision. Public assets remain disabled until `USUAL_BAIT_LAB_PUBLIC_DIR` is explicitly configured; paid delivery files are never web assets.
 - Shopify Bait is a native app package at `apps/bait-shopify/`; its [product/runtime contract](apps/bait-shopify/README.md) defines proxy-only coverage, private observations, tests and the published development backend and pending store installation. It is not part of the existing Bait Worker deployment.
 - `archive/` preserves the original Itchy research and intermediate experiments. These are historical sources, not current product instructions or validated Usual accuracy results.
 - Keep old human decision records intact during migrations. Runtime data belongs outside this repository.

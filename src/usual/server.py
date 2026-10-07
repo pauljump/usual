@@ -1483,7 +1483,15 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
-        if path == "/health":
+        from .bait_lab_public import asset as bait_lab_asset
+        try:
+            lab_asset = bait_lab_asset(path)
+        except OSError:
+            self.send_error(503, "Bait Lab release is unavailable")
+            return
+        if lab_asset is not None:
+            data, mime = lab_asset
+        elif path == "/health":
             data = b'{"ok":true,"product":"usual","mode":"public-autopilot","version":"2.1.0b1","collection":"six"}'
             mime = "application/json"
         elif path == "/github-stars.json":

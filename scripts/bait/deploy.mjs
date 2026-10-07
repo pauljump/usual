@@ -148,17 +148,27 @@ console.log(plan.map((line) => (apply ? "• " : "[dry run] ") + line).join("\n"
 if (!apply) process.exit(0);
 if (!secret) throw new Error("Load BAIT_SECRET from /Users/mini-home/.secrets first.");
 
+// Portfolio instrumentation is canonical in Pulse; fail rather than silently
+// dropping it when this deployment runs without its declared dependency.
+let workerSource = readFileSync(new URL(config.main, ROOT), "utf8");
+if (config.posthogInstrumentation) {
+  const { compose } = await import(new URL(config.posthogInstrumentation.module, ROOT));
+  const fleet = JSON.parse(readFileSync(new URL(config.posthogInstrumentation.sites, ROOT), "utf8"));
+  workerSource = compose(workerSource, { hosts: fleet.hosts.filter(h => !h.endsWith(".polyfeeds.dev")), cspHosts: fleet.cspHosts });
+}
+
 if (!database) database = await cf(`/accounts/${account}/d1/database`, { method: "POST", body: JSON.stringify({ name: config.d1Database }) });
 const form = new FormData();
 form.append("metadata", JSON.stringify({
   main_module: "bait.js", compatibility_date: config.compatibilityDate,
+  keep_bindings: ["secret_text"],
   bindings: [
     { type: "d1", name: "BAIT_DB", id: database.uuid },
     { type: "secret_text", name: "BAIT_SECRET", text: secret },
     ...Object.entries(config.vars).map(([name, text]) => ({ type: "plain_text", name, text })),
   ],
 }));
-form.append("bait.js", new Blob([readFileSync(new URL(config.main, ROOT))], { type: "application/javascript+module" }), "bait.js");
+form.append("bait.js", new Blob([workerSource], { type: "application/javascript+module" }), "bait.js");
 await cf(`/accounts/${account}/workers/scripts/${config.worker}`, { method: "PUT", body: form });
 console.log(`uploaded ${config.worker} (D1 ${database.uuid})`);
 if (config.vars.BAIT_SNAPSHOTS === "true") {

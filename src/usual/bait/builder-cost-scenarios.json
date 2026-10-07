@@ -1,0 +1,43 @@
+{
+  "checked": "2026-10-04",
+  "status": "illustrative-not-measured",
+  "assumptions": {
+    "cpu_ms_per_request": 2,
+    "requests_per_event": 1,
+    "billed_rows_written_per_event": 4,
+    "rows_read_per_event": 10,
+    "paid_accounts": 1
+  },
+  "exclusions": [
+    "storage",
+    "notifications",
+    "backups",
+    "domains",
+    "support",
+    "taxes"
+  ],
+  "sources": [
+    "https://developers.cloudflare.com/workers/platform/pricing/",
+    "https://developers.cloudflare.com/d1/platform/pricing/"
+  ],
+  "monthly_usd": [
+    {
+      "events": 10000000,
+      "workers": 5.0,
+      "d1_excess_writes": 0.0,
+      "subtotal": 5.0
+    },
+    {
+      "events": 100000000,
+      "workers": 35.4,
+      "d1_excess_writes": 350.0,
+      "subtotal": 385.4
+    },
+    {
+      "events": 1000000000,
+      "workers": 341.4,
+      "d1_excess_writes": 3950.0,
+      "subtotal": 4291.4
+    }
+  ]
+}

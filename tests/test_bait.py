@@ -95,3 +95,10 @@ def test_bait_snapshot_client():
     assert receipt["status"] == "passed"
     assert len(receipt["checks"]) >= 12
     assert receipt["live_cloudflare"] is False
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node is needed")
+def test_bait_activity_report():
+    result = subprocess.run(["node", "--test", str(ROOT / "tests/bait_activity_report.test.mjs")],
+                            cwd=ROOT, text=True, capture_output=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr

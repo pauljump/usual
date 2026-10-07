@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Usual logo</title>
+  <desc id="desc">The Usual orange logo mark on a warm ivory background.</desc>
+  <rect width="240" height="240" fill="#f6f4eb"/>
+  <g transform="rotate(-5 120 120)">
+    <rect x="58" y="58" width="124" height="124" rx="28" fill="#e7502d"/>
+    <path d="M90 90v42a30 30 0 0 0 60 0V90" fill="none" stroke="#fff8eb" stroke-width="11" stroke-linejoin="round"/>
+  </g>
+</svg>
