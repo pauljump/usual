@@ -14,3 +14,9 @@ build/
 .usual/
 .whetstone/
 .venv/
+
+# Generated local files; source and retained evidence remain explicit.
+*.tsbuildinfo
+.next/
+.next-*/
+.build/
