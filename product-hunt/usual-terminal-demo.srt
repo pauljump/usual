@@ -1,0 +1,23 @@
+1
+00:00:00,000 --> 00:00:02,400
+Your coding agent asks the same little questions.
+
+2
+00:00:02,400 --> 00:00:05,100
+Usual brings your past decisions into the room.
+
+3
+00:00:05,100 --> 00:00:07,800
+It finds the choice that fits this context.
+
+4
+00:00:07,800 --> 00:00:10,600
+The agent makes the routine call and keeps building.
+
+5
+00:00:10,600 --> 00:00:13,400
+Review what happened. Correct it when needed.
+
+6
+00:00:13,400 --> 00:00:16,000
+Local decision memory for coding agents.
