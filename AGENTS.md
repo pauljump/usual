@@ -2,7 +2,7 @@
 
 - Product: **Usual**. Canonical repository: `https://github.com/pauljump/usual`.
 - Promise: **Your AI, how you like it.** The initial menu is Vibecheck, Choices, Recall, Loops, Pop and Escape.
-- Canonical local root: `/Users/mini-home/projects/itchy`.
+- Canonical local root: `/Users/mini-home/projects/usual/core`.
 - `src/usual/` is the runtime; `SKILL.md` and `install.py` are the portable agent skill.
 - `src/usual/catalog.json` drives the public menu and generated README table. Validate with `python3 scripts/validate_catalog.py`; regenerate the table with `--write-readme`.
 - My Usual stores selected tools/configuration/scopes separately from private historical evidence. Explicit collection commands use `--home`; existing Choices keeps `--db` and its previous database semantics.

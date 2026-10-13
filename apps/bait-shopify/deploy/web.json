@@ -1,7 +1,7 @@
 {
   "project": "usual-bait-shopify",
-  "canonicalRoot": "/Users/mini-home/projects/itchy",
-  "packageRoot": "/Users/mini-home/projects/itchy/apps/bait-shopify",
+  "canonicalRoot": "/Users/mini-home/projects/usual/core",
+  "packageRoot": "/Users/mini-home/projects/usual/core/apps/bait-shopify",
   "hostnames": [
     "bait-shopify.polyfeeds.dev"
   ],

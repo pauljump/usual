@@ -17,7 +17,7 @@ credentials, 380 uses, 3,789 tarpit requests, zero deep-maze requests. Since Oct
 submissions across three credential identifiers, 8–10 days after first collection.
 This is evidence of submission, not successful verification or operator identity.
 
-Read [SPITE.md](SPITE.md) first. Canonical root: `/Users/mini-home/projects/itchy`,
+Read [SPITE.md](SPITE.md) first. Canonical root: `/Users/mini-home/projects/usual/core`,
 repository `pauljump/usual`, branch `main`. Bait should be fun to run and generate
 real, shareable numbers. The business goal is meaningful low-touch revenue;
 traffic is evidence of behavior, not evidence that anyone will buy the data.
