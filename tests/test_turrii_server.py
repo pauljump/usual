@@ -62,7 +62,7 @@ class TurriiServerTests(unittest.TestCase):
         cookie = self.login()
         status, headers, body = self.request("GET", "/turrii/", headers={"Cookie": cookie})
         self.assertEqual(status, 200)
-        self.assertIn(b"Put the claim", body)
+        self.assertIn(b"What is Turrii", body)
         self.assertIn("private, no-store", headers["Cache-Control"])
         self.assertNotIn("TURRII_JAM_PASSWORD", body.decode())
 
