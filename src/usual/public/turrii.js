@@ -180,7 +180,7 @@ $("#start").onsubmit = async (event) => {
       requestId,
       topic: $(".topic[aria-pressed=true]").dataset.id,
       people,
-      opening: {decision: $("#decision").value, position: $("#position").value, constraint: $("#constraint").value},
+      text: $("#opening").value,
       consent: $("#consent").checked,
     });
     requestId = crypto.randomUUID();
@@ -250,4 +250,3 @@ $("#export").onclick = () => {
     showNotice(error.message, true);
   }
 })();
-

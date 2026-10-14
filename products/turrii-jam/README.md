@@ -13,6 +13,11 @@ The workshop follows the Last Bump jam pattern:
 - no automatic model retries or autonomous continuation;
 - a shared server-side archive outside the repository.
 
+The opening is one freeform brain dump (12–4,000 characters), not a structured
+decision brief. The facilitator identifies themes and uncertainty, asks a focused
+follow-up, and never turns rough thoughts into commitments. Later human turns
+remain required.
+
 Runtime configuration comes from the portfolio vault:
 
 - `TURRII_JAM_PASSWORD`
@@ -24,4 +29,3 @@ is `~/.usual/turrii-jam/jams.json` with owner-only permissions.
 
 The model is invoked only after an authenticated user explicitly starts or
 continues a jam. Tests use a fake generator and must not make provider calls.
-

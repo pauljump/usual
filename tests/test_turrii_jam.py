@@ -29,11 +29,7 @@ def opening():
         "requestId": str(uuid.uuid4()),
         "topic": "claim",
         "people": ["achen", "pg"],
-        "opening": {
-            "decision": "Which claim can this product defend in a real buyer workflow?",
-            "position": "I think observed input facts are stronger than a universal human score.",
-            "constraint": "We have one week, and repeated checker use would change my mind.",
-        },
+        "text": "I keep wondering whether people need a proof badge or something else. These are rough thoughts, not a decision yet.",
         "consent": True,
     }
 
@@ -93,6 +89,20 @@ class TurriiJamStoreTests(unittest.TestCase):
             available.create(bad)
         self.assertEqual(available.catalog()["used"], 0)
 
+    def test_brain_dump_is_required_and_treated_as_context(self):
+        store, calls = self.make_store()
+        for text in (None, "   ", "short", "x" * 4001):
+            bad = opening()
+            bad["text"] = text
+            with self.assertRaises(JamError):
+                store.create(bad)
+        self.assertEqual(store.catalog()["used"], 0)
+        value = opening()
+        jam = store.create(value)
+        self.assertEqual(jam["turns"][0]["user"], value["text"])
+        self.assertIn("unstructured brain dump", calls[0]["system"])
+        self.assertIn("not a decision brief or a commitment", calls[0]["system"])
+
     def test_provider_failure_is_saved_without_retry(self):
         calls = []
 
@@ -128,4 +138,3 @@ class TurriiJamStoreTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

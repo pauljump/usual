@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Turrii · Private product jam</title>
-  <link rel="stylesheet" href="/turrii/turrii.css?v=1">
-  <script src="/turrii/turrii.js?v=1" defer></script>
+  <link rel="stylesheet" href="/turrii/turrii.css?v=2">
+  <script src="/turrii/turrii.js?v=2" defer></script>
 </head>
 <body>
   <header>
@@ -19,7 +19,7 @@
       <div>
         <p class="eyebrow">PROVENANCE, PEOPLE, AND THE BOTS IN BETWEEN</p>
         <h1>Put the claim<br><em>on trial.</em></h1>
-        <p class="lede">The product, mechanism, market, agent opportunity, and sharpest objections are already in the room. Bring a decision—not a blank prompt.</p>
+        <p class="lede">The product, mechanism, market, agent opportunity, and sharpest objections are already in the room. Bring your thoughts—we’ll help untangle them.</p>
       </div>
       <div class="ticket">
         <span>ADMIT TWO</span>
@@ -49,20 +49,17 @@
 
       <section class="section opening">
         <div>
-          <div class="section-title"><span class="step">03</span><h2>You open. You decide.</h2></div>
-          <p>Three concrete answers reserve your seat. The room then stops for you at every checkpoint: challenge the arguments, choose the experiment, and make the final call.</p>
+          <div class="section-title"><span class="step">03</span><h2>What’s on your mind?</h2></div>
+          <p>Brain dump here. Rough ideas, doubts, observations, things you’re excited about—no need to organize it or arrive with a decision. The room will help find the useful threads, then keep coming back to you.</p>
           <details>
             <summary>What is already loaded?</summary>
             <p>Turrii’s public product and proof mechanics; technical limits and attack surface; adjacent provenance and writing products; pricing and public traction; the checker-versus-writer demand argument; the Strava/DocuSign analogy; the authorized-voice option; the agent-realism opportunity and its trust conflict; and the proposed 20-link test. Unknown internals stay unknown.</p>
           </details>
         </div>
         <form id="start">
-          <label for="decision">What specific decision must we make?</label>
-          <textarea id="decision" minlength="24" maxlength="1200" required placeholder="Should Turrii become an interaction-realism evaluator for agent teams, or stay focused on writing provenance?"></textarea>
-          <label for="position">Your position—and what evidence supports it</label>
-          <textarea id="position" minlength="24" maxlength="1200" required placeholder="I currently think… because the observable evidence is… The part I am guessing about is…"></textarea>
-          <label for="constraint">Your constraint / what would change your mind</label>
-          <textarea id="constraint" minlength="24" maxlength="1200" required placeholder="We have one week and… I would change my mind if…"></textarea>
+          <label for="opening">Your brain dump</label>
+          <textarea id="opening" minlength="12" maxlength="4000" required aria-describedby="opening-help" placeholder="Here’s where my head is at with Turrii…"></textarea>
+          <p id="opening-help" class="fine">Write freely or paste your notes. This is starting context, not a commitment. Leave out secrets and sensitive personal information.</p>
           <label class="consent"><input type="checkbox" id="consent" required><span>I understand my contributions are sent to Anthropic and saved in this shared, password-protected archive. I won’t include confidential credentials or third-party personal data.</span></label>
           <button id="start-button" class="primary" type="submit">Take a seat <span>↗</span></button>
           <p class="fine">Uses one of two workspace slots. No model call runs until you submit.</p>
@@ -95,4 +92,3 @@
   </main>
 </body>
 </html>
-
