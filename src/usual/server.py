@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
+import hmac
 import json
 import os
 import queue
@@ -1293,6 +1295,11 @@ class ConsumerUsualHandler(UsualHandler):
 
 class PublicAutopilotHandler(BaseHTTPRequestHandler):
     """A public product demo and code download. No private store is opened here."""
+    TURRII_COOKIE = "turrii_jam_session"
+    TURRII_SESSION_SECONDS = 60 * 60 * 24 * 30
+    TURRII_MAX_BODY = 16_384
+    _turrii_failed_attempts: dict[str, tuple[int, float]] = {}
+    _turrii_attempts_lock = threading.Lock()
     ASSETS = {
         "/choices/legacy/": ("autopilot.html", "text/html; charset=utf-8"),
         "/claude-code-memory/": ("claude-code-memory.html", "text/html; charset=utf-8"),
@@ -1400,6 +1407,193 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/a-la-carte": "/pop/",
         "/a-la-carte/": "/pop/",
     }
+
+    def _turrii_headers(self, *, html: bool = False) -> None:
+        self.send_header("Cache-Control", "private, no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()")
+        self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        if html:
+            self.send_header(
+                "Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+                "connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'",
+            )
+
+    @staticmethod
+    def _turrii_password() -> str:
+        return os.environ.get("TURRII_JAM_PASSWORD", "")
+
+    def _turrii_signature(self, expires: str) -> str:
+        return hmac.new(
+            self._turrii_password().encode("utf-8"),
+            f"turrii-jam:{expires}".encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()
+
+    def _turrii_session(self) -> str:
+        expires = str(int(time.time()) + self.TURRII_SESSION_SECONDS)
+        return f"{expires}.{self._turrii_signature(expires)}"
+
+    def _turrii_authorized(self) -> bool:
+        if not self._turrii_password():
+            return False
+        raw = self.headers.get("Cookie", "")
+        for item in raw.split(";"):
+            name, separator, value = item.strip().partition("=")
+            if separator and name == self.TURRII_COOKIE:
+                expires, dot, supplied = value.partition(".")
+                if not dot or not expires.isdigit() or int(expires) < int(time.time()):
+                    return False
+                return hmac.compare_digest(supplied, self._turrii_signature(expires))
+        return False
+
+    def _turrii_client_key(self) -> str:
+        return self.headers.get("CF-Connecting-IP") or self.client_address[0]
+
+    def _turrii_is_limited(self) -> bool:
+        now = time.time()
+        key = self._turrii_client_key()
+        with self._turrii_attempts_lock:
+            count, started = self._turrii_failed_attempts.get(key, (0, now))
+            if now - started > 15 * 60:
+                self._turrii_failed_attempts[key] = (0, now)
+                return False
+            return count >= 12
+
+    def _turrii_record_failure(self) -> None:
+        now = time.time()
+        key = self._turrii_client_key()
+        with self._turrii_attempts_lock:
+            count, started = self._turrii_failed_attempts.get(key, (0, now))
+            if now - started > 15 * 60:
+                count, started = 0, now
+            self._turrii_failed_attempts[key] = (count + 1, started)
+
+    def _turrii_send(self, status: int, data: bytes, mime: str, *, html: bool = False, head: bool = False) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self._turrii_headers(html=html)
+        self.end_headers()
+        if not head:
+            self.wfile.write(data)
+
+    def _turrii_json(self, status: int, value: Any) -> None:
+        self._turrii_send(status, json.dumps(value, separators=(",", ":")).encode("utf-8"), "application/json; charset=utf-8")
+
+    def _turrii_login_page(self, error: str = "") -> bytes:
+        error_markup = f'<p class="login-error" role="alert">{error}</p>' if error else ""
+        return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><title>Turrii jam · Private workshop</title><link rel="stylesheet" href="/turrii/turrii.css"></head>
+<body class="login-body"><main class="login-shell"><section class="login-card" aria-labelledby="login-title"><div class="login-mark" aria-hidden="true">T</div><p class="eyebrow">PRIVATE WORKSHOP / TEEK</p><h1 id="login-title">Put the claim<br><em>on trial.</em></h1><p>The Turrii research, product tensions, agent opportunity, and open decisions are already in the room.</p>{error_markup}<form method="post" action="/turrii/login"><label for="password">Workshop password</label><input id="password" name="password" type="password" autocomplete="current-password" required autofocus><button class="primary" type="submit">Enter the jam room <span>↗</span></button></form><p class="fine">Two shared jams · four human checkpoints · saved privately</p></section></main></body></html>""".encode("utf-8")
+
+    def _turrii_read_body(self) -> bytes:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            raise ValueError("Invalid content length") from None
+        if length < 0 or length > self.TURRII_MAX_BODY:
+            raise ValueError("Request body is too large")
+        return self.rfile.read(length)
+
+    def _turrii_same_origin(self) -> bool:
+        origin = self.headers.get("Origin", "")
+        parsed = urllib.parse.urlparse(origin)
+        host = self.headers.get("Host", "")
+        return parsed.scheme in {"http", "https"} and parsed.netloc == host
+
+    def _turrii_serve(self, *, head: bool = False) -> None:
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/turrii":
+            self.send_response(308)
+            self.send_header("Location", "/turrii/")
+            self.send_header("Content-Length", "0")
+            self._turrii_headers()
+            self.end_headers()
+            return
+        if path == "/turrii/turrii.css":
+            data = files("usual").joinpath("public/turrii.css").read_bytes()
+            self._turrii_send(200, data, "text/css; charset=utf-8", head=head)
+            return
+        if not self._turrii_authorized():
+            if path.startswith("/turrii/api/"):
+                self._turrii_json(401, {"error": "Please sign in again at /turrii/."})
+            else:
+                self._turrii_send(200, self._turrii_login_page(), "text/html; charset=utf-8", html=True, head=head)
+            return
+        if path == "/turrii/":
+            data = files("usual").joinpath("public/turrii.html").read_bytes()
+            self._turrii_send(200, data, "text/html; charset=utf-8", html=True, head=head)
+        elif path == "/turrii/turrii.js":
+            data = files("usual").joinpath("public/turrii.js").read_bytes()
+            self._turrii_send(200, data, "text/javascript; charset=utf-8", head=head)
+        elif path == "/turrii/api/jam":
+            from .turrii_jam import store
+            self._turrii_json(200, store().catalog())
+        elif re.fullmatch(r"/turrii/api/jam/[a-f0-9-]{36}", path):
+            from .turrii_jam import JamError, store
+            try:
+                self._turrii_json(200, store().get(path.rsplit("/", 1)[-1]))
+            except JamError as error:
+                self._turrii_json(error.status, {"error": str(error)})
+        else:
+            self._turrii_send(404, b"Not found", "text/plain; charset=utf-8", head=head)
+
+    def _turrii_post(self) -> None:
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/turrii/login":
+            if self._turrii_is_limited():
+                self._turrii_send(429, self._turrii_login_page("Too many attempts. Please wait a few minutes."), "text/html; charset=utf-8", html=True)
+                return
+            try:
+                fields = urllib.parse.parse_qs(self._turrii_read_body().decode("utf-8"), keep_blank_values=True)
+                supplied = fields.get("password", [""])[0]
+            except (UnicodeDecodeError, ValueError):
+                self._turrii_send(400, self._turrii_login_page("That request could not be read. Try again."), "text/html; charset=utf-8", html=True)
+                return
+            expected = self._turrii_password()
+            if expected and hmac.compare_digest(supplied, expected):
+                with self._turrii_attempts_lock:
+                    self._turrii_failed_attempts.pop(self._turrii_client_key(), None)
+                secure = self.headers.get("X-Forwarded-Proto") == "https"
+                self.send_response(303)
+                self.send_header("Location", "/turrii/")
+                self.send_header("Set-Cookie", f"{self.TURRII_COOKIE}={self._turrii_session()}; Path=/turrii; HttpOnly; SameSite=Strict; Max-Age={self.TURRII_SESSION_SECONDS}{'; Secure' if secure else ''}")
+                self._turrii_headers()
+                self.end_headers()
+            else:
+                self._turrii_record_failure()
+                self._turrii_send(401, self._turrii_login_page("That password didn’t work. Try again."), "text/html; charset=utf-8", html=True)
+            return
+        if not self._turrii_authorized():
+            self._turrii_json(401, {"error": "Please sign in again at /turrii/."})
+            return
+        if not path.startswith("/turrii/api/jam"):
+            self._turrii_json(404, {"error": "Unknown Turrii route."})
+            return
+        if not self._turrii_same_origin() or self.headers.get("X-Jam-Request") != "1" or not self.headers.get("Content-Type", "").startswith("application/json"):
+            self._turrii_json(403, {"error": "Same-origin JSON request required."})
+            return
+        from .turrii_jam import JamError, store
+        try:
+            value = json.loads(self._turrii_read_body())
+            if not isinstance(value, dict):
+                raise ValueError("JSON object required")
+            if path == "/turrii/api/jam":
+                result = store().create(value)
+            elif re.fullmatch(r"/turrii/api/jam/[a-f0-9-]{36}", path):
+                result = store().submit(path.rsplit("/", 1)[-1], value)
+            else:
+                raise JamError(404, "Unknown jam route.")
+            self._turrii_json(202, result)
+        except JamError as error:
+            self._turrii_json(error.status, {"error": str(error)})
+        except (json.JSONDecodeError, ValueError):
+            self._turrii_json(400, {"error": "Could not process this request. No automatic retry was made."})
 
     def _is_social_crawler(self):
         agent = self.headers.get("User-Agent", "").lower()
@@ -1566,12 +1760,21 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             self.wfile.write(data)
 
     def do_GET(self):
+        if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
+            self._turrii_serve()
+            return
         self._serve()
 
     def do_HEAD(self):
+        if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
+            self._turrii_serve(head=True)
+            return
         self._serve(head=True)
 
     def do_POST(self):
+        if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
+            self._turrii_post()
+            return
         self.send_error(405, "The public site does not accept transcripts or decisions")
 
     def do_DELETE(self):

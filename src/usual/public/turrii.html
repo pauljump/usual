@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Turrii · Private product jam</title>
+  <link rel="stylesheet" href="/turrii/turrii.css?v=1">
+  <script src="/turrii/turrii.js?v=1" defer></script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="/turrii/">Turrii<span class="dot">.</span></a>
+    <span class="private">PRIVATE PRODUCT JAM / TEEK</span>
+    <a href="#archive">The record ↗</a>
+  </header>
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">PROVENANCE, PEOPLE, AND THE BOTS IN BETWEEN</p>
+        <h1>Put the claim<br><em>on trial.</em></h1>
+        <p class="lede">The product, mechanism, market, agent opportunity, and sharpest objections are already in the room. Bring a decision—not a blank prompt.</p>
+      </div>
+      <div class="ticket">
+        <span>ADMIT TWO</span>
+        <strong id="quota">— / 2</strong>
+        <p>jams used in this workspace</p>
+        <div class="perforation"></div>
+        <small>4 rounds each · your input required<br>Claude Opus 5.5 · saved for later</small>
+      </div>
+    </section>
+
+    <p id="notice" role="status" class="notice">Opening the room…</p>
+
+    <div id="setup">
+      <section class="section">
+        <div class="section-title"><span class="step">01</span><h2>Pick the decision worth arguing about.</h2></div>
+        <div id="topics" class="topics"></div>
+      </section>
+
+      <section class="section">
+        <div class="section-title"><span class="step">02</span><h2>Choose the lenses.</h2><span class="aside">2–3 seats. Yours is reserved.</span></div>
+        <div class="room">
+          <div class="table-top"><span>THE TURRII QUESTION</span><strong>What is<br><i>actually true?</i></strong><span>NO SCORES WITHOUT FACTS</span></div>
+          <div id="people" class="people"></div>
+        </div>
+        <p class="fine">These are Teek research lenses—not the people themselves, their endorsement, or invented quotations. Retained evidence varies by profile. Every application to Turrii is explicitly an inference.</p>
+      </section>
+
+      <section class="section opening">
+        <div>
+          <div class="section-title"><span class="step">03</span><h2>You open. You decide.</h2></div>
+          <p>Three concrete answers reserve your seat. The room then stops for you at every checkpoint: challenge the arguments, choose the experiment, and make the final call.</p>
+          <details>
+            <summary>What is already loaded?</summary>
+            <p>Turrii’s public product and proof mechanics; technical limits and attack surface; adjacent provenance and writing products; pricing and public traction; the checker-versus-writer demand argument; the Strava/DocuSign analogy; the authorized-voice option; the agent-realism opportunity and its trust conflict; and the proposed 20-link test. Unknown internals stay unknown.</p>
+          </details>
+        </div>
+        <form id="start">
+          <label for="decision">What specific decision must we make?</label>
+          <textarea id="decision" minlength="24" maxlength="1200" required placeholder="Should Turrii become an interaction-realism evaluator for agent teams, or stay focused on writing provenance?"></textarea>
+          <label for="position">Your position—and what evidence supports it</label>
+          <textarea id="position" minlength="24" maxlength="1200" required placeholder="I currently think… because the observable evidence is… The part I am guessing about is…"></textarea>
+          <label for="constraint">Your constraint / what would change your mind</label>
+          <textarea id="constraint" minlength="24" maxlength="1200" required placeholder="We have one week and… I would change my mind if…"></textarea>
+          <label class="consent"><input type="checkbox" id="consent" required><span>I understand my contributions are sent to Anthropic and saved in this shared, password-protected archive. I won’t include confidential credentials or third-party personal data.</span></label>
+          <button id="start-button" class="primary" type="submit">Take a seat <span>↗</span></button>
+          <p class="fine">Uses one of two workspace slots. No model call runs until you submit.</p>
+        </form>
+      </section>
+    </div>
+
+    <section id="session" class="session" hidden>
+      <div class="session-head"><div><p class="eyebrow">ON THE RECORD</p><h2 id="session-title"></h2></div><button id="back" class="secondary" type="button">Back to room</button></div>
+      <div id="rounds" class="rounds"></div>
+      <p id="participants" class="fine"></p>
+      <div id="transcript"></div>
+      <form id="contribute">
+        <label for="reply" id="reply-label">Your reserved turn</label>
+        <p id="human-checkpoint" class="notice"></p>
+        <textarea id="reply" minlength="12" maxlength="4000" required placeholder="Here is what I agree with, what I reject, and the constraint you are missing…"></textarea>
+        <button id="reply-button" class="primary" type="submit">Contribute &amp; continue ↗</button>
+      </form>
+      <div id="completion" class="completion" hidden><h3>That’s the jam.</h3><p>Four rounds. Your decision, dissent, test, and stop condition are on the record.</p></div>
+      <button id="export" class="secondary" type="button">Download transcript ↓</button>
+    </section>
+
+    <section id="archive" class="section archive">
+      <div class="section-title"><span class="step">↳</span><h2>Leave a paper trail.</h2></div>
+      <p>Every human contribution and facilitator response. Shared with anyone who has the workshop password.</p>
+      <div id="records"></div>
+    </section>
+
+    <footer><span>TURRII × TEEK</span><span>Facts first. Your call.</span><a href="https://tryusual.com/">Usual ↗</a></footer>
+  </main>
+</body>
+</html>
+
