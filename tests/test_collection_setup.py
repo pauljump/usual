@@ -159,7 +159,7 @@ def test_installer_preserves_extra_files_and_refuses_modified_owned_files(tmp_pa
 def test_new_commands_do_not_open_choices_database(tmp_path):
     result = subprocess.run([sys.executable, str(ROOT / 'scripts/usual.py'), '--home', str(tmp_path / 'data'),
                              'menu'], check=True, capture_output=True, text=True)
-    assert len(json.loads(result.stdout)['items']) == 6
+    assert len(json.loads(result.stdout)['items']) == 7
     assert not (tmp_path / 'data').exists()
 
 

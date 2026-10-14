@@ -1303,6 +1303,12 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         "/privacy/": ("privacy.html", "text/html; charset=utf-8"),
         "/install/": ("install.html", "text/html; charset=utf-8"),
         "/pop/": ("pop.html", "text/html; charset=utf-8"),
+        "/where/": ("where.html", "text/html; charset=utf-8"),
+        "/where/demo/": ("public/where-demo.html", "text/html; charset=utf-8"),
+        "/where/install": ("public/where.md", "text/plain; charset=utf-8"),
+        "/where.py": ("where.py", "text/plain; charset=utf-8"),
+        "/where-og.png": ("public/where-og.png", "image/png"),
+        "/where-board.png": ("public/where-board.png", "image/png"),
         "/demo/interactive/": ("interactive-demo.html", "text/html; charset=utf-8"),
         "/seo.css": ("public/seo.css", "text/css; charset=utf-8"),
         "/robots.txt": ("public/robots.txt", "text/plain; charset=utf-8"),
@@ -1347,6 +1353,12 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "Answer secret scanners with a fake .env where every credential is unique, "
             "and see who scraped it, who used it, and how fast.",
             "/bait/",
+        ),
+        "/where/install": (
+            "Usual Where: Where Was I?",
+            "Every Claude Code and Codex session on one local board. What each one is "
+            "waiting on. Click to resume.",
+            "/where/",
         ),
         "/pop/install": (
             "Usual Pop: Open Agent Links in the Browser You Actually Want",
@@ -1397,6 +1409,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
         """Minimal shareable HTML for a plain-text asset. Content is fixed in code."""
         title, description, human_page = self.PREVIEW_CARDS[path]
         site = "https://tryusual.com"
+        image = "/where-og.png" if path.startswith("/where") else "/og.png"
         return (
             "<!doctype html>\n<html lang=\"en\">\n<head>\n"
             "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
@@ -1408,14 +1421,14 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             f"<meta property=\"og:description\" content=\"{description}\">"
             "<meta property=\"og:type\" content=\"article\">"
             f"<meta property=\"og:url\" content=\"{site}{path}\">"
-            f"<meta property=\"og:image\" content=\"{site}/og.png\">"
+            f"<meta property=\"og:image\" content=\"{site}{image}\">"
             "<meta property=\"og:image:width\" content=\"1200\">"
             "<meta property=\"og:image:height\" content=\"630\">"
             "<meta property=\"og:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
             "<meta name=\"twitter:card\" content=\"summary_large_image\">"
             f"<meta name=\"twitter:title\" content=\"{title}\">"
             f"<meta name=\"twitter:description\" content=\"{description}\">"
-            f"<meta name=\"twitter:image\" content=\"{site}/og.png\">"
+            f"<meta name=\"twitter:image\" content=\"{site}{image}\">"
             "<meta name=\"twitter:image:alt\" content=\"Usual — evidence with an off switch.\">\n"
             "</head>\n<body>\n"
             f"<h1>{title}</h1>\n<p>{description}</p>\n"
@@ -1443,6 +1456,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/privacy",
             "/install",
             "/pop",
+            "/where/demo",
             "/demo/interactive",
             "/escape/demo",
             "/choices/legacy",
@@ -1537,6 +1551,7 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             "/demo.json",
             "/learn.md",
             "/pop/install",
+            "/where/install",
             "/bait/install",
             "/reading-list.zip",
             "/release.json",

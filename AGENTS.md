@@ -1,7 +1,7 @@
 # Usual project contract
 
 - Product: **Usual**. Canonical repository: `https://github.com/pauljump/usual`.
-- Promise: **Your AI, how you like it.** The initial menu is Vibecheck, Choices, Recall, Loops, Pop and Escape.
+- Promise: **Your AI, how you like it.** The menu is Vibecheck, Choices, Recall, Loops, Pop, Escape and Where.
 - Canonical local root: `/Users/mini-home/projects/usual/core`.
 - `src/usual/` is the runtime; `SKILL.md` and `install.py` are the portable agent skill.
 - `src/usual/catalog.json` drives the public menu and generated README table. Validate with `python3 scripts/validate_catalog.py`; regenerate the table with `--write-readme`.
@@ -10,6 +10,7 @@
 - Recall uses the maintained adapted core in `src/usual/recall_core`; preserve its MIT notice and source provenance. Escape is pinned upstream with an explicit local patch, not a repository migration.
 - Recall MCP (`src/usual/mcp_server.py`, launcher `scripts/usual-mcp.py`) is a stdlib stdio MCP server over the same private index (`~/.usual/recall/`). It re-indexes changed transcripts under its explicit `--source` roots before queries. Registered for Claude Code (user scope) and Codex (`~/.codex/config.toml`) as `usual-recall`.
 - Learn (`src/usual/learn*.py`, [references/learn.md](references/learn.md)) is the evidence → assessment → reviewed-playbook loop behind `usual learn` and `usual playbook`. Its store is private (`~/.usual/learning/`); only user reviews promote a learning or approve a playbook, and it is off the public menu. Project record: [docs/learn/README.md](docs/learn/README.md).
+- Where (`src/usual/where.py`) is a single stdlib file that also ships standalone at `tryusual.com/where.py`; keep it free of package imports so the download works on its own. It reads Claude Code and Codex transcripts read-only, caches to `~/.usual/where/`, and serves its board on 127.0.0.1 with a one-time token. Public page `where.html`, agent guide `public/where.md`; regenerate the demo board and share images with `scripts/where/render.sh` (synthetic sessions only).
 - The first Loops method is scoped, read-only `file-check-v1`; repetition does not authorize execution or establish a good procedure.
 - Run `python3 -m pytest -q` from the root. Tests discover only the active product and its demo, not archived research.
 - Build public downloads with `python3 scripts/build_release.py`. The allowlist excludes private data and research artifacts.

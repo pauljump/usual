@@ -1,0 +1,73 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Where was I?</title>
+<style>
+:root{--paper:#f5f2e9;--ink:#262820;--muted:#6b6e61;--line:#d5d3c5;--light:#fffdf7;--orange:#cc482b;--green:#385744;--amber:#a86a12;
+--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;--serif:Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.45 var(--sans)}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:36px 40px 18px;border-bottom:1px solid var(--ink)}
+h1{font:400 44px/1 var(--serif);margin:0;letter-spacing:-.02em}h1 span{color:var(--orange)}
+.sub{font:12px var(--mono);color:var(--muted);margin-top:10px;letter-spacing:.04em;text-transform:uppercase}
+.tools{display:flex;gap:10px;align-items:center}
+input{font:15px var(--sans);padding:10px 14px;border:1px solid var(--ink);background:var(--light);border-radius:4px;width:280px;box-shadow:2px 2px 0 var(--ink)}
+.chip{font:12px var(--mono);border:1px solid var(--line);background:var(--light);padding:7px 10px;border-radius:99px;cursor:pointer;color:var(--muted)}
+.chip.on{border-color:var(--ink);color:var(--ink);background:#fff}
+.stats{display:flex;gap:28px;padding:16px 40px;border-bottom:1px solid var(--line);font:12px var(--mono);color:var(--muted);flex-wrap:wrap}
+.stats b{font:400 26px var(--serif);color:var(--ink);display:block;letter-spacing:-.01em}.stats .hot b{color:var(--orange)}
+main{padding:24px 40px 80px;display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:18px}
+.card{background:var(--light);border:1px solid var(--ink);border-radius:6px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:10px;
+box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s;position:relative}
+.card:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--ink)}
+.top{display:flex;justify-content:space-between;gap:10px;font:11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tool{display:inline-flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}.codex .dot{background:var(--green)}
+h2{font:400 21px/1.2 var(--serif);margin:0;letter-spacing:-.01em;overflow-wrap:anywhere}
+.loop{border-left:3px solid var(--line);padding:2px 0 2px 10px;color:var(--ink);font-size:14px}
+.loop .k{display:block;font:11px var(--mono);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;color:var(--muted)}
+.loop.question,.loop.unanswered{border-color:var(--orange)}.loop.question .k,.loop.unanswered .k{color:var(--orange)}
+.loop.next{border-color:var(--green)}.loop.next .k{color:var(--green)}.loop.done{color:var(--muted)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;font:11.5px var(--mono)}
+.tag{border:1px solid var(--line);border-radius:3px;padding:2px 6px;color:var(--muted);background:var(--paper)}
+.tag.dirty{border-color:var(--amber);color:var(--amber)}.tag.doom{border-color:var(--orange);color:#fff;background:var(--orange)}
+.acts{display:flex;gap:8px;margin-top:2px}
+button{font:600 13px var(--sans);padding:8px 12px;border-radius:4px;border:1px solid var(--ink);background:#fff;cursor:pointer;color:var(--ink)}
+button.go{background:var(--ink);color:var(--paper)}button:hover{filter:brightness(.95)}
+.cmd{font:11.5px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:60px;font:16px var(--serif)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:4px;font:13px var(--mono);opacity:0;transition:opacity .2s}
+.toast.on{opacity:1}footer{position:fixed;bottom:0;right:0;padding:10px 16px;font:11px var(--mono);color:var(--muted)}
+footer a{color:inherit}
+@media(max-width:720px){header{flex-direction:column;align-items:flex-start;padding:24px 20px 14px}main,.stats{padding-left:20px;padding-right:20px}input{width:100%}.tools{width:100%;flex-wrap:wrap}}
+</style></head><body>
+<header><div><h1>Where was I<span>?</span></h1><div class="sub" id="sub"></div></div>
+<div class="tools"><input id="q" placeholder="Search titles, asks, files…">
+<span class="chip on" data-f="all">All</span><span class="chip" data-f="open">Open loops</span><span class="chip" data-f="dirty">Uncommitted</span></div></header>
+<div class="stats" id="stats"></div><main id="grid"></main><div class="toast" id="toast"></div>
+<footer>Local only · <a href="https://tryusual.com/where/">Usual Where</a></footer>
+<script>
+const DATA={"sessions": [{"tool": "claude", "id": "00000000-demo-4a1e-9c2b-5f00d0000000", "cwd": "~/code/billing-api", "branch": "fix/webhook-retries", "display_title": "Stripe webhooks retry forever after a 500", "first_ask": "Stripe webhooks retry forever after a 500", "last_ask": "Stripe webhooks retry forever after a 500", "asks": 31, "updated": "2026-10-14T17:59:29.486684+00:00", "age": "2h ago", "project": "billing-api", "loop": {"kind": "question", "text": "Want me to replay the 212 failed events, or only today's?"}, "repo": {"exists": true, "git": true, "branch": "fix/webhook-retries", "dirty": 3, "ahead": 0}, "resume": "cd ~/code/billing-api && claude --resume 00000000-demo-4a1e-9c2b-5f00d0000000", "deletes_in": 30, "files": []}, {"tool": "codex", "id": "00000001-demo-4a1e-9c2b-5f00d0000001", "cwd": "~/code/web", "branch": "passkeys", "display_title": "Move login to passkeys", "first_ask": "Move login to passkeys", "last_ask": "Move login to passkeys", "asks": 18, "updated": "2026-10-14T14:59:29.486684+00:00", "age": "5h ago", "project": "web", "loop": {"kind": "next", "text": "Run the e2e suite against staging before merging."}, "repo": {"exists": true, "git": true, "branch": "passkeys", "dirty": 14, "ahead": 0}, "resume": "cd ~/code/web && codex resume 00000001-demo-4a1e-9c2b-5f00d0000001", "deletes_in": null, "files": []}, {"tool": "claude", "id": "00000002-demo-4a1e-9c2b-5f00d0000002", "cwd": "~/code/mobile", "branch": "main", "display_title": "Share sheet crashes on iOS 26", "first_ask": "Share sheet crashes on iOS 26", "last_ask": "Share sheet crashes on iOS 26", "asks": 9, "updated": "2026-10-13T21:59:29.486684+00:00", "age": "22h ago", "project": "mobile", "loop": {"kind": "unanswered", "text": "ok try it on the iPad build too"}, "repo": {"exists": true, "git": true, "branch": "main", "dirty": 0, "ahead": 0}, "resume": "cd ~/code/mobile && claude --resume 00000002-demo-4a1e-9c2b-5f00d0000002", "deletes_in": 29, "files": []}, {"tool": "claude", "id": "00000003-demo-4a1e-9c2b-5f00d0000003", "cwd": "~/code/landing", "branch": "pricing-v3", "display_title": "Pricing page copy pass", "first_ask": "Pricing page copy pass", "last_ask": "Pricing page copy pass", "asks": 12, "updated": "2026-10-14T13:59:29.486684+00:00", "age": "6h ago", "project": "landing", "loop": {"kind": "question", "text": "Should the annual plan show the monthly price or the total?"}, "repo": {"exists": true, "git": true, "branch": "pricing-v3", "dirty": 0, "ahead": 2}, "resume": "cd ~/code/landing && claude --resume 00000003-demo-4a1e-9c2b-5f00d0000003", "deletes_in": 30, "files": []}, {"tool": "codex", "id": "00000004-demo-4a1e-9c2b-5f00d0000004", "cwd": "~/code/data", "branch": "main", "display_title": "Nightly dbt run got 3x slower", "first_ask": "Nightly dbt run got 3x slower", "last_ask": "Nightly dbt run got 3x slower", "asks": 7, "updated": "2026-10-11T21:59:29.486684+00:00", "age": "2d ago", "project": "data", "loop": {"kind": "question", "text": "Do you want the incremental model, or a bigger warehouse for now?"}, "repo": {"exists": true, "git": true, "branch": "main", "dirty": 1, "ahead": 0}, "resume": "cd ~/code/data && codex resume 00000004-demo-4a1e-9c2b-5f00d0000004", "deletes_in": null, "files": []}, {"tool": "claude", "id": "00000005-demo-4a1e-9c2b-5f00d0000005", "cwd": "~/code/infra", "branch": "main", "display_title": "Deploys flake on Fridays", "first_ask": "Deploys flake on Fridays", "last_ask": "Deploys flake on Fridays", "asks": 23, "updated": "2026-09-17T19:59:29.486684+00:00", "age": "27d ago", "project": "infra", "loop": {"kind": "done", "text": "Pinned the runner image; the last 40 deploys passed."}, "repo": {"exists": true, "git": true, "branch": "main", "dirty": 0, "ahead": 0}, "resume": "cd ~/code/infra && claude --resume 00000005-demo-4a1e-9c2b-5f00d0000005", "deletes_in": 2, "files": []}, {"tool": "claude", "id": "00000006-demo-4a1e-9c2b-5f00d0000006", "cwd": "~/code/dotfiles", "branch": "main", "display_title": "zsh startup under 100ms", "first_ask": "zsh startup under 100ms", "last_ask": "zsh startup under 100ms", "asks": 6, "updated": "2026-09-19T19:59:29.486684+00:00", "age": "25d ago", "project": "dotfiles", "loop": {"kind": "done", "text": "Startup is 84ms. nvm was 300ms of it; it loads lazily now."}, "repo": {"exists": true, "git": true, "branch": "main", "dirty": 0, "ahead": 0}, "resume": "cd ~/code/dotfiles && claude --resume 00000006-demo-4a1e-9c2b-5f00d0000006", "deletes_in": 4, "files": []}, {"tool": "claude", "id": "00000007-demo-4a1e-9c2b-5f00d0000007", "cwd": "~/code/billing-api", "branch": "main", "display_title": "Idempotency keys for refunds", "first_ask": "Idempotency keys for refunds", "last_ask": "Idempotency keys for refunds", "asks": 15, "updated": "2026-10-10T19:59:29.486684+00:00", "age": "4d ago", "project": "billing-api", "loop": {"kind": "done", "text": "Merged in #418. Refunds are safe to retry."}, "repo": {"exists": true, "git": true, "branch": "main", "dirty": 0, "ahead": 0}, "resume": "cd ~/code/billing-api && claude --resume 00000007-demo-4a1e-9c2b-5f00d0000007", "deletes_in": 25, "files": []}], "days": 30, "demo": true},TOKEN="",LIVE=false;
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let filter="all";
+const LABEL={question:"Waiting on you",unanswered:"No reply yet",next:"Next step",done:"Last said"};
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),1800)}
+function open_(s){return s.loop.kind!=="done"}
+function render(){
+ const q=$("#q").value.toLowerCase().split(/\s+/).filter(Boolean);
+ const list=DATA.sessions.filter(s=>{const h=[s.display_title,s.first_ask,s.last_ask,s.loop.text,s.cwd,s.branch,s.id,(s.files||[]).join(" ")].join(" ").toLowerCase();
+  return q.every(w=>h.includes(w))&&(filter==="all"||(filter==="open"&&open_(s))||(filter==="dirty"&&s.repo.dirty))});
+ $("#grid").innerHTML=list.length?list.map((s,i)=>`<article class="card ${s.tool}">
+ <div class="top"><span class="tool"><i class="dot"></i>${s.tool==="claude"?"Claude Code":"Codex"} · ${esc(s.project)}</span><span>${esc(s.age)}</span></div>
+ <h2>${esc(s.display_title)}</h2>
+ <div class="loop ${s.loop.kind}"><span class="k">${LABEL[s.loop.kind]}</span>${esc(s.loop.text)}</div>
+ <div class="tags">${(s.repo.branch||s.branch)?`<span class="tag">${esc(s.repo.branch||s.branch)}</span>`:""}${s.repo.dirty?`<span class="tag dirty">${s.repo.dirty} uncommitted</span>`:""}${s.repo.ahead?`<span class="tag dirty">${s.repo.ahead} unpushed</span>`:""}${s.deletes_in!==null&&s.deletes_in<=7?`<span class="tag doom">deleted in ${s.deletes_in}d</span>`:""}<span class="tag">${esc(s.asks)} asks</span></div>
+ <div class="acts"><button class="go" data-a="open" data-i="${i}">${LIVE?"Resume":"Copy resume"}</button><button data-a="brief" data-i="${i}">Copy brief</button></div>
+ <div class="cmd" title="${esc(s.resume)}">${esc(s.resume)}</div></article>`).join(""):`<div class="empty">Nothing here.</div>`;
+ $("#grid").onclick=async e=>{const b=e.target.closest("button");if(!b)return;const s=list[+b.dataset.i];
+  if(b.dataset.a==="open"){if(LIVE){const r=await fetch("/api/open",{method:"POST",headers:{"Content-Type":"application/json","X-Where-Token":TOKEN},body:JSON.stringify({id:s.id})});toast(r.ok?"Opening in a new terminal…":"Could not open; command copied");if(!r.ok)navigator.clipboard.writeText(s.resume)}else{navigator.clipboard.writeText(s.resume);toast("Resume command copied")}}
+  else{let text=s.brief;if(LIVE){const r=await fetch("/api/brief?id="+encodeURIComponent(s.id),{headers:{"X-Where-Token":TOKEN}});text=await r.text()}
+   await navigator.clipboard.writeText(text||s.resume);toast("Brief copied. Paste it into a fresh session")}}
+}
+const n=DATA.sessions,openN=n.filter(open_).length,dirtyN=new Set(n.filter(s=>s.repo.dirty).map(s=>s.cwd)).size,doomN=n.filter(s=>s.deletes_in!==null&&s.deletes_in<=7).length;
+$("#sub").textContent=DATA.demo?"Demo · made-up sessions · run it on yours with where board":`${n.length} sessions · ${new Set(n.map(s=>s.project)).size} projects · last ${DATA.days} days`;
+$("#stats").innerHTML=`<div><b>${n.length}</b>sessions</div><div class="${openN?"hot":""}"><b>${openN}</b>open loops</div><div><b>${dirtyN}</b>repos with uncommitted work</div><div class="${doomN?"hot":""}"><b>${doomN}</b>deleted by Claude Code within 7 days</div>`;
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");filter=c.dataset.f;render()});
+$("#q").oninput=render;render();if(!DATA.demo)$("#q").focus();
+</script></body></html>

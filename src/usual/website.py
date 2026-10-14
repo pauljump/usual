@@ -97,6 +97,8 @@ def item_page(item_id: str) -> bytes:
     source = item["source"]
     title = f'{item["name"]} · Usual'
     prompt = f'Read https://tryusual.com/{item_id}/install and help me install {item["name"]}. Show me what changes and how to remove it. Do not import history unless I select a scope.'
+    if item_id == "where":
+        prompt = "Read https://tryusual.com/where/install and install it. Show me what it reads and writes, and how to remove it."
     if item_id == "pop":
         prompt = "Read https://tryusual.com/pop/install and install it. Help me choose my browser, preserve unrelated instructions, and show me how to remove Pop."
     example = readable(item["example"])
@@ -148,7 +150,10 @@ def item_page(item_id: str) -> bytes:
     if item_id == "pop":
         content.insert(content.index('</div><aside class="tool-facts">'),
                        '<section><h2>Try the link formats.</h2><p>Browser handling depends on your device and client. A generated link alone is not a verified browser launch.</p><a class="button secondary" href="/pop/">Open the original Pop example </a></section>')
-    content.extend(['<section class="next-tool"><p class="eyebrow">À la carte, always</p><h2>A little more your usual.</h2><a class="button secondary" href="/#menu">Browse all six tools </a></section>',
+    if item_id == "where":
+        content.insert(content.index('</div><aside class="tool-facts">'),
+                       '<section><h2>See the board.</h2><p>The demo uses made-up sessions. Run <code>where board</code> to see yours; nothing leaves your machine.</p><a class="button secondary" href="/where/">Open the Where page </a></section>')
+    content.extend(['<section class="next-tool"><p class="eyebrow">À la carte, always</p><h2>A little more your usual.</h2><a class="button secondary" href="/#menu">Browse the menu </a></section>',
                     '</main>', footer(), '</body></html>'])
     return "".join(content).encode("utf-8")
 

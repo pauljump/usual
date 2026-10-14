@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Usual Where: Where Was I? Find and Resume Claude Code and Codex Sessions</title>
+<meta name="description" content="Every Claude Code and Codex session on your machine, on one local board. See what each one is waiting on, which repos have uncommitted work, and what Claude Code is about to delete. Click to resume.">
+<link rel="canonical" href="https://tryusual.com/where/"><link rel="icon" href="/mark.svg" type="image/svg+xml">
+<meta property="og:site_name" content="Usual"><meta property="og:type" content="article"><meta property="og:url" content="https://tryusual.com/where/">
+<meta property="og:title" content="Where was I?"><meta property="og:description" content="Every Claude Code and Codex session on one local board. What each one is waiting on. Click to resume.">
+<meta property="og:image" content="https://tryusual.com/where-og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A board of coding agent sessions, each showing what it is waiting on and a resume button.">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Where was I?">
+<meta name="twitter:description" content="Every Claude Code and Codex session on one local board. What each one is waiting on. Click to resume.">
+<meta name="twitter:image" content="https://tryusual.com/where-og.png">
+<meta name="twitter:image:alt" content="A board of coding agent sessions, each showing what it is waiting on and a resume button.">
+<style>
+:root{--paper:#f5f2e9;--ink:#262820;--muted:#64675b;--line:#d5d3c5;--light:#fffdf7;--orange:#cc482b;--green:#385744;
+--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;--serif:Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 var(--sans)}
+a{color:inherit}.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+.site-header{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.brand{display:flex;align-items:center;gap:10px;font:400 24px var(--serif);text-decoration:none}
+.brand svg{width:30px;height:30px}
+nav{display:flex;gap:18px;align-items:center;font-size:14px}nav a{text-decoration:none}
+.github{border:1px solid var(--ink);padding:7px 11px;border-radius:5px;box-shadow:2px 2px 0 var(--ink);background:#fcfbf6;display:flex;gap:8px;align-items:center}
+.github svg{width:15px;height:15px}.stars{border-left:1px solid var(--line);padding-left:8px;font:12px var(--mono)}
+.hero{padding:56px 0 30px;display:grid;grid-template-columns:1fr;gap:10px}
+.eyebrow{font:13px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:400 clamp(56px,9vw,112px)/.95 var(--serif);letter-spacing:-.035em;margin:10px 0 18px}h1 span{color:var(--orange)}
+.lede{font-size:22px;line-height:1.45;max-width:760px;margin:0 0 28px;color:#33362c}
+.install{display:grid;grid-template-columns:1fr;gap:14px;max-width:760px}
+.box{min-width:0;background:var(--light);border:1px solid var(--ink);border-radius:6px;padding:14px 16px;box-shadow:3px 3px 0 var(--ink)}
+.box .label{font:12px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:8px}
+.row{display:flex;gap:8px}.row code{flex:1;font:14px var(--mono);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:9px 10px;overflow-x:auto;white-space:nowrap}
+button{font:600 14px var(--sans);padding:8px 14px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer}
+.shot{margin:44px 0 10px;border:2px solid var(--ink);border-radius:10px;box-shadow:8px 8px 0 var(--ink);overflow:hidden;background:#fff;display:block}
+.shot img{display:block;width:100%;height:auto}
+.caption{font:13px var(--mono);color:var(--muted);margin:16px 0 0}
+h2{font:400 38px/1.1 var(--serif);letter-spacing:-.02em;margin:72px 0 22px}
+.menu{border-top:1px solid var(--ink)}
+.item{display:grid;grid-template-columns:220px 1fr;gap:28px;padding:22px 0;border-bottom:1px solid var(--line)}
+.item h3{font:400 24px/1.2 var(--serif);margin:0}.item h3 code{font:15px var(--mono);display:block;color:var(--orange);margin-top:6px}
+.item p{margin:0;color:#3a3d33}
+.fine{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.fine div{border:1px solid var(--line);border-radius:6px;padding:16px;background:var(--light);font-size:15px}
+.fine b{display:block;font:400 19px var(--serif);margin-bottom:4px}
+.why{font-size:15px;color:var(--muted);max-width:760px}
+footer{margin:90px 0 40px;padding-top:18px;border-top:1px solid var(--ink);display:flex;justify-content:space-between;font-size:14px;color:var(--muted);flex-wrap:wrap;gap:10px}
+footer a{margin-left:14px}
+@media(max-width:760px){.install,.fine{grid-template-columns:1fr}.item{grid-template-columns:1fr;gap:6px}nav a:not(.github){display:none}.lede{font-size:19px}}
+</style>
+</head>
+<body><div class="wrap">
+<header class="site-header"><a class="brand" href="/"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="8" fill="#e7502d"/><path d="M10 10v12a8 8 0 0 0 16 0V10" fill="none" stroke="#fff8eb" stroke-width="2.8" stroke-linejoin="round"/></svg>usual</a>
+<nav aria-label="Main navigation"><a href="/#menu">Menu</a><a href="/where/demo/">Demo</a><a class="github" href="https://github.com/pauljump/usual" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .8a11.2 11.2 0 0 0-3.5 21.8c.6.1.8-.2.8-.5v-2.1c-3.3.7-4-1.4-4-1.4-.5-1.3-1.3-1.6-1.3-1.6-1.1-.8.1-.8.1-.8 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.4-5.5-6.2 0-1.3.5-2.4 1.2-3.3-.1-.3-.5-1.6.1-3.3 0 0 1-.3 3.4 1.3a11.7 11.7 0 0 1 6.2 0c2.4-1.6 3.4-1.3 3.4-1.3.6 1.7.2 3 .1 3.3.8.9 1.2 2 1.2 3.3 0 4.8-2.8 5.9-5.5 6.2.4.4.8 1.1.8 2.2v3.3c0 .3.2.6.8.5A11.2 11.2 0 0 0 12 .8Z"/></svg>GitHub <span class="stars" id="star-count">Star</span></a></nav></header>
+
+<main>
+<section class="hero">
+<div class="eyebrow">Usual / 07 / Where</div>
+<h1>Where was I<span>?</span></h1>
+<p class="lede">Every Claude Code and Codex session on your machine, on one board. What each one is waiting on, which repos have uncommitted work, and which sessions Claude Code is about to delete. Click a card and it resumes in the right folder.</p>
+<div class="install">
+<div class="box"><span class="label">Paste this to Claude Code or Codex</span><div class="row"><code id="c1">read https://tryusual.com/where/install and install it</code><button data-copy="c1">Copy</button></div></div>
+<div class="box"><span class="label">Or just run it</span><div class="row"><code id="c2">curl -fsSLO https://tryusual.com/where.py &amp;&amp; python3 where.py board</code><button data-copy="c2">Copy</button></div></div>
+</div>
+<a class="shot" href="/where/demo/" aria-label="Open the demo board"><img src="/where-board.png" width="2880" height="1920" alt="The Where board: cards for eight coding sessions, each showing the project, what it is waiting on, git state and a resume button."></a>
+<p class="caption">Made-up sessions. <a href="/where/demo/">Try the demo board</a>.</p>
+</section>
+
+<h2>What you get</h2>
+<div class="menu">
+<div class="item"><h3>The board<code>where board</code></h3><p>A local page with every recent session. Search it, filter to the ones waiting on you, and press Resume. A new terminal opens in the folder the session started in and runs <code>claude --resume</code> or <code>codex resume</code>.</p></div>
+<div class="item"><h3>Just ask<code>/where</code></h3><p>The install adds a skill. Ask "where was I on the webhook thing?" and your agent finds the session, tells you what is still open, and hands you the resume command.</p></div>
+<div class="item"><h3>A brief, not a replay<code>where brief ID</code></h3><p>A short handoff note: what you asked for, which files changed, where it stopped. Paste it into a fresh session instead of reloading a huge one.</p></div>
+<div class="item"><h3>Keep your history<code>where keep</code></h3><p>Claude Code deletes transcripts after 30 days unless you change a setting. This shows how many are about to go and, if you say yes, turns it off and can archive a copy.</p></div>
+</div>
+
+<h2>What it touches</h2>
+<div class="fine">
+<div><b>Reads only</b>Transcripts in <code>~/.claude/projects</code> and <code>~/.codex/sessions</code>. It never edits them. A small cache goes in <code>~/.usual/where</code>.</div>
+<div><b>Stays on your machine</b>The board listens on 127.0.0.1 with a one-time token. No account, no network calls, no telemetry.</div>
+<div><b>One file</b>Python 3.9+, standard library. <a href="/where.py">Read the source</a>. To remove it, delete <code>~/.claude/skills/where</code>.</div>
+</div>
+<p class="why">"Waiting on you" is read from the last exchange of each session, so it can be wrong. The resume command and git state are exact.</p>
+</main>
+
+<footer><span>usual. Part of the <a href="/#menu" style="margin:0">Usual menu</a>.</span><span><a href="/menu/where/">Details</a><a href="/where/install">Agent install guide</a><a href="https://github.com/pauljump/usual">GitHub</a></span></footer>
+</div>
+<script>
+document.querySelectorAll("[data-copy]").forEach(b=>b.addEventListener("click",async()=>{const t=document.getElementById(b.dataset.copy).textContent;try{await navigator.clipboard.writeText(t)}catch{}b.textContent="Copied";setTimeout(()=>b.textContent="Copy",1500)}));
+fetch("/github-stars.json").then(r=>r.ok?r.json():null).then(d=>{if(d&&Number.isSafeInteger(d.stars))document.getElementById("star-count").textContent="☆ "+d.stars.toLocaleString()}).catch(()=>{});
+</script>
+</body></html>

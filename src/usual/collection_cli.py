@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 
-COMMANDS = {"menu", "setup", "pop", "recall", "vibecheck", "loops", "learn", "playbook"}
+COMMANDS = {"menu", "setup", "pop", "recall", "vibecheck", "loops", "learn", "playbook", "where"}
 
 
 def dispatch(argv):
@@ -20,8 +20,11 @@ def dispatch(argv):
         return None
     if os.name != "posix":
         raise ValueError("The six-item local collection currently requires macOS or Linux (POSIX). Legacy Choices commands remain available.")
-    from . import collection as c
     command, tail = argv[0], argv[1:]
+    if command == "where":
+        from . import where
+        return where.main(tail)
+    from . import collection as c
     if command in ("recall", "vibecheck"):
         from . import history
         return getattr(history, command + "_main")(tail, home)

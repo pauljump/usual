@@ -288,6 +288,53 @@
           "Real device coverage is limited; synthetic user agents do not prove device behavior."
         ]
       }
+    },
+    {
+      "id": "where",
+      "number": "07",
+      "name": "Where",
+      "benefit": "See every Claude Code and Codex session, what it is waiting on, and resume it.",
+      "maturity": "Local beta",
+      "maintainer": "pauljump",
+      "source": {
+        "url": "https://github.com/pauljump/usual",
+        "license": "MIT",
+        "version": "0.1.0",
+        "kind": "Usual-owned"
+      },
+      "supported_environments": [
+        "macOS and Linux, Python 3.9+; click-to-resume opens Terminal or iTerm on macOS",
+        "Claude Code transcripts in ~/.claude/projects and Codex rollouts in ~/.codex/sessions"
+      ],
+      "requirements": [
+        "Python 3.9+; standard library only"
+      ],
+      "configuration": {},
+      "install": [
+        "python3 scripts/usual.py where install --client claude",
+        "Or: read https://tryusual.com/where/install and install it"
+      ],
+      "use": [
+        "python3 scripts/usual.py where",
+        "python3 scripts/usual.py where board",
+        "python3 scripts/usual.py where brief SESSION_ID",
+        "python3 scripts/usual.py where keep"
+      ],
+      "remove": [
+        "rm -rf ~/.claude/skills/where ~/.codex/skills/where ~/.usual/where"
+      ],
+      "storage": "Reads transcripts without changing them. A derived cache stays under ~/.usual/where. `where keep --apply` changes only cleanupPeriodDays in ~/.claude/settings.json, after a backup.",
+      "network": "None. The board binds to 127.0.0.1 with a one-time token.",
+      "example": "Stripe webhooks retry forever after a 500\nWaiting on you: replay the 212 failed events, or only today's?\nbilling-api \u00b7 fix/webhook-retries \u00b7 3 uncommitted \u00b7 2h ago\n[Resume]  [Copy brief]",
+      "verification": {
+        "status": "local fixture validation",
+        "tested": [
+          "Synthetic Claude Code and Codex transcripts in tests/test_where.py; real history on macOS by the maintainer."
+        ],
+        "pending": [
+          "Linux terminals for click-to-resume; Windows is unsupported."
+        ]
+      }
     }
   ]
 }

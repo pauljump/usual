@@ -6,7 +6,7 @@ Useful tools for your coding agents. Pick your favorites, discover what fits, an
 
 [Try the synthetic demo](https://tryusual.com/#example) · [Browse the menu](https://tryusual.com/#menu) · [Source & contributions](https://github.com/pauljump/usual)
 
-![Usual: six independently useful tools](src/usual/public/collection-og.svg)
+![Usual: independently useful tools](src/usual/public/collection-og.svg)
 
 A repeated request can become a useful change: **selected history → a cited finding → an inspected routine → a real result → a receipt → an optional setup to share.** Vibecheck is the discovery door. You can also take a single item from the menu immediately.
 
@@ -28,6 +28,7 @@ Open `/tmp/my-first-usual-demo/setup.html` for the shareable card and `my-usual.
 | 04 | [Loops](https://tryusual.com/menu/loops/) | Make one recurring method easy to run again. | Scoped routine beta |
 | 05 | [Pop](https://tryusual.com/menu/pop/) | Get links in the format and browser you prefer. | Rule beta |
 | 06 | [Escape](https://tryusual.com/menu/escape/) | Help website visitors leave an in-app browser. | Pinned upstream widget |
+| 07 | [Where](https://tryusual.com/menu/where/) | See every Claude Code and Codex session, what it is waiting on, and resume it. | Local beta |
 <!-- usual:menu:end -->
 
 À la carte means independently useful. History and Choices are optional. Each item declares its changes, storage, configuration, source and verification in the [versioned catalog](src/usual/catalog.json).
