@@ -1,0 +1,57 @@
+TEEK ROOM KIT v1
+
+One configuration, one shared UI, one bounded jam engine.
+
+QUICK START (in the Usual repository)
+1. Download /teek/template.json after signing in. Save it as teek-room.json.
+2. Change slug, name, context, topics, profiles and guardrails. Context must include
+   all relevant product facts, proposals, research limits and decisions. Do not
+   include credentials, sensitive personal information, or private source corpora.
+3. With publication approval for the target host:
+   PYTHONPATH=src python3 -m usual.teek --config /path/to/teek-room.json
+4. Open /teek/rooms/<slug>/ on that host. The hub lists it automatically.
+   The command refuses overwrites; it never clears an archive or quota.
+
+SUPPORTED PROFILE IDS
+achen, pg, benthomp, collison, bretvictor, thiel, mattlevine, shreyas, jzhuo, pmarca
+Choose at least two. Runtime selection is two or three, initially unselected,
+sorted by last name. This first kit uses Turrii's curated roster, not every Teek
+profile. Profile files/corpus remain local to the deployment host; not bundled.
+
+RUNTIME CONFIGURATION
+TEEK_PASSWORD: hub access password, loaded through the fleet vault runner.
+TEEK_ANTHROPIC_API_KEY: optional dedicated provider credential, vault only.
+  Missing key keeps generation disabled. No other project's key is inherited.
+TEEK_HOME: optional room/archive root, default ~/.usual/teek.
+  rooms/<slug>.json stores config. archives/<slug>/jams.json stores transcripts.
+  Each room has separate two-jam quota and storage; all hub members can read all
+  hub rooms. This is not per-user or tenant-isolated access control.
+
+REUSE
+On this host, new rooms need only config, not copied UI/backend code. Link a room
+from another website. For a separate Python deployment, install the Usual source,
+provide the Teek profile tree, configure the vault/fleet and use the existing
+public-server route adapter. Arbitrary existing Node/Rails/etc apps need their own
+adapter or can link to these hosted rooms. This is not a universal JS embed.
+Frame embedding is deliberately disabled. Publication is a separate operation.
+
+SHARED CONTRACT
+Freeform brain dump -> human challenge -> experiment -> human final decision.
+Four human contributions, no automatic continuation, six attempts per jam.
+Model: claude-opus-5-5; medium effort; 6,000 max output tokens; no fallback.
+No provider calls during config creation, page viewing or tests.
+Frozen product context/source snapshot, shared archive and transcript export.
+Simulated analytical lenses; not endorsements or independent experts.
+No confirmed decision board or GitHub issue creation yet.
+
+CHANGE MANAGEMENT
+Restart through the fleet after editing existing room configuration: room stores
+are cached per process. Existing jams preserve their original frozen context.
+Keep old topic IDs when revising room topics so archives remain understandable.
+Never copy Last Bump or Turrii archives into the kit. Their existing URLs and
+passwords remain separate. Turrii now shares the parameterized engine/client;
+Last Bump remains a separate Node implementation, not automatically synchronized.
+
+VERIFICATION
+python3 -m pytest -q tests/test_teek.py tests/test_turrii_jam.py tests/test_turrii_server.py
+Tests must use synthetic profiles and mocked generation, never provider calls.

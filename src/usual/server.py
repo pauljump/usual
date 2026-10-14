@@ -1760,18 +1760,30 @@ class PublicAutopilotHandler(BaseHTTPRequestHandler):
             self.wfile.write(data)
 
     def do_GET(self):
+        if urllib.parse.urlparse(self.path).path == "/teek" or urllib.parse.urlparse(self.path).path.startswith("/teek/"):
+            from .teek import handle
+            handle(self)
+            return
         if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
             self._turrii_serve()
             return
         self._serve()
 
     def do_HEAD(self):
+        if urllib.parse.urlparse(self.path).path == "/teek" or urllib.parse.urlparse(self.path).path.startswith("/teek/"):
+            from .teek import handle
+            handle(self, head=True)
+            return
         if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
             self._turrii_serve(head=True)
             return
         self._serve(head=True)
 
     def do_POST(self):
+        if urllib.parse.urlparse(self.path).path == "/teek" or urllib.parse.urlparse(self.path).path.startswith("/teek/"):
+            from .teek import handle
+            handle(self, post=True)
+            return
         if urllib.parse.urlparse(self.path).path.startswith("/turrii"):
             self._turrii_post()
             return

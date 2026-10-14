@@ -1,12 +1,14 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
-const API = "/turrii/api/jam";
+const API = document.body.dataset.jamApi || "/turrii/api/jam";
+const roomName = document.body.dataset.jamName || "Turrii";
+const requestKey = API === "/turrii/api/jam" ? "turrii-jam-request" : API + ":request";
 let catalog;
 let current;
 let poll;
 let busy = false;
-let requestId = sessionStorage.getItem("turrii-jam-request") || crypto.randomUUID();
-sessionStorage.setItem("turrii-jam-request", requestId);
+let requestId = sessionStorage.getItem(requestKey) || crypto.randomUUID();
+sessionStorage.setItem(requestKey, requestId);
 
 const roundTitles = ["You frame it", "You challenge it", "You choose a test", "You decide"];
 
@@ -184,7 +186,7 @@ $("#start").onsubmit = async (event) => {
       consent: $("#consent").checked,
     });
     requestId = crypto.randomUUID();
-    sessionStorage.setItem("turrii-jam-request", requestId);
+    sessionStorage.setItem(requestKey, requestId);
     history.replaceState(null, "", "#jam=" + current.id);
     renderJam();
     await refresh();
@@ -231,11 +233,11 @@ $("#back").onclick = async () => {
 
 $("#export").onclick = () => {
   if (!current) return;
-  const text = `# Turrii × Teek jam\n\nModel: ${current.model}\nCreated: ${current.created}\nContext hash: ${current.contextHash}\nSimulated perspectives, not actual people or endorsements.\n\n${current.turns.map((turn) => `## Round ${turn.round}\n\n### You\n${turn.user}\n\n### Facilitator\n${turn.answer || "[No completed response]"}`).join("\n\n")}\n\n## Source snapshot\n${JSON.stringify(current.evidence, null, 2)}`;
+  const text = `# ${roomName} × Teek jam\n\nModel: ${current.model}\nCreated: ${current.created}\nContext hash: ${current.contextHash}\nSimulated perspectives, not actual people or endorsements.\n\n${current.turns.map((turn) => `## Round ${turn.round}\n\n### You\n${turn.user}\n\n### Facilitator\n${turn.answer || "[No completed response]"}`).join("\n\n")}\n\n## Source snapshot\n${JSON.stringify(current.evidence, null, 2)}`;
   const url = URL.createObjectURL(new Blob([text], {type: "text/markdown"}));
   const anchor = element("a");
   anchor.href = url;
-  anchor.download = `turrii-jam-${current.id}.md`;
+  anchor.download = `teek-jam-${current.id}.md`;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
