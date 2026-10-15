@@ -122,6 +122,7 @@ function conversationEntries(turn) {
   for (const message of turn.dialogue.messages) {
     const bubble = entry(speakerName(message.speaker), message.text, false);
     bubble.classList.add('speaker', 'speaker-' + current.people.indexOf(message.speaker));
+    bubble.dataset.initials = catalog.profiles.find(profile => profile.id === message.speaker)?.initials || speakerName(message.speaker).split(' ').map(word => word[0]).slice(0, 2).join('');
     bubble.append(element('small', 'Simulated profile', 'speaker-note'));
     entries.push(bubble);
   }
@@ -146,6 +147,15 @@ function exportTurn(turn) {
   return text;
 }
 
+function renderChatTranscript() {
+  const transcript = $('#transcript');
+  const stickToBottom = transcript.dataset.jam !== current.id || transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
+  const position = transcript.scrollTop;
+  transcript.replaceChildren(...current.turns.flatMap(conversationEntries));
+  transcript.dataset.jam = current.id;
+  transcript.scrollTop = stickToBottom ? transcript.scrollHeight : position;
+}
+
 function renderJam() {
   $("#setup").hidden = true;
   $("#session").hidden = false;
@@ -153,7 +163,7 @@ function renderJam() {
   $("#participants").textContent = current.people.map((id) => catalog.profiles.find((profile) => profile.id === id)?.name).join(" · ") + " · Simulated lenses, not real participants";
   const done = current.turns.filter((turn) => turn.answer).length;
   $("#rounds").replaceChildren(...roundTitles.map((title, index) => element("div", `${index + 1} / ${title}`, `round ${index < done ? "done" : index === done ? "current" : ""}`)));
-  $("#transcript").replaceChildren(...current.turns.flatMap(conversationEntries));
+  renderChatTranscript();
   $("#human-checkpoint").textContent = current.turns.filter(turn => turn.answer).at(-1)?.dialogue?.question || catalog.humanTurns[Math.min(done, 3)];
   $("#reply-label").textContent = `Your turn ${Math.min(done + 1, 4)} of 4 · the conversation waits for you`;
   $("#reply").placeholder = catalog.humanTurns[Math.min(done, 3)];
@@ -162,7 +172,7 @@ function renderJam() {
   $("#completion").hidden = current.status !== "complete";
   $("#reply").readOnly = failed;
   if (failed) $("#reply").value = current.turns.at(-1).user;
-  $("#reply-button").textContent = failed ? `Retry saved contribution (${6 - current.attempts} attempts left)` : `Take my turn ${done + 1} of 4 ↗`;
+  $("#reply-button").textContent = failed ? `Retry saved contribution (${6 - current.attempts} attempts left)` : "Send ↑";
   $("#reply-button").disabled = busy;
   if (current.status === "thinking") {
     showNotice(`Round ${done + 1} is being considered. You can leave; the result will be saved. No next round runs without you.`);
