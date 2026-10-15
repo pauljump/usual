@@ -32,3 +32,9 @@ is `~/.usual/turrii-jam/jams.json` with owner-only permissions.
 
 The model is invoked only after an authenticated user explicitly starts or
 continues a jam. Tests use a fake generator and must not make provider calls.
+
+Replies include short exact source wording inline where available, not internal
+path citations. Research summaries are not presented as original customer quotes.
+A versioned presentation directive applies to future replies in ongoing jams too;
+each turn records it and its effective prompt hash. Frozen context and historical
+replies are unchanged. The shared engine applies this to Teek rooms as well.

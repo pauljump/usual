@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 from usual.turrii_jam import LIMIT, MODEL, ROUNDS, JamError, TurriiJamStore, context_text
-from usual.jam_dialogue import parse_dialogue
+from usual.jam_dialogue import EVIDENCE_STYLE, parse_dialogue
 
 
 def profiles():
@@ -153,6 +153,19 @@ class TurriiJamStoreTests(unittest.TestCase):
         jam = store.create(value)
         self.assertEqual(jam["status"], "waiting")
         self.assertIn("Frozen Turrii context", calls[0]["system"])
+
+    def test_evidence_style_applies_to_existing_frozen_jams_without_rewriting_history(self):
+        store, calls = self.make_store()
+        jam = store.create(opening())
+        first_answer = jam["turns"][0]["answer"]
+        frozen = store.state["jams"][0]["system"]
+        continued = store.submit(jam["id"], {"round": 2, "text": "Please explain the evidence in the conversation itself."})
+        self.assertEqual(calls[-1]["system"], frozen + "\n\n" + EVIDENCE_STYLE)
+        self.assertEqual(store.state["jams"][0]["system"], frozen)
+        self.assertEqual(continued["turns"][0]["answer"], first_answer)
+        self.assertEqual(continued["turns"][1]["responsePolicy"], EVIDENCE_STYLE)
+        self.assertEqual(len(continued["turns"][1]["promptHash"]), 64)
+        self.assertIn("Never invent a quotation", EVIDENCE_STYLE)
 
     def test_invalid_dialogue_cannot_advance_or_invent_human_turns(self):
         for changes in ({"summary": "too early"}, {"question": None}, {"messages": [{"speaker": "user", "text": "fake"}]}):

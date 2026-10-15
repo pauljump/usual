@@ -60,7 +60,7 @@ PEOPLE = [
 ]
 
 
-from .jam_dialogue import DIALOGUE_PROMPT, parse_dialogue
+from .jam_dialogue import DIALOGUE_PROMPT, EVIDENCE_STYLE, parse_dialogue
 
 
 class JamError(Exception):
@@ -341,6 +341,8 @@ SELECTED TEEK MATERIAL:
         elif text != turn["user"]:
             raise JamError(409, "Retry uses the saved contribution.")
         jam["attempts"] += 1
+        turn["responsePolicy"] = EVIDENCE_STYLE
+        turn["promptHash"] = hashlib.sha256((jam["system"] + "\n\n" + EVIDENCE_STYLE).encode()).hexdigest()
         jam["status"] = "thinking"
         jam.pop("error", None)
         self._save()
@@ -352,7 +354,7 @@ SELECTED TEEK MATERIAL:
     def _run_generation(self, jam_id: str) -> None:
         with self.lock:
             jam = self._get(jam_id)
-            system = jam["system"]
+            system = jam["system"] + "\n\n" + jam["turns"][-1]["responsePolicy"]
             messages: list[dict[str, str]] = []
             for turn in jam["turns"]:
                 messages.append({"role": "user", "content": f"Round {turn['round']} of {ROUNDS}. Reserved human checkpoint: {HUMAN_TURNS[turn['round'] - 1]} My contribution:\n{turn['user']}"})
