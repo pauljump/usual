@@ -109,14 +109,16 @@ class TeekTests(unittest.TestCase):
         calls = []
         def generate(**kwargs):
             calls.append(kwargs)
-            return {"text": "Mock response", "model": "mock"}
+            return {"text": json.dumps({"messages": [{"speaker": person, "text": "A grounded reply."} for person in ["pg", "achen", "pg", "achen"]], "question": "What do you think?", "summary": None}), "model": "mock"}
         with tempfile.TemporaryDirectory() as directory:
             def make(slug):
                 return TurriiJamStore(data_file=Path(directory)/slug/"jams.json", profiles=profiles, context=slug+" context", project_name=slug, topics=teek.DEFAULT_TOPICS, guardrails=teek.GUARDRAILS, generate=generate, ready=lambda: True, background=False)
             a, b = make("Alpha"), make("Beta")
             a.catalog(); b.catalog()
             self.assertEqual(calls, [])
-            jam = a.create({"requestId": str(uuid.uuid4()), "topic": "wedge", "people": ["pg", "achen"], "text": "Some rough thoughts about this project and its users.", "consent": True})
+            jam = a.create({"requestId": str(uuid.uuid4()), "topic": "wedge", "people": ["pg", "achen"], "text": "Some rough thoughts about this project and its users."})
+            self.assertEqual(jam["status"], "waiting")
+            self.assertEqual(len(jam["turns"][0]["dialogue"]["messages"]), 4)
             self.assertEqual(a.catalog()["used"], 1)
             self.assertEqual(b.catalog()["used"], 0)
             self.assertIn("Alpha context", calls[0]["system"])

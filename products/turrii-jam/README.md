@@ -8,6 +8,9 @@ The workshop follows the Last Bump jam pattern:
 
 - two shared jam slots;
 - four rounds, each requiring an explicit human contribution;
+- General jam selected by default, with optional focused categories;
+- version 2 named simulated profile replies in conversation order, two passes per exchange, followed by a required human turn; a separate summary only after the fourth human contribution;
+- server-validated speaker order and summary timing; invalid output does not advance; legacy records remain readable in their original format;
 - two or three selected Teek lenses;
 - a frozen Turrii context and evidence snapshot for each jam;
 - no automatic model retries or autonomous continuation;

@@ -20,6 +20,7 @@ from .turrii_jam import JamError, PEOPLE, TurriiJamStore, anthropic_generate, lo
 SLUG = re.compile(r"[a-z][a-z0-9-]{0,47}")
 GUARDRAILS = "Stay on product and business decisions. Do not provide medical, legal, or financial professional advice. Route high-stakes claims to qualified human reviewers. Optimize for user agency and benefit, not compulsion or deception."
 DEFAULT_TOPICS = [
+    {"id":"general","title":"General jam","subtitle":"No category. Bring whatever is on your mind and let the conversation find its direction."},
     {"id": "wedge", "title": "Wedge: who needs this first?", "subtitle": "Pick a specific audience, moment of need, and alternative to beat."},
     {"id": "mvp", "title": "MVP: draw the cut line", "subtitle": "Choose one end-to-end promise and what can wait."},
     {"id": "distribution", "title": "Distribution: the first ten", "subtitle": "Choose one channel, invitation, and two-week test."},

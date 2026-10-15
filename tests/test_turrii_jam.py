@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 
 from usual.turrii_jam import LIMIT, MODEL, ROUNDS, JamError, TurriiJamStore, context_text
+from usual.jam_dialogue import parse_dialogue
 
 
 def profiles():
@@ -24,13 +25,19 @@ def profiles():
     ]
 
 
+def dialogue(round_number=1, people=None):
+    people = people or ["achen", "pg"]
+    return json.dumps({"messages": [{"speaker": person, "text": "A direct reply to the preceding argument."} for person in (people if round_number == 4 else people * 2)],
+                       "question": None if round_number == 4 else "Which part would you change?",
+                       "summary": "The human's actual decision; unresolved risks remain." if round_number == 4 else None})
+
+
 def opening():
     return {
         "requestId": str(uuid.uuid4()),
         "topic": "claim",
         "people": ["achen", "pg"],
         "text": "I keep wondering whether people need a proof badge or something else. These are rough thoughts, not a decision yet.",
-        "consent": True,
     }
 
 
@@ -42,7 +49,7 @@ class TurriiJamStoreTests(unittest.TestCase):
 
         def fake_generate(**kwargs):
             calls.append(kwargs)
-            return {"text": "A bounded mock response. What evidence changes the decision?", "model": MODEL, "usage": {"output_tokens": 12}}
+            return {"text": dialogue((len(kwargs["messages"]) + 1) // 2), "model": MODEL, "usage": {"output_tokens": 12}}
 
         store = TurriiJamStore(
             data_file=Path(directory.name) / "jams.json",
@@ -69,10 +76,21 @@ class TurriiJamStoreTests(unittest.TestCase):
     def test_four_rounds_require_four_human_contributions(self):
         store, calls = self.make_store()
         jam = store.create(opening())
+        self.assertEqual(jam["status"], "waiting")
+        self.assertEqual(len(jam["turns"][0]["dialogue"]["messages"]), 4)
+        self.assertIsNone(jam["turns"][0]["dialogue"]["summary"])
+        store.catalog()
+        store.get(jam["id"])
+        self.assertEqual(len(calls), 1)
+        with self.assertRaises(JamError):
+            store.submit(jam["id"], {"round": 2, "text": " "})
+        self.assertEqual(len(calls), 1)
         for round_number in range(2, 5):
             jam = store.submit(jam["id"], {"round": round_number, "text": "My explicit contribution changes the next decision round."})
         self.assertEqual(len(calls), ROUNDS)
         self.assertEqual(jam["status"], "complete")
+        self.assertTrue(jam["turns"][-1]["dialogue"]["summary"])
+        self.assertIsNone(jam["turns"][-1]["dialogue"]["question"])
         self.assertEqual(len(jam["turns"]), ROUNDS)
         with self.assertRaises(JamError):
             store.submit(jam["id"], {"round": 5, "text": "There must not be an autonomous fifth round."})
@@ -127,6 +145,25 @@ class TurriiJamStoreTests(unittest.TestCase):
             "Authorized voice",
         ):
             self.assertIn(marker, context)
+
+    def test_general_jam_is_default_and_keeps_full_context(self):
+        store, calls = self.make_store()
+        self.assertEqual(store.catalog()["topics"][0]["id"], "general")
+        value = {**opening(), "topic": "general"}
+        jam = store.create(value)
+        self.assertEqual(jam["status"], "waiting")
+        self.assertIn("Frozen Turrii context", calls[0]["system"])
+
+    def test_invalid_dialogue_cannot_advance_or_invent_human_turns(self):
+        for changes in ({"summary": "too early"}, {"question": None}, {"messages": [{"speaker": "user", "text": "fake"}]}):
+            value = {**json.loads(dialogue()), **changes}
+            with self.assertRaises(ValueError):
+                parse_dialogue(json.dumps(value), ["achen", "pg"], 1)
+        store, _ = self.make_store(generate=lambda **kwargs: {"text": "A facilitator essay"})
+        jam = store.create(opening())
+        self.assertEqual(jam["status"], "error")
+        self.assertNotIn("answer", jam["turns"][0])
+        self.assertEqual(jam["attempts"], 1)
 
     def test_persisted_public_record_never_exposes_system_prompt(self):
         store, _ = self.make_store()

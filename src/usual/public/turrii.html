@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <title>Turrii · Private product jam</title>
-  <link rel="stylesheet" href="/turrii/turrii.css?v=4">
-  <script src="/turrii/turrii.js?v=5" defer></script>
+  <link rel="stylesheet" href="/turrii/turrii.css?v=5">
+  <script src="/turrii/turrii.js?v=7" defer></script>
 </head>
 <body>
   <header>
@@ -26,7 +26,7 @@
         <strong id="quota">— / 2</strong>
         <p>sessions used</p>
         <div class="perforation"></div>
-        <small>Four considered rounds<br>Your judgment stays in the loop</small>
+        <small>Four turns from you<br>Speaker-by-speaker replies. Summary at the end.</small>
       </div>
     </section>
 
@@ -34,7 +34,7 @@
 
     <div id="setup">
       <section class="section">
-        <div class="section-title"><span class="step">01</span><h2>Pick the decision worth arguing about.</h2></div>
+        <div class="section-title"><span class="step">01</span><h2>Keep it general. Or pick a focus.</h2></div>
         <div id="topics" class="topics"></div>
       </section>
 
@@ -50,7 +50,7 @@
       <section class="section opening">
         <div>
           <div class="section-title"><span class="step">03</span><h2>What’s on your mind?</h2></div>
-          <p>Brain dump here. Rough ideas, doubts, observations, things you’re excited about—no need to organize it or arrive with a decision. The room will help find the useful threads, then keep coming back to you.</p>
+          <p>Brain dump here. Rough ideas, doubts, observations, things you’re excited about—no need to organize it or arrive with a decision. The profiles reply to you and each other, turn by turn. After each exchange, the conversation stops until you reply. A summary comes only at the end.</p>
           <details>
             <summary>What is already loaded?</summary>
             <p>Turrii’s public product and proof mechanics; technical limits and attack surface; adjacent provenance and writing products; pricing and public traction; the checker-versus-writer demand argument; the Strava/DocuSign analogy; the authorized-voice option; the agent-realism opportunity and its trust conflict; and the proposed 20-link test. Unknown internals stay unknown.</p>
@@ -60,7 +60,6 @@
           <label for="opening">Your brain dump</label>
           <textarea id="opening" minlength="12" maxlength="4000" required aria-describedby="opening-help" placeholder="Here’s where my head is at with Turrii…"></textarea>
           <p id="opening-help" class="fine">Write freely or paste your notes. This is starting context, not a commitment. Leave out secrets and sensitive personal information.</p>
-          <label class="consent"><input type="checkbox" id="consent" required><span>I understand my contributions are sent to Anthropic and saved in this shared, password-protected archive. I won’t include confidential credentials or third-party personal data.</span></label>
           <button id="start-button" class="primary" type="submit">Take a seat <span>↗</span></button>
           <p class="fine">Uses one of two workspace slots. No model call runs until you submit.</p>
         </form>
@@ -84,7 +83,7 @@
 
     <section id="archive" class="section archive">
       <div class="section-title"><span class="step">↳</span><h2>Leave a paper trail.</h2></div>
-      <p>Every human contribution and facilitator response. Shared with anyone who has the workshop password.</p>
+      <p>Every human contribution, profile reply and final summary. Shared with anyone who has the workshop password.</p>
       <div id="records"></div>
     </section>
 

@@ -36,7 +36,13 @@ adapter or can link to these hosted rooms. This is not a universal JS embed.
 Frame embedding is deliberately disabled. Publication is a separate operation.
 
 SHARED CONTRACT
-Freeform brain dump -> human challenge -> experiment -> human final decision.
+General jam (default, no category) or an optional focused topic.
+Freeform brain dump -> named profile replies -> required human reply -> repeat.
+Four human contributions; only after the fourth comes the final summary.
+Each exchange is a validated ordered conversation, not a facilitator essay.
+Two passes through selected speakers per exchange; one closing pass at the end.
+A single model generates each exchange. These are not independent agents.
+General jam is always supplied by the engine, even for older room configs.
 Four human contributions, no automatic continuation, six attempts per jam.
 Model: claude-opus-5-5; medium effort; 6,000 max output tokens; no fallback.
 No provider calls during config creation, page viewing or tests.

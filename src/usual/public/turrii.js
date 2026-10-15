@@ -108,6 +108,44 @@ function entry(label, text, human) {
   return node;
 }
 
+
+function speakerName(id) {
+  return catalog.profiles.find(profile => profile.id === id)?.name || id;
+}
+function conversationEntries(turn) {
+  const entries = [entry(`YOU · TURN ${turn.round} OF 4`, turn.user, true)];
+  if (!turn.answer) return entries;
+  if (!turn.dialogue) {
+    entries.push(entry('LEGACY FACILITATOR RESPONSE', turn.answer, false));
+    return entries;
+  }
+  for (const message of turn.dialogue.messages) {
+    const bubble = entry(speakerName(message.speaker), message.text, false);
+    bubble.classList.add('speaker', 'speaker-' + current.people.indexOf(message.speaker));
+    bubble.append(element('small', 'Simulated profile', 'speaker-note'));
+    entries.push(bubble);
+  }
+  if (turn.dialogue.question) {
+    const handoff = entry('YOUR TURN', turn.dialogue.question, false);
+    handoff.classList.add('handoff');
+    entries.push(handoff);
+  }
+  if (turn.round === 4 && turn.dialogue.summary) {
+    const summary = entry('FINAL SUMMARY', turn.dialogue.summary, false);
+    summary.classList.add('final-summary');
+    entries.push(summary);
+  }
+  return entries;
+}
+function exportTurn(turn) {
+  let text = `## Your turn ${turn.round}\n\n### You\n${turn.user}\n\n`;
+  if (!turn.dialogue) return text + (turn.answer || '[No completed response]');
+  text += turn.dialogue.messages.map(message => `### ${speakerName(message.speaker)} (simulated)\n${message.text}`).join('\n\n');
+  if (turn.dialogue.question) text += '\n\n### Your turn\n' + turn.dialogue.question;
+  if (turn.round === 4 && turn.dialogue.summary) text += '\n\n### Final summary\n' + turn.dialogue.summary;
+  return text;
+}
+
 function renderJam() {
   $("#setup").hidden = true;
   $("#session").hidden = false;
@@ -115,19 +153,16 @@ function renderJam() {
   $("#participants").textContent = current.people.map((id) => catalog.profiles.find((profile) => profile.id === id)?.name).join(" · ") + " · Simulated lenses, not real participants";
   const done = current.turns.filter((turn) => turn.answer).length;
   $("#rounds").replaceChildren(...roundTitles.map((title, index) => element("div", `${index + 1} / ${title}`, `round ${index < done ? "done" : index === done ? "current" : ""}`)));
-  $("#transcript").replaceChildren(...current.turns.flatMap((turn) => [
-    entry(`YOU · ROUND ${turn.round}`, turn.user, true),
-    ...(turn.answer ? [entry(`TEEK FACILITATOR · ROUND ${turn.round}`, turn.answer, false)] : []),
-  ]));
-  $("#human-checkpoint").textContent = catalog.humanTurns[Math.min(done, 3)];
-  $("#reply-label").textContent = `Your reserved seat · round ${Math.min(done + 1, 4)} of 4`;
+  $("#transcript").replaceChildren(...current.turns.flatMap(conversationEntries));
+  $("#human-checkpoint").textContent = current.turns.filter(turn => turn.answer).at(-1)?.dialogue?.question || catalog.humanTurns[Math.min(done, 3)];
+  $("#reply-label").textContent = `Your turn ${Math.min(done + 1, 4)} of 4 · the conversation waits for you`;
   $("#reply").placeholder = catalog.humanTurns[Math.min(done, 3)];
   const failed = current.status === "error";
   $("#contribute").hidden = current.status === "thinking" || current.status === "complete" || current.attempts >= 6;
   $("#completion").hidden = current.status !== "complete";
   $("#reply").readOnly = failed;
   if (failed) $("#reply").value = current.turns.at(-1).user;
-  $("#reply-button").textContent = failed ? `Retry saved contribution (${6 - current.attempts} attempts left)` : `Send round ${done + 1} of 4 ↗`;
+  $("#reply-button").textContent = failed ? `Retry saved contribution (${6 - current.attempts} attempts left)` : `Take my turn ${done + 1} of 4 ↗`;
   $("#reply-button").disabled = busy;
   if (current.status === "thinking") {
     showNotice(`Round ${done + 1} is being considered. You can leave; the result will be saved. No next round runs without you.`);
@@ -135,7 +170,7 @@ function renderJam() {
   } else if (failed) {
     showNotice(current.error, true);
   } else {
-    showNotice(current.status === "complete" ? "Complete. Your transcript and final decision memo are saved." : `Your turn. ${done} of 4 rounds complete.`);
+    showNotice(current.status === "complete" ? "Complete. Your conversation and final summary are saved." : `Your turn. ${done} of 4 rounds complete.`);
   }
 }
 
@@ -183,7 +218,6 @@ $("#start").onsubmit = async (event) => {
       topic: $(".topic[aria-pressed=true]").dataset.id,
       people,
       text: $("#opening").value,
-      consent: $("#consent").checked,
     });
     requestId = crypto.randomUUID();
     sessionStorage.setItem(requestKey, requestId);
@@ -233,7 +267,7 @@ $("#back").onclick = async () => {
 
 $("#export").onclick = () => {
   if (!current) return;
-  const text = `# ${roomName} × Teek jam\n\nModel: ${current.model}\nCreated: ${current.created}\nContext hash: ${current.contextHash}\nSimulated perspectives, not actual people or endorsements.\n\n${current.turns.map((turn) => `## Round ${turn.round}\n\n### You\n${turn.user}\n\n### Facilitator\n${turn.answer || "[No completed response]"}`).join("\n\n")}\n\n## Source snapshot\n${JSON.stringify(current.evidence, null, 2)}`;
+  const text = `# ${roomName} × Teek jam\n\nModel: ${current.model}\nCreated: ${current.created}\nContext hash: ${current.contextHash}\nSimulated perspectives, not actual people or endorsements.\n\n${current.turns.map(exportTurn).join("\n\n")}\n\n## Source snapshot\n${JSON.stringify(current.evidence, null, 2)}`;
   const url = URL.createObjectURL(new Blob([text], {type: "text/markdown"}));
   const anchor = element("a");
   anchor.href = url;

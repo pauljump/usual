@@ -21,3 +21,16 @@ h2{font:400 30px/1.2 "Iowan Old Style","Palatino Linotype",Georgia,serif;letter-
 .login-body{background:var(--paper)}.login-shell{width:min(100%,470px)}.login-card{border:1px solid var(--line);border-radius:2px;padding:46px;background:var(--surface);box-shadow:0 24px 70px rgba(48,44,36,.07)}.login-card h1{font-size:48px;line-height:1.02;margin:22px 0}.login-mark{width:36px;height:36px;border-radius:50%;background:#e4e2db;color:#514e48;font-size:17px;margin-bottom:32px}.login-card input{border-color:var(--line);border-radius:2px;background:white;font-size:14px}.login-error{border-radius:2px}
 .topic:hover,.person:hover{transform:none}
 @media(max-width:760px){header{padding:22px 20px}main{padding:0 20px}.intro{grid-template-columns:1fr;gap:32px;padding:62px 0 44px}h1{font-size:54px}.ticket{width:100%;display:grid;grid-template-columns:1fr auto;align-items:end;gap:4px 16px}.ticket strong{grid-row:1/3;grid-column:2;margin:0}.ticket .perforation{display:none}.ticket small{grid-column:1/3;margin-top:14px}.topics{grid-template-columns:1fr}.topic:nth-child(odd){border-right:0;padding-right:42px}.topic:nth-child(even){padding-left:4px}.topic:nth-child(odd):after{right:8px}.room{grid-template-columns:1fr;gap:28px}.table-top{min-height:150px;border-radius:2px}.people{grid-template-columns:1fr}.person:nth-child(odd){border-right:0}.person:nth-child(even){padding-left:0}.opening{grid-template-columns:1fr;gap:36px}.section{padding:44px 0}.entry.human{margin-left:4%}.login-card{padding:34px 26px}.login-card h1{font-size:42px}}
+
+/* Speaker-by-speaker conversation; never render model content as HTML. */
+#transcript{max-width:840px;margin:0 auto}
+.entry.speaker{margin-right:8%;border-left:3px solid #9a8660}
+.entry.speaker-1{border-left-color:#6e8b82}
+.entry.speaker-2{border-left-color:#8b789b}
+.entry.speaker .tag{font-size:14px;letter-spacing:0;text-transform:none;font-weight:700}
+.speaker-note{display:block;color:#827d73;font-size:10px;margin-top:14px}
+.entry.handoff{background:transparent;border:1px dashed #9c9e8d;padding:18px 24px;margin-left:8%}
+.entry.final-summary{border:2px solid #7d886a;margin-top:36px}
+.entry .body{overflow-wrap:anywhere}
+#contribute{border-top:2px solid #7d886a;padding-top:24px}
+@media(max-width:760px){.entry.speaker{margin-right:3%}.entry.handoff{margin-left:3%}}
