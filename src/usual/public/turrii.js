@@ -147,13 +147,63 @@ function exportTurn(turn) {
   return text;
 }
 
+let playbackTimer;
+let playbackActive = false;
+const playbackSeen = new Map();
+function playbackCount(key) {
+  if (playbackSeen.has(key)) return playbackSeen.get(key);
+  try { return Math.max(0, Number(sessionStorage.getItem(key)) || 0); } catch { return 0; }
+}
+function rememberPlayback(key, count) {
+  playbackSeen.set(key, count);
+  try { sessionStorage.setItem(key, String(count)); } catch {}
+}
 function renderChatTranscript() {
+  clearTimeout(playbackTimer);
+  playbackActive = false;
   const transcript = $('#transcript');
   const stickToBottom = transcript.dataset.jam !== current.id || transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight < 100;
   const position = transcript.scrollTop;
-  transcript.replaceChildren(...current.turns.flatMap(conversationEntries));
+  const last = current.turns.at(-1);
+  const key = 'teek-playback:' + location.pathname + ':' + current.id + ':' + last?.round;
+  const nodes = current.turns.slice(0, -1).flatMap(conversationEntries);
+  const latest = last ? conversationEntries(last) : [];
+  const replies = last?.dialogue?.messages || [];
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const count = reduced ? replies.length : Math.min(replies.length, playbackCount(key));
+  if (reduced) rememberPlayback(key, count);
+  if (last?.answer && replies.length && count < replies.length) {
+    playbackActive = true;
+    nodes.push(...latest.slice(0, 1 + count));
+    const pending = element('div', null, 'chat-playback');
+    pending.setAttribute('role', 'status');
+    pending.append(element('span', '•••', 'chat-dots'), element('span', 'Up next: ' + speakerName(replies[count].speaker) + ' · saved reply'));
+    const skip = element('button', 'Show all now', 'secondary');
+    skip.type = 'button';
+    const id = current.id;
+    skip.onclick = () => {
+      if (current?.id !== id) return;
+      rememberPlayback(key, replies.length);
+      renderJam();
+    };
+    pending.append(skip);
+    nodes.push(pending);
+    const delay = count === 0 ? 1400 : Math.min(6000, Math.max(2200, replies[count - 1].text.length * 12));
+    playbackTimer = setTimeout(() => {
+      if (current?.id !== id || $('#session').hidden) return;
+      rememberPlayback(key, count + 1);
+      renderJam();
+    }, delay);
+  } else nodes.push(...latest);
+  transcript.replaceChildren(...nodes);
   transcript.dataset.jam = current.id;
   transcript.scrollTop = stickToBottom ? transcript.scrollHeight : position;
+}
+function playbackControls() {
+  if (!playbackActive) return;
+  $('#contribute').hidden = true;
+  $('#completion').hidden = true;
+  showNotice('Playing saved replies one at a time. Your turn follows this exchange.');
 }
 
 function renderJam() {
@@ -182,6 +232,7 @@ function renderJam() {
   } else {
     showNotice(current.status === "complete" ? "Complete. Your conversation and final summary are saved." : `Your turn. ${done} of 4 rounds complete.`);
   }
+  playbackControls();
 }
 
 function schedulePoll() {
@@ -263,6 +314,8 @@ $("#contribute").onsubmit = async (event) => {
 
 $("#back").onclick = async () => {
   clearTimeout(poll);
+  clearTimeout(playbackTimer);
+  playbackActive = false;
   current = null;
   history.replaceState(null, "", location.pathname);
   $("#session").hidden = true;
