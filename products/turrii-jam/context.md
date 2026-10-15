@@ -105,6 +105,41 @@ person's body of work and responsibility are the main event. Show facts such as
 typed, pasted, revised, capture tier, and gaps. Avoid collapsing them into a moral
 score.
 
+## Supplied brand and GTM direction
+
+A founder-supplied 75-slide Turrii brief and go-to-market deck was reviewed on
+2026-10-14. It is product direction, not independent market evidence. It defines
+Turrii as verification for human-created thought leadership on LinkedIn and
+Substack, aimed broadly at U.S. technology thought leaders, professionals, and
+enthusiasts. Its primary KPI is plugin downloads; awareness and positive sentiment
+are secondary.
+
+The proposed product loop is concrete: a Turrii button appears in the editor; a
+post that clears a 70%+ human-created threshold receives a compact public line with
+fixed black, purple, and white bookends plus a unique proof code; the post then
+appears on the writer's Turrii profile with a more detailed breakdown. The brief
+explicitly allows light AI editing and says AI itself is not the enemy. Its three
+levels match the public free, $2.99, and $5.99 tiers, with progressively greater
+capture depth but the same outward accreditation.
+
+The deck's own grounding insight is the strategic crux: verification becomes useful
+only after enough respected thought leaders display it, so the launch plan seeks
+scale quickly. One strategy recruits 10 or more technology voices who have already
+complained about slop, then staggers their posts across two weeks. An alternate
+strategy creates an invitation-only “Turrii 10 Founders” cohort and opens access in
+scarce batches. Supporting ideas include high-frequency owned social, explainers,
+testimonials, a “Slop Cop,” a community leaderboard, media exclusives, a podcast
+blitz, and more theatrical launch stunts.
+
+This direction sharpens rather than resolves the core questions. The deck contains
+both a wide-adoption strategy and an exclusivity strategy; it treats downloads as
+the primary KPI even though the product's value depends on reader recognition and
+checker behavior; and some campaign ideas accuse or rank “slop” despite the more
+careful product claim that AI-assisted writing can still qualify. A jam should keep
+the useful product sequence—capture, receipt, public record—separate from the
+unvalidated assumption that a creator-led anti-slop movement supplies durable
+demand.
+
 ## Agent-side opportunity
 
 A more commercially compelling adjacent product may serve agent developers rather

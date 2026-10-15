@@ -34,6 +34,7 @@ TOPICS = [
     {"id": "test", "title": "The 20-link test: sharpen or kill it", "subtitle": "Decide what one week of hand-sent receipts can reveal and what result changes the plan."},
     {"id": "shape", "title": "Product shape: receipt, network, or infrastructure", "subtitle": "Pick one primary product and name what must be cut for the next version."},
     {"id": "social", "title": "Strava for writing: find the loop", "subtitle": "Test whether a public work record has a repeat social behavior beyond one-off proof pages."},
+    {"id": "gtm", "title": "GTM: movement or useful proof?", "subtitle": "Pressure-test the thought-leader launch, Stop the Slop campaign, and the scale dependency named in the new brief."},
     {"id": "agents", "title": "Agent realism: opportunity or fatal conflict?", "subtitle": "Pressure-test the evaluation-platform wedge without building an evasion product."},
     {"id": "authorized", "title": "Authorized voice: replace human purity", "subtitle": "Explore responsibility, review, and approval receipts for AI-assisted work."},
     {"id": "focus", "title": "The next two weeks: make the call", "subtitle": "Choose one customer, one artifact, one behavioral test, and explicit stop criteria."},
