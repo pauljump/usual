@@ -7,7 +7,7 @@ The agent that has already read it. Coding agents ask The Swarm before they read
   13,680 tokens saved for you · 4.1M saved on this page so far · https://thoughtswarm.tryusual.com/p/nextjs.org
 ```
 
-Part of Thought Swarm.
+Part of Usual. Paul’s 26 Oct decision is to consolidate this code into `pauljump/usual` (`/Users/mini-home/projects/usual/core`). This standalone repository remains the current source until that migration is completed; see [LAUNCH.md](LAUNCH.md#repository-ownership-decision--paul-26-oct).
 
 ## How it works
 

@@ -4,6 +4,10 @@ The Swarm launches as a 30-day public experiment, a proof of concept rather than
 
 This is the one checklist for the launch, reconciled across every thread on 26 Oct. Each item is marked **done**, **in progress**, **waiting on Paul** or **to do**.
 
+## Repository ownership decision — Paul, 26 Oct
+
+Thought Swarm belongs inside `pauljump/usual`, whose canonical local root is `/Users/mini-home/projects/usual/core`. The standalone `pauljump/thought-swarm` repository is the current implementation location, not the desired final ownership structure. Migration has not happened yet. Preserve the existing source history, unpublished local commits, deployed Worker, D1 data and canonical hostname when consolidating; update public source links after the code is available in Usual. Do not publish a second standalone product repository as part of the launch plan below.
+
 ## Decisions so far (26 Oct)
 
 - **Angle:** iOS and App Store submission. Agents read Apple's guidelines and docs constantly; Paul's agents read the App Review Guidelines 8 times in a month.
@@ -60,8 +64,8 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 
 ### 4. Day 0 (a Tuesday or Wednesday)
 
-- **to do** Before the repo goes public: drop "on Agent Relay" from the GitHub repo description with `gh repo edit pauljump/thought-swarm --description "The Swarm: coding agents share what they've already read. A 30-day experiment in how often agents re-read the same docs. Part of Usual (tryusual.com)."`
-- **to do** 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts from a clean machine.
+- **superseded by Usual consolidation decision** Before the repo goes public: drop "on Agent Relay" from the GitHub repo description with `gh repo edit pauljump/thought-swarm --description "The Swarm: coding agents share what they've already read. A 30-day experiment in how often agents re-read the same docs. Part of Usual (tryusual.com)."`
+- **superseded by Usual consolidation decision** 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts from a clean machine.
 - **to do** 08:30 PT: post the X thread with the video, and pin it. 09:00 PT: Show HN.
 - **to do** Reply to everyone for the first 3 hours. At about 3 hours, quote-tweet a scoreboard screenshot.
 
@@ -100,7 +104,7 @@ How it works:
 - It always fetches the live page, so answers are never stale. Fetching is cheap; reading is what costs tokens.
 - The cache key is a hash of the page's text plus the digest recipe, so a changed page is a new entry.
 - Each page is digested once, by Claude, for everyone.
-- Only the URL is stored. robots.txt is respected, with an opt-out for `ThoughtSwarm`.
+- Public source snapshots and digests are stored. Agent identifiers are hashed. robots.txt is respected, with an opt-out for `ThoughtSwarm`.
 - A public scoreboard shows tokens saved and what agents are reading. A page shows up there only after three different agents have read it.
 
 It runs for 30 days. Then I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to.
@@ -114,7 +118,7 @@ Install: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.co
 3. Every receipt is counted on a public scoreboard: how many agents read the same page, and how many tokens they didn't have to burn. thoughtswarm.tryusual.com/live [scoreboard GIF]
 4. It never goes stale. The live page is fetched every time, and the digest is keyed on a hash of its text. Need the exact wording of rule 4.3? Your agent asks for that one section and gets it word for word.
 5. Add your agent to the experiment. In Claude Code, one line: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`. Any agent with a shell: paste the one-line prompt from the README.
-6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Only URLs are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/thought-swarm
+6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Public source snapshots and digests are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/thought-swarm
 
 ## Later: Agent Relay (not part of launch)
 
