@@ -33,10 +33,23 @@ describe("MCP endpoint", () => {
     const call: any = await (await mcp(app, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "read_page", arguments: { url: URL1 } } }, session!)).json();
     expect(call.result.isError).toBeUndefined();
     expect(call.result.content[0].text).toContain("⬡ swarm receipt");
-    expect(call.result.structuredContent.receipt.hit).toBe(false);
+    expect(call.result.content[0].text).toContain("SQLite docs.");
+    expect(call.result.structuredContent).toBeUndefined();
 
     const stats: any = await (await mcp(app, { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "swarm_stats", arguments: {} } }, session!)).json();
     expect(stats.result.content[0].text).toContain("1 reads to 1 agents");
+  });
+
+  it("counts new sessions from the same address as the same agent", async () => {
+    const { app, web } = await setup();
+    web.pages.set(URL1, { body: pageHtml("SQLite docs.") });
+    const read = async (id: number) => {
+      const init = await mcp(app, { jsonrpc: "2.0", id, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "1" } } });
+      return (await mcp(app, { jsonrpc: "2.0", id: id + 1, method: "tools/call", params: { name: "read_page", arguments: { url: URL1 } } }, init.headers.get("mcp-session-id")!)).json();
+    };
+    await read(1);
+    const second: any = await read(3);
+    expect(second.result.content[0].text).toContain("1 agent has read this page");
   });
 
   it("reports read failures as tool errors, not protocol errors", async () => {

@@ -59,7 +59,6 @@ export async function handleMcp(req: Request, ctx: McpContext): Promise<Response
   } catch {
     return rpcJson({ jsonrpc: "2.0", id: null, error: { code: -32700, message: "Parse error" } });
   }
-  const sessionId = req.headers.get("mcp-session-id") ?? undefined;
   const messages = Array.isArray(payload) ? payload : [payload];
   const replies: unknown[] = [];
   let newSession: string | undefined;
@@ -67,7 +66,9 @@ export async function handleMcp(req: Request, ctx: McpContext): Promise<Response
   for (const msg of messages) {
     if (msg.id === undefined || msg.id === null) continue; // notification or response: nothing to answer
     if (msg.method === "initialize") newSession = crypto.randomUUID();
-    replies.push(await dispatch(msg, ctx, sessionId ?? newSession ?? ctx.clientIp));
+    // One agent per address, like the plain /read path, so restarting a client
+    // (a new MCP session) doesn't count as another agent toward the public threshold.
+    replies.push(await dispatch(msg, ctx, ctx.clientIp));
   }
   if (replies.length === 0) return new Response(null, { status: 202 });
   const body = Array.isArray(payload) ? replies : replies[0];
@@ -98,10 +99,9 @@ async function dispatch(msg: RpcRequest, ctx: McpContext, agentId: string): Prom
         if (typeof args.url !== "string") return ok(toolText("read_page needs a url string.", true));
         try {
           const r = await ctx.swarm.read(args.url, agentId, { allowMiss: () => ctx.allowMiss(ctx.clientIp) });
-          return ok({
-            ...toolText(`${r.markdown}\n\n${r.receipt_line}`),
-            structuredContent: { url: r.url, receipt: r.receipt },
-          });
+          // Text only: clients such as Claude Code show the model structuredContent
+          // instead of the text when both are present, which would hide the digest.
+          return ok(toolText(`${r.markdown}\n\n${r.receipt_line}`));
         } catch (err) {
           return ok(toolText(`Couldn't read ${args.url}: ${ctx.describeError(err)}`, true));
         }
