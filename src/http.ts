@@ -22,7 +22,7 @@ export interface AppConfig {
 const DAY = 24 * 60 * 60 * 1000;
 
 export function pasteLine(base: string): string {
-  return `Before you read any public docs page, ask the swarm first: curl -s '${base.replace(/\/$/, "")}/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.`;
+  return `Before you read any public docs page, ask the swarm first: curl -s '${base.replace(/\/$/, "")}/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.`;
 }
 
 export class App {
@@ -67,10 +67,12 @@ export class App {
   private async read(req: Request, url: URL): Promise<Response> {
     let target = url.searchParams.get("url");
     let agent = url.searchParams.get("agent");
+    let section = url.searchParams.get("section") ?? undefined;
     if (req.method === "POST") {
-      const body = (await req.json().catch(() => ({}))) as { url?: unknown; agent?: unknown };
+      const body = (await req.json().catch(() => ({}))) as { url?: unknown; agent?: unknown; section?: unknown };
       if (typeof body.url === "string") target = body.url;
       if (typeof body.agent === "string") agent = body.agent;
+      if (typeof body.section === "string") section = body.section;
     }
     if (!target) return json({ error: "Pass the page to read as ?url=… or a JSON body {\"url\": \"…\"}." }, 400);
     const ip = clientIp(req);
@@ -81,6 +83,7 @@ export class App {
     const result = await this.c.swarm.read(target, agent || req.headers.get("x-swarm-agent") || ip, {
       allowMiss: seed ? undefined : () => this.allowMiss(ip),
       seed,
+      section,
     });
     if ((req.headers.get("accept") ?? "").includes("text/markdown") || url.searchParams.get("format") === "text") {
       return text(`${result.markdown}\n\n${result.receipt_line}\n\n${UNTRUSTED_NOTE}`, 200, "text/markdown; charset=utf-8");
@@ -249,8 +252,7 @@ Any agent with a shell, paste this into the chat:
   ${pasteLine(base)}
 
 Endpoints
-  GET  ${root}/read?url=<page>        digest + receipt (JSON; add &format=text for markdown)
-  POST ${root}/a2a                    A2A JSON-RPC (message/send)
+  GET  ${root}/read?url=<page>        digest + receipt (JSON; add &format=text for markdown, &section=<name> for one part verbatim)
   POST ${root}/mcp                    MCP (Streamable HTTP): tools read_page, swarm_stats
   GET  ${root}/live                   the public scoreboard page
   GET  ${root}/badge/<domain>.svg     README badge for a docs site

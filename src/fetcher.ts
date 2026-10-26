@@ -3,7 +3,7 @@ import { extractText, type Extracted } from "./extract.js";
 import { AGENT_TOKEN, isAllowed, parseRobots } from "./robots.js";
 import { assertPublicTarget, normalizeUrl } from "./url.js";
 
-export const USER_AGENT = `Mozilla/5.0 (compatible; ${AGENT_TOKEN}/0.1; +https://arelay.to/swarm)`;
+export const USER_AGENT = `Mozilla/5.0 (compatible; ${AGENT_TOKEN}/0.1; +https://thoughtswarm.tryusual.com)`;
 const MAX_BYTES = 3_000_000;
 const ROBOTS_TTL_MS = 60 * 60 * 1000;
 const TEXT_TYPES = /^(text\/(html|plain|markdown|x-markdown)|application\/(xhtml\+xml|json))/i;
@@ -82,7 +82,13 @@ export class PageFetcher {
     if (!rules) {
       try {
         const res = await this.get(`${url.origin}/robots.txt`, "text/plain");
-        rules = res.ok ? parseRobots(await readCapped(res, 500_000)) : [];
+        // Some sites send real rules with an error status (Stack Overflow answers 418 with "Disallow: /"),
+        // so any body that looks like robots.txt is obeyed. A site that refuses to show us its robots.txt
+        // (401/403) is refusing us. Other failures (404, 5xx, network) mean there are no rules to follow.
+        const body = await readCapped(res, 500_000).catch(() => "");
+        if (res.ok || /^\s*user-agent\s*:/im.test(body)) rules = parseRobots(body);
+        else if (res.status === 401 || res.status === 403) rules = parseRobots("User-agent: *\nDisallow: /");
+        else rules = [];
       } catch {
         rules = [];
       }

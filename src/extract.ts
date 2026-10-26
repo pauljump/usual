@@ -25,6 +25,8 @@ const STRUCTURAL = new Set(["html", "body", "main", "article"]);
 export interface Extracted {
   title: string;
   text: string;
+  /** Credit line the digest must carry, for sources licensed with attribution. */
+  attribution?: string;
 }
 
 function isElement(n: Node): n is T.Element {

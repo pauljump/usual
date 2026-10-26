@@ -1,5 +1,6 @@
 import { renderDigest, type Digest, type Digester } from "./digest.js";
 import { estimateTokens } from "./extract.js";
+import { outline, section as findSection, type SectionResult } from "./sections.js";
 import { sha256Hex, type PageFetcher } from "./fetcher.js";
 import type { DigestRow, SwarmStore } from "./store.js";
 import { domainOf, normalizeUrl } from "./url.js";
@@ -10,7 +11,7 @@ export interface Receipt {
   agents_on_page: number;
   reads_on_page: number;
   page_tokens: number;
-  digest_tokens: number;
+  digest_tokens: number; // what this read returned: digest, outline and any section
   tokens_saved: number; // for this read: 0 on a miss
   tokens_saved_on_page: number;
   page_url: string; // public stats page for the domain
@@ -21,7 +22,8 @@ export interface ReadResult {
   title: string;
   content_hash: string;
   digest: Digest;
-  markdown: string;
+  markdown: string; // digest, page outline, and the requested section if any
+  section?: SectionResult;
   receipt: Receipt;
   receipt_line: string;
 }
@@ -55,7 +57,7 @@ export class Swarm {
 
   // Fetching is cheap and keeps answers current; digesting is the expensive
   // step, done once per (page content, recipe) for everyone.
-  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean } = {}): Promise<ReadResult> {
+  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean; section?: string } = {}): Promise<ReadResult> {
     const page = await this.o.fetcher.fetchPage(normalizeUrl(rawUrl));
     const contentHash = await sha256Hex(page.text);
     const key = await sha256Hex([page.url, contentHash, this.o.digester.recipe].join("\n"));
@@ -68,6 +70,7 @@ export class Swarm {
       if (!job) {
         job = (async () => {
           const digest = await this.o.digester.digest({ url: page.url, title: page.title, text: page.text });
+          if (page.attribution) digest.attribution = page.attribution;
           const newRow = {
             key,
             url: page.url,
@@ -92,8 +95,12 @@ export class Swarm {
     }
 
     const digest = JSON.parse(row.digest_json) as Digest;
-    const markdown = renderDigest(digest, row.url);
-    const saved = hit ? Math.max(0, row.page_tokens - row.digest_tokens) : 0;
+    // The outline and section come from the live page text on every read, so
+    // they need no model call and are never stale.
+    const sec = opts.section?.trim() ? findSection(page.text, opts.section) : undefined;
+    const markdown = renderRead(renderDigest(digest, row.url), outline(page.text), sec);
+    const served = estimateTokens(markdown);
+    const saved = hit ? Math.max(0, row.page_tokens - served) : 0;
     const at = this.now();
     const domain = domainOf(row.url);
     // Seeding (pre-loading pages before launch) is not a read by an agent, so
@@ -114,14 +121,26 @@ export class Swarm {
       agents_on_page: stats.agents,
       reads_on_page: stats.reads,
       page_tokens: row.page_tokens,
-      digest_tokens: row.digest_tokens,
+      digest_tokens: served,
       tokens_saved: saved,
       tokens_saved_on_page: stats.tokens_saved,
       page_url: `${this.o.publicBaseUrl.replace(/\/$/, "")}/p/${domain}`,
     };
     if (!opts.seed) await Promise.resolve(this.o.onRead?.({ url: row.url, domain, hit, tokens_saved: saved, at })).catch(() => {});
-    return { url: row.url, title: row.title, content_hash: contentHash, digest, markdown, receipt, receipt_line: receiptLine(receipt, at) };
+    return { url: row.url, title: row.title, content_hash: contentHash, digest, markdown, ...(sec ? { section: sec } : {}), receipt, receipt_line: receiptLine(receipt, at) };
   }
+}
+
+function renderRead(digest: string, pageOutline: string, sec?: SectionResult): string {
+  const out = [digest];
+  if (pageOutline) {
+    out.push("", "## Sections on this page", "The digest above is short. For any section below, ask the swarm for it by its name or number to get its full text.", "", pageOutline);
+  }
+  if (sec) {
+    out.push("", `## Section: ${sec.query}`);
+    out.push(sec.found ? `Full text of this part of the page, copied from the live page:\n\n${sec.text}` : `Nothing on this page matches "${sec.query}". Try a heading or rule number from the outline.`);
+  }
+  return out.join("\n");
 }
 
 export class RateLimited extends Error {

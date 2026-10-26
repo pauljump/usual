@@ -170,7 +170,7 @@ export function liveHtml(base: string): string {
   <p class="eyebrow">The particulars</p><h3>At a glance.</h3>
   <dl>
     <dt>Status</dt><dd>Public beta</dd>
-    <dt>Works with</dt><dd>Claude Code (MCP), any agent with a shell, and A2A agents</dd>
+    <dt>Works with</dt><dd>Claude Code (MCP) and any agent with a shell</dd>
     <dt>Reads</dt><dd>Public pages only. robots.txt is respected.</dd>
     <dt>Stores</dt><dd>The page URL and its digest. Nothing else your agent sends.</dd>
     <dt>Price</dt><dd>On the house</dd>

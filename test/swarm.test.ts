@@ -59,6 +59,25 @@ describe("The Swarm read path", () => {
     expect(digester.calls).toBe(0);
   });
 
+  it("treats a robots.txt it isn't allowed to read as disallowing everything", async () => {
+    const { app, web, digester } = await setup();
+    web.pages.set("https://nextjs.org/robots.txt", { status: 403, type: "text/plain", body: "Forbidden" });
+    web.pages.set(URL1, { body: pageHtml("Blocked.") });
+    const res = await get(app, `/read?url=${encodeURIComponent(URL1)}`);
+    expect(res.status).toBe(403);
+    expect(digester.calls).toBe(0);
+  });
+
+  it("obeys robots.txt rules sent with an error status", async () => {
+    const { app, web, digester } = await setup();
+    web.pages.set("https://nextjs.org/robots.txt", { status: 418, type: "text/plain", body: "User-agent: *\nDisallow: /" });
+    web.pages.set(URL1, { body: pageHtml("Blocked.") });
+    const res = await get(app, `/read?url=${encodeURIComponent(URL1)}`);
+    expect(res.status).toBe(403);
+    expect(res.body.error).toContain("robots.txt");
+    expect(digester.calls).toBe(0);
+  });
+
   it("refuses private targets and binary content", async () => {
     const { app, web } = await setup();
     expect((await get(app, `/read?url=${encodeURIComponent("http://169.254.169.254/latest/meta-data")}`)).status).toBe(400);
