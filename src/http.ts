@@ -250,7 +250,7 @@ Any agent with a shell, paste this into the chat:
 
 Endpoints
   GET  ${root}/read?url=<page>        digest + receipt (JSON; add &format=text for markdown)
-  POST ${root}/a2a                    A2A JSON-RPC (message/send), used by arelay.to/swarm
+  POST ${root}/a2a                    A2A JSON-RPC (message/send)
   POST ${root}/mcp                    MCP (Streamable HTTP): tools read_page, swarm_stats
   GET  ${root}/live                   the public scoreboard page
   GET  ${root}/badge/<domain>.svg     README badge for a docs site
