@@ -1,0 +1,16 @@
+# Optional, license-gated BARkey backend. Default builds continue to use project.yml / Hex.
+include:
+  - path: project.yml
+packages:
+  KeyboardKit:
+    url: https://github.com/KeyboardKit/KeyboardKit.git
+    exactVersion: 10.3.0
+targets:
+  TelegraphKeyboard:
+    sources:
+      - path: KeyboardKitPro
+    dependencies:
+      - package: KeyboardKit
+    settings:
+      base:
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) USUAL_KEYBOARDKIT_PRO"

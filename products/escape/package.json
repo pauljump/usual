@@ -39,7 +39,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pauljump/escape-webview.git"
+    "url": "git+https://github.com/pauljump/usual.git",
+    "directory": "products/escape"
   },
-  "homepage": "https://github.com/pauljump/escape-webview#readme"
+  "homepage": "https://github.com/pauljump/usual/tree/main/products/escape"
 }

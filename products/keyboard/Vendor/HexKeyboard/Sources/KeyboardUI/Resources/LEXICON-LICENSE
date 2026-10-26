@@ -1,0 +1,30 @@
+en.lexicon is built by scripts/lexicon from two sources. Hex's own code is MIT (see LICENSE at the repository root);
+the word list and counts inside en.lexicon carry these notices.
+
+Words: SCOWL (Spell Checker Oriented Word Lists) 2020.12.07 by Kevin Atkinson, http://wordlist.aspell.net/
+en_US lists up to size 60 and proper names up to 50, plus larger-list words as common as the median size-60 word.
+
+  Copyright 2000-2018 by Kevin Atkinson
+
+  Permission to use, copy, modify, distribute and sell these word
+  lists, the associated scripts, the output created from the scripts,
+  and its documentation for any purpose is hereby granted without fee,
+  provided that the above copyright notice appears in all copies and
+  that both that copyright notice and this permission notice appear in
+  supporting documentation. Kevin Atkinson makes no representations
+  about the suitability of this array for any purpose. It is provided
+  "as is" without express or implied warranty.
+
+  SCOWL's component lists are public domain or under similar permissive notices; the full text is in the
+  Copyright file of the SCOWL release.
+
+Frequencies: Google Books Ngram Viewer, version 20200217, English Fiction 1-grams and 2-grams, books from 1980 on,
+https://storage.googleapis.com/books/ngrams/books/datasetsv3.html
+
+  This compilation is licensed under a Creative Commons Attribution 3.0 Unported License,
+  https://creativecommons.org/licenses/by/3.0/
+  en.lexicon contains counts derived from it (summed per word, rounded to tenths of a nat of log-probability).
+
+en.phrases is built by scripts/phrases from the same Google Books Ngram English Fiction release (2-grams and 3-grams,
+books from 1980 on, CC BY 3.0 as above): for each word and pair of words, the words that most often follow them, with
+their counts turned into probabilities.

@@ -1,3 +1,7 @@
+# Escape · part of Usual
+
+Canonical source: [pauljump/usual](https://github.com/pauljump/usual), `products/escape/`. The original Git history is preserved in this repository. The Usual installer serves its pinned, patched distribution from `src/usual/vendor/escape_webview/`; updating source does not automatically replace that release.
+
 # escape-webview
 
 Links opened inside the **X, Instagram, Facebook, TikTok, LINE, …** apps run in a
@@ -15,7 +19,7 @@ and the card appears. Open it in Safari and nothing happens, which is the point.
 **Point your coding agent at this repo and it installs itself** — [`AGENTS.md`](AGENTS.md)
 is written for Claude Code, Codex, Cursor or similar:
 
-> Install https://github.com/pauljump/escape-webview into this site. Follow AGENTS.md.
+> Install Escape from https://github.com/pauljump/usual/tree/main/products/escape into this site. Follow products/escape/AGENTS.md.
 
 ---
 

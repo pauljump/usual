@@ -19,5 +19,4 @@ using vault-supplied Cloudflare credentials and the portfolio deployment policy.
 The `thought-swarm` Worker, `thoughtswarm.tryusual.com` route, D1 database ID,
 existing digests and share links are unchanged. Runtime secrets belong in the vault.
 
-GitHub publication and the updated website source link are pending approval:
-Usual already had nine unrelated unpublished commits before this import.
+This import is included in the Usual product consolidation. Website deployments are separate from GitHub source publication.

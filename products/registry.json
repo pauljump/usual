@@ -1,0 +1,103 @@
+{
+  "repository": "https://github.com/pauljump/usual",
+  "products": [
+    {
+      "id": "vibecheck",
+      "name": "Vibecheck",
+      "path": "products/vibecheck",
+      "source": "src/usual/",
+      "visibility": "public"
+    },
+    {
+      "id": "choices",
+      "name": "Choices",
+      "path": "products/choices",
+      "source": "src/usual/",
+      "visibility": "public"
+    },
+    {
+      "id": "recall",
+      "name": "Recall",
+      "path": "products/recall",
+      "source": "src/usual/recall_core/",
+      "visibility": "public"
+    },
+    {
+      "id": "loops",
+      "name": "Loops",
+      "path": "products/loops",
+      "source": "src/usual/loops.py",
+      "visibility": "public"
+    },
+    {
+      "id": "pop",
+      "name": "Pop",
+      "path": "products/pop",
+      "source": "src/usual/pop.html",
+      "visibility": "public"
+    },
+    {
+      "id": "escape",
+      "name": "Escape",
+      "path": "products/escape",
+      "source": "products/escape/",
+      "visibility": "public"
+    },
+    {
+      "id": "where",
+      "name": "Where",
+      "path": "products/where",
+      "source": "src/usual/where.py",
+      "visibility": "public"
+    },
+    {
+      "id": "proof",
+      "name": "Proof",
+      "path": "products/proof",
+      "source": "src/usual/proof_jam.py",
+      "visibility": "private workshop"
+    },
+    {
+      "id": "teek",
+      "name": "Teek",
+      "path": "products/teek",
+      "source": "src/usual/teek.py",
+      "visibility": "private hub"
+    },
+    {
+      "id": "bait",
+      "name": "Bait",
+      "path": "products/bait",
+      "source": "src/usual/bait/",
+      "visibility": "public"
+    },
+    {
+      "id": "bait-lab",
+      "name": "Bait Lab",
+      "path": "products/bait-lab",
+      "source": "products/bait-lab/",
+      "visibility": "experiment"
+    },
+    {
+      "id": "bait-shopify",
+      "name": "Bait for Shopify",
+      "path": "products/bait-shopify",
+      "source": "products/bait-shopify/",
+      "visibility": "development"
+    },
+    {
+      "id": "thought-swarm",
+      "name": "Thought Swarm",
+      "path": "products/thought-swarm",
+      "source": "products/thought-swarm/",
+      "visibility": "public"
+    },
+    {
+      "id": "keyboard",
+      "name": "Usual Keyboard",
+      "path": "products/keyboard",
+      "source": "products/keyboard/",
+      "visibility": "development"
+    }
+  ]
+}

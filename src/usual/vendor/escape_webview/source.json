@@ -2,10 +2,10 @@
   "schema_version": 1,
   "name": "escape-webview",
   "version": "1.0.0",
-  "repository": "https://github.com/pauljump/escape-webview",
+  "repository": "https://github.com/pauljump/usual/tree/main/products/escape",
   "commit": "8ded426d530638ea334bfd137345114973f3d602",
   "license": "MIT",
-  "integration": "Pinned upstream dependency with one explicit Usual integration patch. Upstream remains canonical; Usual owns its catalog and installation.",
+  "integration": "Maintained in products/escape within Usual. This pinned runtime distribution retains its original version and explicit integration patch.",
   "files": {
     "escape-webview.js": "cd94ccce483e2be8aa973feb345fdcdad80bce4511c37484df5eed571ac81c39",
     "escape-webview.upstream.js": "d0bfd537046e22021070c26a33c6af8e54d9a073d9fed3bec37f948905268b46",
@@ -34,5 +34,6 @@
       "to": "GUIDE.menu.tap",
       "reason": "The generic menu object defines tap, not trigger. Correct visible undefined text in generic or forced desktop card."
     }
-  ]
+  ],
+  "historical_repository": "https://github.com/pauljump/escape-webview"
 }

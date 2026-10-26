@@ -250,7 +250,7 @@
       "maturity": "Pinned upstream widget",
       "maintainer": "pauljump",
       "source": {
-        "url": "https://github.com/pauljump/escape-webview",
+        "url": "https://github.com/pauljump/usual/tree/main/products/escape",
         "license": "MIT",
         "version": "1.0.0+usual.1",
         "revision": "8ded426d530638ea334bfd137345114973f3d602",

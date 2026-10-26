@@ -1,3 +1,5 @@
+> **All Usual products live here.** [Browse the product directory](products/README.md) — including Thought Swarm, Proof, Escape, Bait and Usual Keyboard. Star this repository to follow the collection.
+
 # Usual
 
 **Your AI, how you like it.**

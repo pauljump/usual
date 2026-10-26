@@ -1,0 +1,148 @@
+name: Telegraph
+options:
+  bundleIdPrefix: com.pauljump
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  HexKeyboard:
+    path: ../Vendor/HexKeyboard
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1"
+    DEVELOPMENT_TEAM: 99US464DK4
+    SUPPORTED_PLATFORMS: iphoneos iphonesimulator
+    SUPPORTS_MACCATALYST: NO
+    CODE_SIGN_STYLE: Automatic
+
+schemes:
+  Telegraph:
+    build:
+      targets:
+        Telegraph: all
+        TelegraphKeyboard: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+    test:
+      targets: [TelegraphUITests, TelegraphActionTests]
+
+targets:
+  Telegraph:
+    type: application
+    platform: iOS
+    sources:
+      - path: Telegraph/Sources
+      - path: Shared
+      - path: Telegraph/Assets.xcassets
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pauljump.telegraph
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        MARKETING_VERSION: "0.3"
+        CURRENT_PROJECT_VERSION: "8"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: Telegraph/Telegraph.entitlements
+    info:
+      path: Telegraph/Info.plist
+      properties:
+        CFBundleDisplayName: Usual
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            tail20c872.ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        ITSAppUsesNonExemptEncryption: false
+        LSSupportsOpeningDocumentsInPlace: false
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.pauljump.telegraph.lexicon
+            UTTypeDescription: Telegraph words
+            UTTypeConformsTo: [public.json, public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [telegraph]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Telegraph words
+            LSHandlerRank: Owner
+            LSItemContentTypes: [com.pauljump.telegraph.lexicon]
+    dependencies:
+      - target: TelegraphKeyboard
+        embed: true
+
+  TelegraphKeyboard:
+    dependencies:
+      - package: HexKeyboard
+        product: KeyboardUI
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TelegraphKeyboard/Sources
+        excludes: [KeyboardView.swift, KeyboardModel.swift]
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pauljump.telegraph.keyboard
+        MARKETING_VERSION: "0.3"
+        CURRENT_PROJECT_VERSION: "8"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: TelegraphKeyboard/TelegraphKeyboard.entitlements
+    info:
+      path: TelegraphKeyboard/Info.plist
+      properties:
+        CFBundleDisplayName: Usual
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            tail20c872.ts.net:
+              NSIncludesSubdomains: true
+              NSExceptionAllowsInsecureHTTPLoads: true
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).KeyboardViewController"
+          NSExtensionAttributes:
+            IsASCIICapable: true
+            PrefersRightToLeft: false
+            PrimaryLanguage: en-US
+            RequestsOpenAccess: true
+
+  TelegraphUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [TelegraphUITests]
+    dependencies:
+      - target: Telegraph
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pauljump.telegraph.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Telegraph
+
+  TelegraphActionTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: TelegraphActionTests
+      - path: TelegraphKeyboard/Sources/KeyboardViewController.swift
+      - path: Shared/MiniClient.swift
+    dependencies:
+      - target: Telegraph
+      - package: HexKeyboard
+        product: KeyboardUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.pauljump.telegraph.actiontests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Telegraph.app/Telegraph"
+        BUNDLE_LOADER: "$(TEST_HOST)"
