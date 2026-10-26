@@ -100,8 +100,21 @@ export class App {
         const info = await shareInfo(this.c.publicBaseUrl,row,this.c.store);
         return html(documentHtml(this.c.publicBaseUrl, JSON.parse(row.digest_json), row.url, row.created_at, "Saved digest. Use the agent-readable version for a token-saving receipt.", info));
       }
+      if (path.startsWith("/admin/") && !this.isAdmin(req)) return json({ error: "Unauthorized." }, 401);
+      if (path === "/admin/agents" && req.method === "GET") {
+        const agents = await this.c.store.agents(Math.min(1000, Number(url.searchParams.get("limit")) || 200));
+        return json({ agents: agents.map((a) => ({ ...a, internal: Boolean(a.internal), sample_urls: a.sample_urls ? a.sample_urls.split(",") : [] })) });
+      }
+      if (path === "/admin/internal-agents" && req.method === "POST") {
+        const body = await req.json().catch(() => ({})) as { agents?: unknown; agent_ids?: unknown; label?: unknown; internal?: unknown };
+        const list = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string") ? v as string[] : [];
+        const hashes = [...list(body.agents), ...await Promise.all(list(body.agent_ids).map((id) => this.c.swarm.hashAgent(id)))];
+        if (!hashes.length || hashes.length > 1000) return json({ error: "Pass 1 to 1000 agent hashes as agents, or raw agent ids or IPs as agent_ids." }, 400);
+        const internal = body.internal !== false;
+        await this.c.store.markInternal(hashes, typeof body.label === "string" ? body.label.slice(0, 200) : "internal", internal);
+        return json({ internal, agents: hashes });
+      }
       if (path === "/admin/ingest" && req.method === "POST") {
-        if (!this.c.adminToken || req.headers.get("authorization") !== `Bearer ${this.c.adminToken}`) return json({ error: "Unauthorized." }, 401);
         const body = await req.json() as any;
         if (typeof body.url !== "string" || typeof body.text !== "string" || !body.text.trim() || body.text.length > 4_000_000 || typeof body.title !== "string") return json({ error: "Provide a public URL, title and source text (maximum 4 million characters)." }, 400);
         const target = normalizeUrl(body.url);
@@ -195,6 +208,10 @@ export class App {
     });
   }
 
+  private isAdmin(req: Request): boolean {
+    return Boolean(this.c.adminToken) && req.headers.get("authorization") === `Bearer ${this.c.adminToken}`;
+  }
+
   private allowMiss(ip: string): boolean {
     const limit = this.c.missesPerHour ?? 60;
     const now = Date.now();
@@ -220,7 +237,7 @@ export class App {
       last_24h: { ...day, hit_rate: day.reads ? day.hits / day.reads : 0 },
       top_pages_24h: top,
       now_reading: recent.map((r) => ({ ...r, hit: Boolean(r.hit) })),
-      privacy: `Pages appear here only after ${PUBLIC_MIN_AGENTS} different agents have read them. Questions and code from agents are never stored.`,
+      privacy: `Pages appear here only after ${PUBLIC_MIN_AGENTS} different agents have read them. Agents marked as internal testing are excluded. Questions and code from agents are never stored.`,
     };
   }
 
@@ -348,7 +365,7 @@ A shared library of AI-generated summaries (digests) of public documents. People
 
 ## Interpret the page
 - The library lists curated documents available to read, not evidence of user activity.
-- The activity scoreboard lists document requests, including possible tests and repeats. Agent identifiers are not verified unique people.
+- The activity scoreboard lists document requests, including repeats. Agents marked as internal (tests, verification, seeding) are excluded. Agent identifiers are not verified unique people.
 - Tokens saved are a character-based estimate of full source text minus returned text on cached reads, not measured billing savings. Browser views, preview crawlers, sharing and preload jobs do not count as agent reads.
 `;
 }

@@ -56,6 +56,11 @@ export class Swarm {
   }
 
   // Saved snapshots avoid network and extraction work until an explicit refresh.
+  // The stored form of an agent id or IP. Raw ids are never stored.
+  hashAgent(agentId: string): Promise<string> {
+    return sha256Hex(this.o.agentSalt + "\n" + agentId);
+  }
+
   async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean; section?: string; refresh?: boolean } = {}): Promise<ReadResult> {
     const normalized = normalizeUrl(rawUrl);
     if (!opts.refresh) {
@@ -136,7 +141,7 @@ export class Swarm {
       url: row.url,
       domain,
       digest_key: row.key,
-      agent: await sha256Hex(this.o.agentSalt + "\n" + agentId),
+      agent: await this.hashAgent(agentId),
       hit,
       tokens_saved: saved,
       at,

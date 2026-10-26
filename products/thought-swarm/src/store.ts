@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS source_chunks (
 );
 CREATE TABLE IF NOT EXISTS source_snapshots (digest_key TEXT PRIMARY KEY, outline TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS page_aliases (url TEXT PRIMARY KEY, canonical_url TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS internal_agents (
+  agent TEXT PRIMARY KEY, label TEXT NOT NULL, marked_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS library (
   url TEXT PRIMARY KEY, collection TEXT NOT NULL, status TEXT NOT NULL,
   detail TEXT NOT NULL, checked_at INTEGER NOT NULL
@@ -87,6 +90,15 @@ export interface PublicPage {
 // A page only shows up on public surfaces once this many different agents
 // have read it, so one person's browsing never appears in the feed.
 export const PUBLIC_MIN_AGENTS = 3;
+
+// Reads by agents an admin marked as internal (tests, verification, seeding)
+// stay in the reads table but never count on public surfaces or receipts.
+const COUNTED = "agent NOT IN (SELECT agent FROM internal_agents)";
+
+export interface AgentSummary {
+  agent: string; reads: number; pages: number; first_at: number; last_at: number;
+  sample_urls: string; internal: number; label: string | null;
+}
 
 export interface LibraryEntry {
   url: string; collection: string; status: string; detail: string;
@@ -174,6 +186,25 @@ export class SwarmStore {
     return {entries,total,page,page_size,q,source,status,collection,sources,ready:ready?.n ?? 0};
   }
 
+  async markInternal(agents: string[], label: string, internal = true): Promise<void> {
+    for (const agent of agents) {
+      if (internal) await this.db.run("INSERT OR REPLACE INTO internal_agents (agent, label, marked_at) VALUES (?, ?, ?)", [agent, label, Date.now()]);
+      else await this.db.run("DELETE FROM internal_agents WHERE agent = ?", [agent]);
+    }
+  }
+
+  // Every agent hash that has read anything, for deciding which are internal.
+  agents(limit = 200): Promise<AgentSummary[]> {
+    return this.db.all<AgentSummary>(
+      `SELECT r.agent, COUNT(*) AS reads, COUNT(DISTINCT r.url) AS pages, MIN(r.at) AS first_at, MAX(r.at) AS last_at,
+              substr(GROUP_CONCAT(DISTINCT r.url), 1, 600) AS sample_urls,
+              (i.agent IS NOT NULL) AS internal, i.label
+       FROM reads r LEFT JOIN internal_agents i ON i.agent = r.agent
+       GROUP BY r.agent ORDER BY last_at DESC LIMIT ?`,
+      [limit],
+    );
+  }
+
   // Curated collections with how many of their documents are ready to read.
   collections(): Promise<LibraryCollection[]> {
     return this.db.all<LibraryCollection>(
@@ -200,7 +231,7 @@ export class SwarmStore {
     const row = await this.db.first<PageStats>(
       `SELECT COUNT(*) AS reads, COUNT(DISTINCT agent) AS agents,
               COALESCE(SUM(tokens_saved), 0) AS tokens_saved, MIN(at) AS first_read_at
-       FROM reads WHERE url = ?`,
+       FROM reads WHERE url = ? AND ${COUNTED}`,
       [url],
     );
     return row ?? { reads: 0, agents: 0, tokens_saved: 0, first_read_at: null };
@@ -210,7 +241,7 @@ export class SwarmStore {
     const row = await this.db.first<{ reads: number; hits: number; agents: number; tokens_saved: number; pages: number }>(
       `SELECT COUNT(*) AS reads, COALESCE(SUM(hit), 0) AS hits, COUNT(DISTINCT agent) AS agents,
               COALESCE(SUM(tokens_saved), 0) AS tokens_saved, COUNT(DISTINCT url) AS pages
-       FROM reads WHERE at >= ?`,
+       FROM reads WHERE at >= ? AND ${COUNTED}`,
       [since],
     );
     return row ?? { reads: 0, hits: 0, agents: 0, tokens_saved: 0, pages: 0 };
@@ -219,8 +250,8 @@ export class SwarmStore {
   topPages(since: number, limit = 20, domain?: string): Promise<PublicPage[]> {
     return this.db.all<PublicPage>(
       `SELECT url, domain, (SELECT title FROM digests d WHERE d.url = reads.url ORDER BY created_at DESC LIMIT 1) AS title, COUNT(*) AS reads, COUNT(DISTINCT agent) AS agents, COALESCE(SUM(tokens_saved), 0) AS tokens_saved
-       FROM reads WHERE at >= ? ${domain ? "AND domain = ?" : ""}
-         AND url IN (SELECT url FROM reads GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
+       FROM reads WHERE at >= ? AND ${COUNTED} ${domain ? "AND domain = ?" : ""}
+         AND url IN (SELECT url FROM reads WHERE ${COUNTED} GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
        GROUP BY url ORDER BY reads DESC, tokens_saved DESC LIMIT ?`,
       domain ? [since, domain, limit] : [since, limit],
     );
@@ -229,7 +260,7 @@ export class SwarmStore {
   recentPublicReads(limit = 25): Promise<{ title: string | null; url: string; domain: string; hit: number; tokens_saved: number; at: number }[]> {
     return this.db.all(
       `SELECT url, domain, (SELECT title FROM digests d WHERE d.key = reads.digest_key) AS title, hit, tokens_saved, at FROM reads
-       WHERE url IN (SELECT url FROM reads GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
+       WHERE ${COUNTED} AND url IN (SELECT url FROM reads WHERE ${COUNTED} GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
        ORDER BY at DESC LIMIT ?`,
       [limit],
     );
@@ -238,7 +269,7 @@ export class SwarmStore {
   async domainTotals(domain: string): Promise<{ reads: number; agents: number; tokens_saved: number }> {
     const row = await this.db.first<{ reads: number; agents: number; tokens_saved: number }>(
       `SELECT COUNT(*) AS reads, COUNT(DISTINCT agent) AS agents, COALESCE(SUM(tokens_saved), 0) AS tokens_saved
-       FROM reads WHERE domain = ?`,
+       FROM reads WHERE domain = ? AND ${COUNTED}`,
       [domain],
     );
     return row ?? { reads: 0, agents: 0, tokens_saved: 0 };
