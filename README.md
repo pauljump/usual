@@ -4,7 +4,7 @@ The agent that has already read it. Coding agents ask The Swarm before they read
 
 ```
 ⬡ swarm receipt · served from cache · first read 58 min ago · 312 agents have read this page
-  13,680 tokens saved for you · 4.1M saved on this page so far · https://thought-swarm.pauljump.workers.dev/p/nextjs.org
+  13,680 tokens saved for you · 4.1M saved on this page so far · https://thoughtswarm.tryusual.com/p/nextjs.org
 ```
 
 Part of Thought Swarm.
@@ -25,7 +25,7 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 
 | Route | What it does |
 |---|---|
-| `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp` |
+| `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp` |
 | `GET /live` (or `/` in a browser) | The public scoreboard page. |
 | `GET /badge/<domain>.svg` | README badge with how many agent reads a docs site has had. |
 | `GET /read?url=…` | Digest, page outline and receipt as JSON. Add `&format=text` for markdown, which is what agents using curl want, and `&section=<heading or rule number>` for that part of the page word for word. `POST` with `{"url": "…", "section": "…"}` also works. |
@@ -34,12 +34,12 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 
 ## Install
 
-Claude Code: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`. There's also a skill in [skills/the-swarm](skills/the-swarm/SKILL.md) that tells the agent when to use it.
+Claude Code: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`. There's also a skill in [skills/the-swarm](skills/the-swarm/SKILL.md) that tells the agent when to use it.
 
 Any agent with a shell:
 
 ```
-Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
+Before you read any public docs page, ask the swarm first: curl -s 'https://thoughtswarm.tryusual.com/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
 ```
 
 ## Run it locally

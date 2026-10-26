@@ -20,7 +20,7 @@ If the `swarm` MCP server is connected, call its `read_page` tool with the URL. 
 Otherwise, use curl:
 
 ```sh
-curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<url-encoded page url>'
+curl -s 'https://thoughtswarm.tryusual.com/read?format=text&url=<url-encoded page url>'
 ```
 
 Then:

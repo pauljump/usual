@@ -2,9 +2,11 @@ name = "thought-swarm"
 main = "src/worker.ts"
 compatibility_date = "2026-10-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+routes = [{ pattern = "thoughtswarm.tryusual.com", custom_domain = true }]
 
 [vars]
-PUBLIC_BASE_URL = "https://thought-swarm.pauljump.workers.dev"
+PUBLIC_BASE_URL = "https://thoughtswarm.tryusual.com"
 # SWARM_MODEL = "claude-haiku-5-5"
 # MISSES_PER_HOUR = "60"
 
