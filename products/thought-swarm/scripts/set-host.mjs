@@ -7,7 +7,7 @@ if (!host) {
   console.error("Usage: node scripts/set-host.mjs <host>");
   process.exit(1);
 }
-const files = ["README.md", "LAUNCH.md", "wrangler.toml", "skills/the-swarm/SKILL.md", "seeds/README.md", "scripts/preload.ts"];
+const files = ["README.md", "wrangler.toml", "skills/the-swarm/SKILL.md", "seeds/README.md", "scripts/preload.ts"];
 for (const f of files) {
   try {
     const before = readFileSync(f, "utf8");

@@ -1,141 +1,55 @@
-# Launch plan
+# Operations
 
-The Swarm launches as a 30-day public experiment, a proof of concept rather than a long-running product. The claim: coding agents keep re-reading the same docs pages and burning tokens, when one read could serve everyone. The receipts and the scoreboard are the evidence, and a results post on day 30 is the payoff.
+How to deploy, seed and run a Thought Swarm instance, and what is left before the public launch. Contributors don't need any of this to work on the code; see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-This is the one checklist for the launch, reconciled across every thread on 26 Oct. Each item is marked **done**, **in progress**, **waiting on Paul** or **to do**.
+## Deploy an instance
 
-## Repository ownership decision — Paul, 26 Oct
+Cloudflare Workers + D1. The free plan is enough to serve saved digests; it stops serving rather than billing when a limit runs out. Very large first-time digests (big SEC filings) can exceed the free plan's CPU limit; prepare those with the reconciliation runner below instead.
 
-Thought Swarm belongs inside `pauljump/usual`, whose canonical local root is `/Users/mini-home/projects/usual/core`. The standalone `pauljump/thought-swarm` repository is now historical; the maintained implementation is `products/thought-swarm/` in Usual. Migration completed locally on 26 Oct 2026; see [MIGRATION.md](MIGRATION.md) for the canonical source and publication status. Preserve the existing source history, unpublished local commits, deployed Worker, D1 data and canonical hostname when consolidating; update public source links after the code is available in Usual. Do not publish a second standalone product repository as part of the launch plan below.
-
-## Decisions so far (26 Oct)
-
-- **Angle:** iOS and App Store submission. Agents read Apple's guidelines and docs constantly; Paul's agents read the App Review Guidelines 8 times in a month.
-- **Home:** thoughtswarm.tryusual.com, styled as a tool on the Usual menu. thought-swarm.pauljump.workers.dev stays up as a fallback.
-- **Agent Relay is out of this launch.** No arelay.to handle, no founders note, no Relay mentions. The code stays for a possible later post (see the end).
-- **Pre-load:** the iOS submission pack only (1,492 pages, about $1–2 on Haiku 5.5). The generic 8,790-page framework list is on hold.
-- **Not included:** Stack Overflow (its robots.txt says no crawlers and no AI use), Apple's Developer Forums (human check) and Reddit (robots.txt).
-- **Costs stay small:** Cloudflare's free plan, which stops serving rather than billing when its limits run out, and a spending cap on the Anthropic key. No extra infrastructure.
-
-## Open decisions for Paul
-
-1. **Friends beta first, or straight to public?** A short beta (20 to 50 iOS developers for 2 or 3 days) means the scoreboard isn't at zero on launch day, and it gives real receipts for the video. Going straight to public is faster, but the first hours would show near-zero numbers. Recommended: the short beta.
-2. **Spending cap on the Anthropic key.** Recommended: in the Console, create a new key for The Swarm with a $25 monthly limit, swap it in, and revoke the key that was pasted in chat. That's the cap and the rotation in one step.
-
-## Install lines (what people share)
-
-Claude Code, one command:
-
-```
-claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp
+```sh
+ANTHROPIC_API_KEY=… ./scripts/go-live.sh [host]
 ```
 
-Any agent with a shell, paste into the chat:
+The script installs dependencies, checks the Wrangler login (or `CLOUDFLARE_API_TOKEN`), creates the `thought-swarm` D1 database if `wrangler.toml` has no id yet, generates `SWARM_AGENT_SALT`, `SWARM_ADMIN_TOKEN` and `A2A_BEARER_TOKEN` into `.swarm-secrets` (mode 600, gitignored), deploys, sets the secrets and smoke-tests `/health`. With a `host` it points `PUBLIC_BASE_URL`, the docs and the skill at that hostname (`scripts/set-host.mjs`); add the custom-domain route in `wrangler.toml` yourself. Re-running it is safe.
 
-```
-Before you read any public docs page, ask the swarm first: curl -s 'https://thoughtswarm.tryusual.com/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
-```
+The canonical instance is `thoughtswarm.tryusual.com` (Worker `thought-swarm`, with `thought-swarm.pauljump.workers.dev` kept as a fallback). Its credentials come from the maintainer's vault, never from files in this repository.
 
-## Checklist
+## Admin routes
 
-### 1. Build and deploy
+All require `Authorization: Bearer $SWARM_ADMIN_TOKEN`.
 
-- **done** Live on Cloudflare Workers + D1, 67 tests passing.
-- **done** Claude Code fix: `read_page` returns the digest as text, so agents use it instead of re-reading the page. Agents are counted per address, not per session.
-- **done** Apple's JavaScript-built docs (developer.apple.com/documentation and the HIG) are read through their JSON.
-- **done** Section lookup: newly saved sources include an outline, and `section=4.3` returns that part of the saved source word for word. Older preloaded digests without source text require explicit refresh to capture sections.
-- **done** robots.txt is respected, including when a site serves it with an error status. Stack Overflow is refused.
-- **done** Agent Relay removed from the README, this file and the usage text.
-- **done** thoughtswarm.tryusual.com is live (workers.dev kept as a fallback).
-- **done** Usual restyle ([PR #2](https://github.com/pauljump/thought-swarm/pull/2)) merged and deployed from the Mini.
-- **to do** Re-run the stranger test on the live domain once it resolves: a clean Claude Code install answering what App Review Guideline 4.3 covers, the curl paste line, /live and the badges.
+| Route | Purpose |
+|---|---|
+| `GET /read?seed=1&url=…` | Digest a page without counting it as an agent read (used by `preload.ts`). |
+| `POST /admin/ingest` | `{url, title, text, attribution?}`: digest text that was fetched and extracted elsewhere (used by `reconcile.ts` for pages too heavy to parse in the Worker). |
+| `GET /admin/agents` | Agent hashes with read counts, first and last read, sample pages and whether each is marked internal. |
+| `POST /admin/internal-agents` | `{agents: [hash…] \| agent_ids: [raw id or IP…], label, internal?: false}`: mark agents as internal (tests, verification, preloading) or unmark them. Internal agents stay in the raw `reads` table but are excluded from `/stats`, `/live`, `/p/<domain>`, badges and receipts. Nothing is deleted. |
 
-### 2. Pre-load and costs
+## Seed a library
 
-- **done** iOS submission pack built, 1,492 pages: App Store Connect, developer account and App Review help; the App Review Guidelines; the HIG; StoreKit, privacy and ATT, Sign in with Apple, Xcode distribution, TestFlight and Xcode Cloud; the EU rules; Apple developer news; 69 WWDC sessions; plus fastlane, Expo, RevenueCat, Flutter, Capacitor and React Native.
-- **done** Reconciled every pack entry against D1: **1,461 of 1,492 ready**. The remaining **31** are explicitly unavailable: 30 source links return Page Not Found and one (Apple system status) is a JavaScript-only page. See `seeds/reconciliation.json` and the live `/library`. Do not use `done.txt` as completion evidence; the old runner included skipped URLs.
-- **waiting on Paul** Spending cap and key swap (open decision 2). Also delete the Cloudflare API token that was pasted in chat once the domain is live.
-- **to do** Reset the stats so test reads don't count: `npx wrangler d1 execute DB --remote --command "DELETE FROM reads"`. Cached digests stay.
+- `npx tsx scripts/build-seed-list.ts --max 500` builds `seeds/urls.txt` from `seeds/sites.tsv`.
+- `SWARM_URL=… SWARM_ADMIN_TOKEN=… npx tsx scripts/preload.ts --concurrency 6` digests every URL through the deployed service. It is resumable via `seeds/done.txt`, but `done.txt` also lists skipped URLs, so it is not proof of completion.
+- `scripts/reconcile.ts` is the authority: it checks every seed URL against D1, fetches and extracts missing pages locally (robots.txt respected), sends them to `/admin/ingest`, and records each URL's status in the `library` table and `seeds/reconciliation.json`. It needs `CLOUDFLARE_ACCOUNT_ID`, `D1_DATABASE_ID`, Cloudflare credentials and `SWARM_ADMIN_TOKEN` in the environment.
 
-### 3. Warm the counter (days −3 to −1, if Paul picks the beta)
+Current canonical library: 1,462 of 1,493 entries ready (the iOS and App Store submission pack plus Anthropic's S-1). The 31 unavailable ones are 30 Apple links that now return "Page Not Found" and Apple's JavaScript-only system status page. Per-URL results are in `seeds/reconciliation.json`.
 
-- **to do** Send the install line to 20 to 50 developers who ship iOS apps with Claude Code, Codex or Cursor.
-- **to do** Record the video, receipt screenshot and scoreboard GIF from real receipts (script below).
+## Costs
 
-### 4. Day 0 (a Tuesday or Wednesday)
+New digests use Claude Haiku 5.5 by default; a cache hit makes no model call. The 1,492-page submission pack was estimated at about $1 to $2. Put a monthly spending limit on the Anthropic key the Worker uses.
 
-- **superseded by Usual consolidation decision** Before the repo goes public: drop "on Agent Relay" from the GitHub repo description with `gh repo edit pauljump/thought-swarm --description "The Swarm: coding agents share what they've already read. A 30-day experiment in how often agents re-read the same docs. Part of Usual (tryusual.com)."`
-- **superseded by Usual consolidation decision** 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts from a clean machine.
-- **to do** 08:30 PT: post the X thread with the video, and pin it. 09:00 PT: Show HN.
-- **to do** Reply to everyone for the first 3 hours. At about 3 hours, quote-tweet a scoreboard screenshot.
+## Before the public launch
 
-### 5. Days 7 and 14: check-ins
+Decisions for Paul:
 
-- **to do** Quote-tweet the scoreboard: agents, reads, the share that were re-reads, tokens not burned, and the most re-read page of the week.
+1. **Test reads.** The current counts include launch testing, reconciliation and verification reads, and early reads from an MCP bug where the digest didn't reach the agent. Recommended: mark those agents internal with `POST /admin/internal-agents` (reversible, nothing deleted) rather than deleting `reads`.
+2. **Key cap.** Create a dedicated Anthropic key with a monthly limit, swap it into the Worker secret, and revoke any key that was ever pasted into a chat. Delete Cloudflare API tokens that were pasted into chats.
+3. **Beta or straight to public.** A short beta with 20 to 50 iOS developers means real receipts and a non-zero scoreboard on launch day.
 
-### 6. Day 30: results, then shut down
+Already settled:
 
-- **to do** Results post: agents, reads, the share of reads that re-read a page another agent already read, tokens saved, the top 20 re-read pages and the cost of running it. Add a clearly labeled projection ("if every coding agent did this…") worked out from the measured rate, with the math shown.
-- **to do** Publish per-page read counts (URLs only) so others can check the result.
-- **to do** Remove the API key so no new pages get digested. Leave a results page at the domain, and either keep serving cached pages or turn the Worker off (Paul's call).
+- The source is public in [pauljump/usual](https://github.com/pauljump/usual) under `products/thought-swarm/`. The old standalone repository is historical.
+- The launch angle is iOS and App Store submission; the hostname is `thoughtswarm.tryusual.com`.
+- Not read: Stack Overflow (robots.txt), Apple Developer Forums (human verification) and Reddit (robots.txt).
+- Agent Relay is not part of the launch. The A2A endpoint and `scripts/claim-handle.ts` remain for a possible later announcement.
 
-### Reference: pre-loading another list
-
-`preload.ts` reads `seeds/urls.txt`, skips what's already in `seeds/done.txt`, and prints a "skipped because" summary at the end: `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/preload.ts`. `npx tsx scripts/build-seed-list.ts --max 500` builds a framework list from `seeds/sites.tsv`. First-time setup on a new machine is `ANTHROPIC_API_KEY=… ./scripts/go-live.sh`.
-
-## 30-second video
-
-1. (0–5s) Two terminals. Left: a stranger's Claude Code asks what App Review Guideline 4.3 covers. It reads the guidelines through the swarm. Receipt: "you're the first agent to read this version".
-2. (5–15s) Right: your agent gets the same question. Receipt: "served from cache · … tokens saved for you", and the answer comes from the 4.3 section the swarm returned.
-3. (15–25s) Cut to /live: the tokens-saved counter ticking up, the "Agents are reading now" feed.
-4. (25–30s) The install line on screen. "Add your agent to the swarm."
-
-Use real numbers from the beta. A measured example: Apple's App Review Guidelines are about 23,700 tokens as a page and about 1,600 as a digest.
-
-## Show HN draft
-
-**Title:** Show HN: A 30-day experiment in how often coding agents re-read the same docs
-
-Every coding agent re-reads the same docs pages. My own Claude Code sessions read Apple's App Review Guidelines 8 times in a month, at about 24k tokens each time. Multiply that by every agent out there.
-
-The Swarm tests what happens if one agent reads a page and everyone else reuses that. Before your agent reads a public docs page, it asks the swarm. If any agent already read that exact version, yours gets a ~1–2k token digest (API signatures and code examples kept verbatim) plus an outline of the page's sections, with a receipt for the tokens saved. If the digest is missing something, the agent asks for that one section (say, rule 4.3) and gets it word for word.
-
-How it works:
-- It always fetches the live page, so answers are never stale. Fetching is cheap; reading is what costs tokens.
-- The cache key is a hash of the page's text plus the digest recipe, so a changed page is a new entry.
-- Each page is digested once, by Claude, for everyone.
-- Public source snapshots and digests are stored. Agent identifiers are hashed. robots.txt is respected, with an opt-out for `ThoughtSwarm`.
-- A public scoreboard shows tokens saved and what agents are reading. A page shows up there only after three different agents have read it.
-
-It runs for 30 days. Then I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to.
-
-Install: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`, or paste one line into any agent with a shell. Open source (Apache-2.0), part of Usual (tryusual.com).
-
-## X thread
-
-1. Every coding agent is reading the same docs pages, over and over. Mine read Apple's App Review Guidelines 8 times in one month, at about 24,000 tokens each time. So I'm running a 30-day experiment: what if one agent read it, and every other agent reused that? 🧵 [video]
-2. It's called The Swarm. Before your agent opens a docs page, it asks the swarm first. If any agent already read that exact version, yours gets the digest instead: about 1,600 tokens instead of 23,700 for the guidelines. Plus a receipt for what it saved. [receipt screenshot]
-3. Every receipt is counted on a public scoreboard: how many agents read the same page, and how many tokens they didn't have to burn. thoughtswarm.tryusual.com/live [scoreboard GIF]
-4. It never goes stale. The live page is fetched every time, and the digest is keyed on a hash of its text. Need the exact wording of rule 4.3? Your agent asks for that one section and gets it word for word.
-5. Add your agent to the experiment. In Claude Code, one line: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`. Any agent with a shell: paste the one-line prompt from the README.
-6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Public source snapshots and digests are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/usual
-
-## Later: Agent Relay (not part of launch)
-
-Relay was left out of the launch to keep the story simple (Paul's call, 2026-10-26). The code still supports it. When you add it, it's a second news moment ("The Swarm is now a public agent on Agent Relay"):
-
-- [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/claim-handle.ts register --domain <host>`, redeploy with `ARELAY_VERIFICATION_TOKEN`, then `claim-handle.ts verify`. Registered handles show up in the arelay.to/agents directory.
-- [ ] Optional live feed: the `#swarm-live` Relay channel with an Observer link. It runs from the Node server, not the Worker, today.
-- [ ] Relay's X handle is @agent_relay. Khaliq Gant is @khaliqgant.
-
-## 26 Oct recovery handoff
-
-Paul authorized Codex to finish the Apple preload, process the Anthropic S-1 using Anthropic, update the live site, and inform the original Claude thread. All 1,493 curated entries are reconciled: 1,461 Apple-pack documents and one S-1 ready, 31 unavailable source pages clearly identified. No Cloudflare paid-plan upgrade was made.
-
-The S-1 is saved at `/document?url=https%3A%2F%2Fwww.sec.gov%2FArchives%2Fedgar%2Fdata%2F2130357%2F000162828026067168%2Fanthropicpbc-sx1.htm`. Processing covered all extracted text in five part summaries and a synthesis; it is a digest, not an exhaustive transcription. Three consecutive cached reads returned HTTP 200 after deployment. Homepage links to the S-1 and `/library`.
-
-Cloudflare 1102 was confirmed as CPU exhaustion while extracting the large filing. Default reads now serve dated saved digests without fetching or parsing their sources; `refresh=true` explicitly checks again. Exact sections use saved source snapshots when available. Old digests without those snapshots say so, and do not silently re-fetch. Initial processing or refresh of large sources may still exceed Free CPU limits. The operator recovery path fetches/extracts on the Mini and sends text to authenticated `/admin/ingest` using the existing deployed Anthropic key. robots.txt is checked by the local fetcher. No model call is made on a cache hit; no preload read is added to usage statistics.
-
-Runtime configuration comes from the vault; the admin credential is in `/Users/mini-home/.secrets/projects/thought-swarm.env`. The monorepo Anthropic key returned 401 and was not used for recovery; the deployed Worker key succeeded. Never paste key values into chat. Final deployed version: `1d0fd087-9943-4545-8a73-841c51241dd7`. Validation: typecheck, 67 tests, live cached S-1 reads, live library counts, browser checks. Source is canonical `thought-swarm` main. Original preload log is retained separately from the committed source.
-
-This recovery does not decide public-repo visibility, launch posts, beta strategy, stats reset, spending caps, or credential revocation. Those remain the user's launch decisions.
+Post drafts are in [launch-posts.md](launch-posts.md). After the launch: check-ins on days 7 and 14, and a results post on day 30 with the measured re-read rate, tokens saved, top re-read pages and running cost, plus per-page read counts so others can check the result.
