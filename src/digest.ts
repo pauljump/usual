@@ -4,7 +4,10 @@ import { z } from "zod";
 // Bump RECIPE_VERSION whenever the prompt or schema changes: it is part of the
 // cache key, so old digests are never served under a new recipe.
 export const RECIPE_VERSION = "digest-v1";
-export const DEFAULT_MODEL = "claude-opus-5-5";
+// Haiku 5.5 keeps pre-loading 10,000 pages cheap; set SWARM_MODEL to switch.
+export const DEFAULT_MODEL = "claude-haiku-5-5";
+// Server-side refusal fallbacks exist for these models, not for Haiku.
+const FALLBACK_MODELS = /^claude-(opus-5|sonnet-5-5|fable-5)/;
 const MAX_INPUT_CHARS = 400_000; // ~100k tokens; larger pages are refused, never cut
 
 export const DigestSchema = z.object({
@@ -64,8 +67,7 @@ export class ClaudeDigester implements Digester {
       response = await this.client.beta.messages.create({
         model: this.model,
         max_tokens: 16000,
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
+        ...(FALLBACK_MODELS.test(this.model) ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
         output_config: { effort: "low", format: { type: "json_schema", schema: this.schema } },
         system: SYSTEM,
         messages: [

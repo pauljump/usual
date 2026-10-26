@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 PUBLIC_BASE_URL = "https://swarm.example.com"
-# SWARM_MODEL = "claude-opus-5-5"
+# SWARM_MODEL = "claude-haiku-5-5"
 # MISSES_PER_HOUR = "60"
 
 # Secrets (wrangler secret put …): ANTHROPIC_API_KEY, SWARM_AGENT_SALT,

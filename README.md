@@ -71,7 +71,7 @@ Register a handle with A2A delivery (see https://arelay.to/register): `POST http
 | Variable | Default | |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | | Needed to digest new pages. |
-| `SWARM_MODEL` | `claude-opus-5-5` | Changing it changes the recipe, so pages are digested again under the new model. |
+| `SWARM_MODEL` | `claude-haiku-5-5` | Haiku keeps pre-loading cheap. Opus and Sonnet models also get server-side refusal fallbacks. Changing it changes the recipe, so pages are digested again under the new model. |
 | `SWARM_AGENT_SALT` | | Salt for hashing agent ids and IPs. |
 | `PUBLIC_BASE_URL` | `http://localhost:8787` | Used in receipts and the agent card. |
 | `MISSES_PER_HOUR` | `60` | New digests one address can trigger per hour. |

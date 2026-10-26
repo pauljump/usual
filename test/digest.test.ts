@@ -34,9 +34,18 @@ function fakeClient(reply: { stop_reason: string; text: string }, seen: { url?: 
 }
 
 describe("ClaudeDigester", () => {
-  it("sends a structured-output request with server-side fallbacks and parses the digest", async () => {
+  it("defaults to Haiku 5.5, which has no server-side fallback", async () => {
     const seen: any = {};
     const d = new ClaudeDigester(fakeClient({ stop_reason: "end_turn", text: JSON.stringify(sample) }, seen));
+    await d.digest({ url: "u", title: "", text: "t" });
+    expect(seen.body.model).toBe("claude-haiku-5-5");
+    expect(seen.body).not.toHaveProperty("fallbacks");
+    expect(d.recipe).toBe("digest-v1/claude-haiku-5-5");
+  });
+
+  it("sends a structured-output request with server-side fallbacks on Opus and parses the digest", async () => {
+    const seen: any = {};
+    const d = new ClaudeDigester(fakeClient({ stop_reason: "end_turn", text: JSON.stringify(sample) }, seen), "claude-opus-5-5");
     const out = await d.digest({ url: "https://nextjs.org/docs/caching", title: "Caching", text: "page text" });
     expect(out).toEqual(sample);
     expect(seen.body.model).toBe("claude-opus-5-5");
