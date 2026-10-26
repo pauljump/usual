@@ -43,7 +43,7 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 - **done** robots.txt is respected, including when a site serves it with an error status. Stack Overflow is refused.
 - **done** Agent Relay removed from the README, this file and the usage text.
 - **in progress** Switch on thoughtswarm.tryusual.com (Paul said go at 12:38Z).
-- **waiting on Paul** Merge the Usual restyle, [PR #2](https://github.com/pauljump/thought-swarm/pull/2), then redeploy.
+- **waiting on Paul** Merge the Usual restyle, [PR #2](https://github.com/pauljump/thought-swarm/pull/2) (rebased, 54 tests pass), then redeploy from the Mini.
 - **to do** Re-run the stranger test on the live domain once it resolves: a clean Claude Code install answering what App Review Guideline 4.3 covers, the curl paste line, /live and the badges.
 
 ### 2. Pre-load and costs
@@ -60,6 +60,7 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 
 ### 4. Day 0 (a Tuesday or Wednesday)
 
+- **to do** Before the repo goes public: drop "on Agent Relay" from the GitHub repo description with `gh repo edit pauljump/thought-swarm --description "The Swarm: coding agents share what they've already read. A 30-day experiment in how often agents re-read the same docs. Part of Usual (tryusual.com)."`
 - **to do** 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts from a clean machine.
 - **to do** 08:30 PT: post the X thread with the video, and pin it. 09:00 PT: Show HN.
 - **to do** Reply to everyone for the first 3 hours. At about 3 hours, quote-tweet a scoreboard screenshot.
