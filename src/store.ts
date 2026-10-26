@@ -100,6 +100,12 @@ export class SwarmStore {
     return this.db.first<DigestRow>("SELECT * FROM digests WHERE key = ?", [key]);
   }
 
+  digestPrefix(prefix: string): Promise<DigestRow[]> {
+    // Range lookup uses the digest primary-key index. Ambiguous prefixes are
+    // never resolved to an arbitrary document.
+    return this.db.all("SELECT * FROM digests WHERE key >= ? AND key < ? LIMIT 2", [prefix, prefix + "g"]);
+  }
+
   latestDigest(url: string): Promise<DigestRow | null> {
     return this.db.first<DigestRow>("SELECT * FROM digests WHERE url = COALESCE((SELECT canonical_url FROM page_aliases WHERE url = ?), ?) ORDER BY created_at DESC LIMIT 1", [url, url]);
   }

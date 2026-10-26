@@ -60,13 +60,7 @@ export class Swarm {
     const normalized = normalizeUrl(rawUrl);
     if (!opts.refresh) {
       const cached = await this.o.store.latestDigest(normalized);
-      if (cached) {
-        const source = opts.section ? await this.o.store.source(cached.key) : undefined;
-        const savedOutline = await this.o.store.sourceOutline(cached.key);
-        // Old preloaded digests may lack a source snapshot. Their digest remains
-        // readable; explicit refresh can populate exact section lookups.
-        return this.finishRead(cached, true, agentId, opts, source, savedOutline?.outline);
-      }
+      if (cached) return this.readSnapshot(cached, agentId, opts);
     }
     const page = await this.o.fetcher.fetchPage(normalized);
     return this.ingest(page, agentId, opts, normalized);
@@ -116,6 +110,12 @@ export class Swarm {
 
     await this.o.store.saveSource(row.key, page.text);
     return this.finishRead(row, hit, agentId, opts, page.text);
+  }
+
+  async readSnapshot(row: DigestRow, agentId: string, opts: {seed?: boolean; section?: string} = {}): Promise<ReadResult> {
+    const source = opts.section ? await this.o.store.source(row.key) : undefined;
+    const savedOutline = await this.o.store.sourceOutline(row.key);
+    return this.finishRead(row, true, agentId, opts, source, savedOutline?.outline);
   }
 
   private async finishRead(row: DigestRow, hit: boolean, agentId: string,

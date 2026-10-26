@@ -28,6 +28,10 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 | Route | What it does |
 |---|---|
 | `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp` |
+| `GET /share` | Paste a saved document URL to get a short link and social preview. |
+| `POST /share` | `{ "url": "original URL or Thought Swarm link" }` returns a stable saved-version URL and PNG URL; never fetches or digests a source. |
+| `GET /s/<id>` | Shared saved-version page with Open Graph and X large-image metadata. Add `?format=text` for the same version with an agent receipt. |
+| `GET /s/<id>/card.png` | Branded 1200×630 PNG; HEAD supported; cached at the edge for a day. |
 | `GET /library` | Curated pack coverage: ready, unavailable and pending pages, separate from agent-read statistics. |
 | `GET /document?url=…` | Readable HTML view of a saved digest; never triggers fresh processing. |
 | `GET /live` (or `/` in a browser) | The public scoreboard page. |
@@ -85,3 +89,11 @@ Apache-2.0
 ## Reconcile the curated library
 
 `scripts/reconcile.ts` checks every seed URL against D1, reuses completed digests across recipes, and extracts sources and checks robots.txt on the Mini, then uses the admin-authenticated `/admin/ingest` Worker endpoint (Anthropic) for missing digests. Runtime credentials must be supplied from the vault. It records each URL in `library` and `seeds/reconciliation.json`; missing pages and source restrictions remain explicit, never silently counted as complete. Source snapshots are published only after all chunks are stored. The older `done.txt` is not an authority for completion because it included skipped URLs.
+
+## Social sharing
+
+Every saved document offers Copy share link, Share on X (opens a draft), Download image, and a preview. `/share` accepts the original source URL, a `/document?url=...` link, or an existing short link. Unsaved documents show a library-directed error; sharing never starts a model call. Short IDs use a 16-character digest-key prefix; ambiguous prefixes return 404 and link generation falls back to the complete key. Links pin the digest version, including its agent-readable response. Human document views, share generation, and crawler image requests do not add agent reads; explicit agent-readable requests do.
+
+Social images are generated locally within the Worker using pre-rendered raster glyphs and native PNG compression, with no external image service or extra runtime dependencies. The raster alphabet supports Latin-1 and common typographic punctuation; unsupported glyphs use `?` in the image only (full Unicode titles remain intact in HTML and metadata). Long titles wrap and truncate in the image. `scripts/build-share-font.py` regenerates the committed glyph data on macOS with Pillow. X/Open Graph metadata is server rendered; actual display and refresh timing remain controlled by the social platform.
+
+The share feature is implemented and locally verified, pending publication approval. It uses the existing canonical Worker/domain and does not require any new provider or model credentials.

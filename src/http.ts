@@ -1,12 +1,14 @@
 // Runtime-neutral HTTP layer (Fetch API Request -> Response), shared by the
 // Cloudflare Worker and the local Node server.
 
+import { shareInfo } from "./share.js";
+import { sharePng } from "./share/image.js";
 import { DigestError } from "./digest.js";
 import { FetchError } from "./fetcher.js";
 import { PUBLIC_MIN_AGENTS, type SwarmStore } from "./store.js";
 import { RateLimited, type Swarm } from "./swarm.js";
 import { handleMcp } from "./mcp.js";
-import { badgeSvg, domainHtml, liveHtml, libraryHtml, documentHtml } from "./pages.js";
+import { badgeSvg, domainHtml, liveHtml, libraryHtml, documentHtml, shareHtml } from "./pages.js";
 import { UrlError, firstUrlIn, normalizeUrl, assertPublicTarget } from "./url.js";
 
 export interface AppConfig {
@@ -47,6 +49,44 @@ export class App {
         const t = await this.c.store.domainTotals(badge[1].toLowerCase());
         return new Response(badgeSvg(t.reads), { headers: { "content-type": "image/svg+xml", "cache-control": "max-age=300", ...CORS } });
       }
+      if (path === "/share" && req.method === "GET") return html(shareHtml(this.c.publicBaseUrl));
+      if (path === "/share" && req.method === "POST") {
+        const body = await req.json().catch(() => ({})) as {url?: unknown};
+        if (typeof body.url !== "string") return json({error:"Paste the original document URL or a Thought Swarm document link."},400);
+        let target = normalizeUrl(body.url);
+        const parsed = new URL(target);
+        if (parsed.origin === new URL(this.c.publicBaseUrl).origin) {
+          const match = parsed.pathname.match(/^\/s\/([a-f0-9]{16}|[a-f0-9]{64})$/);
+          if (match) {
+            const rows = await this.c.store.digestPrefix(match[1]);
+            return rows.length === 1 ? json(await shareInfo(this.c.publicBaseUrl,rows[0],this.c.store)) : json({error:"This shared digest was not found."},404);
+          }
+          if (parsed.pathname === "/document" && parsed.searchParams.get("url")) target = normalizeUrl(parsed.searchParams.get("url")!);
+        }
+        assertPublicTarget(target);
+        const row = await this.c.store.latestDigest(target);
+        if (!row) return json({error:"This document has no saved digest yet. Choose a ready document from the library first."},404);
+        return json(await shareInfo(this.c.publicBaseUrl,row,this.c.store));
+      }
+      const shared = path.match(/^\/s\/([a-f0-9]{16}|[a-f0-9]{64})(\/card\.png)?$/);
+      if (shared && (req.method === "GET" || req.method === "HEAD")) {
+        const rows = await this.c.store.digestPrefix(shared[1]);
+        if (rows.length !== 1) return json({error:"This shared digest was not found."},404);
+        const row = rows[0];
+        const info = await shareInfo(this.c.publicBaseUrl,row,this.c.store);
+        if (shared[2]) {
+          const headers = {"content-type":"image/png", "cache-control":"public, max-age=86400", "x-content-type-options":"nosniff"};
+          if (req.method === "HEAD") return new Response(null,{headers});
+          const png = await sharePng(row.title,new URL(row.url).hostname,row.created_at);
+          return new Response(png.slice().buffer as ArrayBuffer,{headers});
+        }
+        if (url.searchParams.get("format") === "text" && req.method === "GET") {
+          const result = await this.c.swarm.readSnapshot(row, clientIp(req), {section:url.searchParams.get("section") ?? undefined});
+          return text(`${result.markdown}\n\n${result.receipt_line}\n\n${UNTRUSTED_NOTE}`,200,"text/markdown; charset=utf-8");
+        }
+        const page = documentHtml(this.c.publicBaseUrl,JSON.parse(row.digest_json),row.url,row.created_at,"Saved digest. Social previews and browser visits do not count as agent reads.",info);
+        return req.method === "HEAD" ? new Response(null,{headers:{"content-type":"text/html; charset=utf-8"}}) : html(page);
+      }
       if (path === "/library") {
         const entries = await this.c.store.library();
         return wantsHtml ? html(libraryHtml(this.c.publicBaseUrl, entries)) : json({ entries });
@@ -56,8 +96,8 @@ export class App {
         if (!target) return json({ error: "Provide a document URL." }, 400);
         const row = await this.c.store.latestDigest(normalizeUrl(target));
         if (!row) return json({ error: "No saved digest for this document yet." }, 404);
-        const result = await this.c.swarm.read(target, clientIp(req));
-        return html(documentHtml(this.c.publicBaseUrl, result.digest, result.url, row.created_at, result.receipt_line));
+        const info = await shareInfo(this.c.publicBaseUrl,row,this.c.store);
+        return html(documentHtml(this.c.publicBaseUrl, JSON.parse(row.digest_json), row.url, row.created_at, "Saved digest. Use the agent-readable version for a token-saving receipt.", info));
       }
       if (path === "/admin/ingest" && req.method === "POST") {
         if (!this.c.adminToken || req.headers.get("authorization") !== `Bearer ${this.c.adminToken}`) return json({ error: "Unauthorized." }, 401);

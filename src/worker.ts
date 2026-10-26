@@ -45,9 +45,17 @@ function build(env: Env): App {
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const edgeCache = (caches as unknown as {default: Cache}).default;
+    const image = req.method === "GET" && /^\/s\/[a-f0-9]{16,64}\/card\.png$/.test(new URL(req.url).pathname);
+    if (image) {
+      const cached = await edgeCache.match(req);
+      if (cached) return cached;
+    }
     app ??= build(env);
     await initialized;
-    return app.handle(req);
+    const response = await app.handle(req);
+    if (image && response.ok) ctx.waitUntil(edgeCache.put(req, response.clone()));
+    return response;
   },
 };

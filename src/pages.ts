@@ -5,6 +5,7 @@
 
 import { compact } from "./swarm.js";
 import type { PublicPage } from "./store.js";
+import type { ShareInfo } from "./share.js";
 import type { Digest } from "./digest.js";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -79,6 +80,7 @@ dt{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:up
 .site-footer{display:flex;justify-content:space-between;align-items:center;gap:25px;padding:50px 0 38px;border-top:1px solid var(--line)}
 .site-footer>.brand{font-size:30px}.site-footer>span{font-size:11px;color:var(--muted);margin-right:auto}
 .site-footer>div{display:flex;gap:20px;font-size:10px;color:var(--muted);flex-wrap:wrap}.site-footer>div a{text-decoration:none}.site-footer>div a:hover{color:var(--ink)}
+.share-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.share-actions a,.share-actions button,.share-submit{border:1px solid var(--ink);padding:10px 16px;border-radius:3px;background:var(--light);color:var(--ink);font-size:14px;text-decoration:none}.share-actions a:hover,.share-actions button:hover{background:var(--soft)}.share-submit{background:var(--orange);color:var(--light);border-color:var(--orange)}.share-panel{padding:22px;background:var(--light);border:1px solid var(--line);border-radius:4px;margin:26px 0}.share-panel summary{cursor:pointer}.share-panel img,.share-preview{display:block;width:100%;height:auto;border:1px solid var(--line);margin:16px 0}.share-form label{display:block;margin:0 0 8px}.share-form input{width:100%;padding:14px;font:inherit;border:1px solid var(--muted);border-radius:3px;margin-bottom:12px}.share-form input:focus-visible{outline:3px solid var(--orange);outline-offset:3px}.share-link{overflow-wrap:anywhere;font-family:var(--mono);font-size:13px}.share-error{color:#9d2618;margin:12px 0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--light);font-size:12px;padding:11px 16px;border-radius:3px;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:no-preference){.flash{animation:f 1.4s ease-out}@keyframes f{from{background:#f3eedf}to{background:transparent}}}
 @media (max-width:1050px){.wrap{width:calc(100% - 56px)}.hero,.layout{grid-template-columns:1fr;gap:50px}.facts{position:static;border-left:0;border-top:1px solid var(--line);padding:28px 0 0}}
@@ -93,13 +95,13 @@ dl{grid-template-columns:95px minmax(0,1fr)}.site-footer{flex-wrap:wrap;padding:
 const COPY_SCRIPT = `<script>
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;
 const t=document.getElementById(b.dataset.copy).textContent,n=document.getElementById('notice');
-try{await navigator.clipboard.writeText(t);n.textContent='Copied. Paste it into your agent.'}catch(_){n.textContent='Select the text and copy it by hand.'}
+try{await navigator.clipboard.writeText(t);n.textContent='Copied.'}catch(_){n.textContent='Select the text and copy it by hand.'}
 n.classList.add('show');setTimeout(()=>n.classList.remove('show'),2200)});
 </script>`;
 
 function header(root: string): string {
   return `<div class="wrap"><header class="site-header"><a class="brand" href="${USUAL}/" aria-label="Usual home"><span class="brand-mark" aria-hidden="true">u</span>usual<span class="brand-period">.</span></a>
-<nav aria-label="Main navigation"><a href="${USUAL}/#menu">Menu</a><a class="hide-sm" href="${esc(root)}/live">Scoreboard</a><a class="github-link" href="${REPO}">GitHub</a></nav></header></div>`;
+<nav aria-label="Main navigation"><a href="${USUAL}/#menu">Menu</a><a class="hide-sm" href="${esc(root)}/library">Library</a><a href="${esc(root)}/share">Share</a><a class="github-link" href="${REPO}">GitHub</a></nav></header></div>`;
 }
 
 function footer(): string {
@@ -108,12 +110,13 @@ function footer(): string {
 <div id="notice" class="toast" role="status" aria-live="polite"></div>`;
 }
 
-function shell(root: string, title: string, description: string, main: string, script = ""): string {
+function shell(root: string, title: string, description: string, main: string, script = "", social?: ShareInfo): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f5f2e9"><title>${esc(title)}</title><meta name="description" content="${esc(description)}">
-<link rel="icon" href="${ICON}" type="image/svg+xml"><meta property="og:site_name" content="Usual"><meta property="og:type" content="website">
-<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(root)}/">
-<meta name="twitter:card" content="summary"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}">
+<link rel="icon" href="${ICON}" type="image/svg+xml"><meta property="og:site_name" content="Thought Swarm"><meta property="og:type" content="website">
+<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(social?.url ?? root + '/')}">
+${social ? `<link rel="canonical" href="${esc(social.url)}"><meta property="og:image" content="${esc(social.image_url)}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${esc(social.image_alt)}"><meta name="twitter:image" content="${esc(social.image_url)}"><meta name="twitter:image:alt" content="${esc(social.image_alt)}">` : ''}
+<meta name="twitter:card" content="${social ? 'summary_large_image' : 'summary'}"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}">
 <style>${STYLE}</style></head><body>${header(root)}<main class="wrap">${main}</main>${footer()}${COPY_SCRIPT}${script}</body></html>`;
 }
 
@@ -268,17 +271,43 @@ export function libraryHtml(base: string, entries: {url: string; collection: str
     }).join("") || '<p>The library is being reconciled.</p>'}`);
 }
 
-export function documentHtml(base: string, d: Digest, url: string, at: number, receipt: string): string {
+export function documentHtml(base: string, d: Digest, url: string, at: number, receipt: string, social?: ShareInfo): string {
   return shell(base, `${d.title} · Thought Swarm`, d.summary.slice(0, 180), `
     <div class="breadcrumbs"><a href="/live">Thought Swarm</a><span>/</span><a href="/library">Library</a></div>
     <article style="max-width:850px;margin:0 auto 70px"><h1 style="font-size:clamp(32px,5vw,58px)">${esc(d.title)}</h1>
     <p class="micro" style="margin-top:20px">Source snapshot ${new Date(at).toISOString()} · Saved digest; source not re-fetched.</p>
-    <p><a href="${esc(url)}">Original source ↗</a> · <a href="/read?format=text&amp;url=${encodeURIComponent(url)}">Agent-readable version</a></p>
+    <p><a href="${esc(url)}">Original source ↗</a> · <a href="${social ? esc(social.url) + '?format=text' : '/read?format=text&amp;url=' + encodeURIComponent(url)}">Agent-readable version</a></p>
+    ${social ? shareControls(social) : ''}
     <p style="font-size:20px">${esc(d.summary)}</p>
     ${d.version_info ? `<p class="micro">${esc(d.version_info)}</p>` : ''}
     <h2>Key points</h2><ul>${d.key_points.map(p => `<li style="margin:16px 0">${esc(p)}</li>`).join('')}</ul>
     ${d.api.length ? '<h2>API</h2>' + d.api.map(a => `<p><code>${esc(a.signature || a.name)}</code> ${esc(a.notes)}</p>`).join('') : ''}
     ${d.code_examples.map(e => `<h3>${esc(e.caption)}</h3><pre style="overflow:auto;padding:20px;background:var(--light)"><code>${esc(e.code)}</code></pre>`).join('')}
     ${d.gotchas.length ? '<h2>Qualifications</h2><ul>' + d.gotchas.map(g => `<li style="margin:12px 0">${esc(g)}</li>`).join('') + '</ul>' : ''}
-    <pre style="white-space:pre-wrap;overflow-wrap:anywhere" class="receipt">${esc(receipt)}</pre></article>`);
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere" class="receipt">${esc(receipt)}</pre></article>`, "", social);
+}
+
+function shareControls(info: ShareInfo): string {
+  const intent = 'https://x.com/intent/post?text=' + encodeURIComponent('Read once. Share the digest. ' + info.title.slice(0,130)) + '&url=' + encodeURIComponent(info.url);
+  return `<section class="share-panel" aria-label="Share this digest">
+    <p><strong>Read once. Pass it on.</strong></p><p id="document-share-link" class="share-link">${esc(info.url)}</p>
+    <div class="share-actions"><button type="button" data-copy="document-share-link">Copy share link</button><a href="${esc(intent)}" target="_blank" rel="noopener noreferrer">Share on X ↗</a><a href="${esc(info.image_url)}" download="thought-swarm.png">Download image</a></div>
+    <details><summary>Preview the social image</summary><img src="${esc(info.image_url)}" alt="${esc(info.image_alt)}" width="1200" height="630" loading="lazy"><p class="micro">A link to this saved version, with a preview image for social feeds.</p></details></section>`;
+}
+
+export function shareHtml(base: string): string {
+  return shell(base, 'Share a digest · Thought Swarm', 'Turn a saved digest into a short link with a social preview image.', `
+    <div class="breadcrumbs"><a href="/live">Thought Swarm</a><span>/</span>Share</div>
+    <article style="max-width:850px;margin:0 auto 70px"><p class="eyebrow">Already read. Ready to share.</p><h1 style="font-size:clamp(40px,6vw,72px)">One link.<br>One less reread.</h1>
+    <p class="lede" style="margin:24px 0">Give someone a head start. Make a short link to any saved digest, with an image ready for their feed.</p>
+    <form id="share-form" class="share-form"><label for="source-url">Document URL</label><input id="source-url" name="url" type="url" required placeholder="Paste the original URL or a Thought Swarm link" autocomplete="off"><button class="share-submit" id="make-share" type="submit">Make share link</button></form>
+    <p class="micro" style="margin-top:12px">Choose a saved document from the <a href="/library">library</a>. The link keeps this version of its digest.</p><p id="share-status" role="status" aria-live="polite"></p>
+    <section id="share-result" hidden><img id="share-image" class="share-preview" width="1200" height="630" alt=""><h2 id="share-title" style="font-size:28px"></h2><p id="generated-link" class="share-link" style="margin-top:16px"></p><div class="share-actions"><button type="button" data-copy="generated-link">Copy share link</button><a id="share-open">Open digest</a><a id="share-x" target="_blank" rel="noopener noreferrer">Share on X ↗</a><a id="share-download" download="thought-swarm.png">Download image</a></div></section></article>`, `<script>
+const form=document.getElementById('share-form'),status=document.getElementById('share-status'),button=document.getElementById('make-share'),result=document.getElementById('share-result');
+form.addEventListener('submit',async e=>{e.preventDefault();button.disabled=true;status.className='';status.textContent='Making your link…';result.hidden=true;
+try{const response=await fetch('/share',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:document.getElementById('source-url').value})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not make a link. Try again.');
+document.getElementById('share-title').textContent=data.title;document.getElementById('generated-link').textContent=data.url;document.getElementById('share-open').href=data.url;document.getElementById('share-download').href=data.image_url;const image=document.getElementById('share-image');image.src=data.image_url;image.alt=data.image_alt;
+document.getElementById('share-x').href='https://x.com/intent/post?text='+encodeURIComponent('Read once. Share the digest. '+data.title.slice(0,130))+'&url='+encodeURIComponent(data.url);status.textContent='Ready to share. The preview image travels with your link.';result.hidden=false;
+}catch(error){status.className='share-error';status.textContent=error.message||'Could not make a link. Try again.';}finally{button.disabled=false;}});
+</script>`);
 }
