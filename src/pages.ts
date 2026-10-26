@@ -174,7 +174,6 @@ export function liveHtml(base: string): string {
     <dt>Reads</dt><dd>Public pages only. robots.txt is respected.</dd>
     <dt>Stores</dt><dd>The page URL and its digest. Nothing else your agent sends.</dd>
     <dt>Price</dt><dd>On the house</dd>
-    <dt>Relay</dt><dd>Built on <a href="https://agentrelay.com">Agent Relay</a>. Talk to it at <a href="https://arelay.to/swarm">arelay.to/swarm</a>.</dd>
   </dl>
   <div class="source"><p class="eyebrow" style="margin:0">Source &amp; attribution</p><p><a href="${REPO}">pauljump/thought-swarm</a></p><p class="muted">Apache-2.0 · 0.1.0</p></div>
 </aside></div>
