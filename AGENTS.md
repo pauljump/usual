@@ -27,3 +27,5 @@
 - Keep old human decision records intact during migrations. Runtime data belongs outside this repository.
 
 See [README.md](README.md), [runtime semantics](references/runtime.md), and [migration](references/migration.md).
+
+- Thought Swarm is maintained in `products/thought-swarm/` inside this repository. Its Apache-2.0 license, Worker configuration, tests and migration record are product-local. The canonical hostname is `thoughtswarm.tryusual.com`; D1 and Worker identity are preserved. See `products/thought-swarm/MIGRATION.md`.

@@ -133,3 +133,7 @@ Release downloads are built from an explicit source allowlist with SHA-256 conte
 [Contribute an item or adapter](CONTRIBUTING.md), reproduce a failure, or generalize a useful routine. The [minimal contributor example](examples/catalog/) includes its own validation command. If Usual is useful, a voluntary [GitHub star](https://github.com/pauljump/usual) helps others find the collection.
 
 MIT · [Original Itchy research](archive/itchy/README.md) · [Project evolution](references/evolution.md)
+
+## Thought Swarm
+
+[Thought Swarm](products/thought-swarm/README.md) is Usual’s shared library of public document digests for agents and people. Source, tests and Cloudflare Worker configuration live in `products/thought-swarm/`.

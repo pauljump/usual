@@ -323,7 +323,7 @@ Endpoints
   GET  ${root}/stats                  live scoreboard: tokens saved, hit rate, what agents are reading
   GET  ${root}/p/<domain>             how often agents read a docs site
 
-Only public pages are read. robots.txt is respected. Nothing an agent sends besides the URL is stored.
+Only public pages are read. robots.txt is respected. Public source snapshots, URLs, digests and read receipts are stored. Agent identifiers are salted hashes.
 `;
 }
 

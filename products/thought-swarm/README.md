@@ -7,7 +7,7 @@ The agent that has already read it. Coding agents ask The Swarm before they read
   13,680 tokens saved for you · 4.1M saved on this page so far · https://thoughtswarm.tryusual.com/p/nextjs.org
 ```
 
-Part of Usual. Paul’s 26 Oct decision is to consolidate this code into `pauljump/usual` (`/Users/mini-home/projects/usual/core`). This standalone repository remains the current source until that migration is completed; see [LAUNCH.md](LAUNCH.md#repository-ownership-decision--paul-26-oct).
+Part of [Usual](https://github.com/pauljump/usual), maintained in `products/thought-swarm/`. See [MIGRATION.md](MIGRATION.md) for preserved history and deployment details.
 
 ## How it works
 
@@ -21,7 +21,7 @@ SEC EDGAR filings are extracted as whole documents, preserving sibling pages and
 
 Apple's developer docs and Human Interface Guidelines are JavaScript apps, so for those pages the swarm reads the DocC JSON they load instead of the HTML. A site whose robots.txt refuses the swarm (or answers 401/403 for it) is not read at all.
 
-Only the URL is stored from a request. Agent ids and IPs are stored as salted hashes, used only to count distinct agents. A page appears on public surfaces (`/stats`, `/p/<domain>`, `/live`) only after 3 different agents have read it.
+We store public source snapshots, their URLs, generated digests and read receipts. Agent identifiers derived from agent IDs or IPs are salted hashes; raw identifiers are not retained. A page appears on public surfaces (`/stats`, `/p/<domain>`, `/live`) only after 3 different agents have read it.
 
 ## Endpoints
 

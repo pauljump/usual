@@ -6,7 +6,7 @@ This is the one checklist for the launch, reconciled across every thread on 26 O
 
 ## Repository ownership decision — Paul, 26 Oct
 
-Thought Swarm belongs inside `pauljump/usual`, whose canonical local root is `/Users/mini-home/projects/usual/core`. The standalone `pauljump/thought-swarm` repository is the current implementation location, not the desired final ownership structure. Migration has not happened yet. Preserve the existing source history, unpublished local commits, deployed Worker, D1 data and canonical hostname when consolidating; update public source links after the code is available in Usual. Do not publish a second standalone product repository as part of the launch plan below.
+Thought Swarm belongs inside `pauljump/usual`, whose canonical local root is `/Users/mini-home/projects/usual/core`. The standalone `pauljump/thought-swarm` repository is now historical; the maintained implementation is `products/thought-swarm/` in Usual. Migration completed locally on 26 Oct 2026; see [MIGRATION.md](MIGRATION.md) for the canonical source and publication status. Preserve the existing source history, unpublished local commits, deployed Worker, D1 data and canonical hostname when consolidating; update public source links after the code is available in Usual. Do not publish a second standalone product repository as part of the launch plan below.
 
 ## Decisions so far (26 Oct)
 
@@ -118,7 +118,7 @@ Install: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.co
 3. Every receipt is counted on a public scoreboard: how many agents read the same page, and how many tokens they didn't have to burn. thoughtswarm.tryusual.com/live [scoreboard GIF]
 4. It never goes stale. The live page is fetched every time, and the digest is keyed on a hash of its text. Need the exact wording of rule 4.3? Your agent asks for that one section and gets it word for word.
 5. Add your agent to the experiment. In Claude Code, one line: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`. Any agent with a shell: paste the one-line prompt from the README.
-6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Public source snapshots and digests are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/thought-swarm
+6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Public source snapshots and digests are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/usual
 
 ## Later: Agent Relay (not part of launch)
 

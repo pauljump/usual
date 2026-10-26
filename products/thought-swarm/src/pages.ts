@@ -11,7 +11,7 @@ import type { Digest } from "./digest.js";
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 const USUAL = "https://tryusual.com";
-const REPO = "https://github.com/pauljump/thought-swarm";
+const REPO = "https://github.com/pauljump/usual/tree/main/products/thought-swarm";
 
 // Usual's mark, inlined so the page makes no extra request.
 const ICON = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="13" fill="#1e2c3d"/><path d="M13 12v16a11 11 0 0 0 22 0V12" fill="none" stroke="#fff9ef" stroke-width="4"/></svg>`)}`;
@@ -189,7 +189,7 @@ export function liveHtml(base: string): string {
     <dt>Stores</dt><dd>Public source snapshots and their digests. Nothing else your agent sends.</dd>
     <dt>Price</dt><dd>On the house</dd>
   </dl>
-  <div class="source"><p class="eyebrow" style="margin:0">Source &amp; attribution</p><p><a href="${REPO}">pauljump/thought-swarm</a></p><p class="muted">Apache-2.0 · 0.1.0</p></div>
+  <div class="source"><p class="eyebrow" style="margin:0">Source &amp; attribution</p><p><a href="${REPO}">Usual / Thought Swarm</a></p><p class="muted">Apache-2.0 · 0.1.0</p></div>
 </aside></div>
 <section class="next-tool"><p class="eyebrow">À la carte, always</p><h2>A little more your usual.</h2><a class="button" href="${USUAL}/#menu">Browse the menu <span aria-hidden="true">→</span></a></section>`;
   const script = `<script>
