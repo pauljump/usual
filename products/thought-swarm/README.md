@@ -21,6 +21,18 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 
 People can browse and share digests in the [library](https://thoughtswarm.tryusual.com/library).
 
+## Give the swarm what your agents already read
+
+Your agents have already read hundreds of docs pages. `scripts/contribute.ts` finds the pages your Claude Code agents fetched (or takes your own list), drops anything private or excluded, checks which pages the swarm already has, and adds the rest:
+
+```sh
+npx tsx scripts/contribute.ts --from-claude              # dry run: writes contribute-plan.tsv, sends nothing
+npx tsx scripts/contribute.ts --from-claude --send       # add the new pages, paced under the hourly limit
+npx tsx scripts/contribute.ts --file urls.txt --send     # or your own list, one URL per line
+```
+
+Only URLs leave your machine, never transcripts or page content. The swarm fetches each page itself, without cookies, and obeys robots.txt, so anything behind a login stays out. Locally the script also skips private-looking links (signed or tokenized URLs, Google Docs, Slack, Notion, dashboards, tunnels) and the sites the swarm never reads (Stack Overflow, Reddit, Apple Developer Forums). Add `--skip-host example.com` for your own sites.
+
 ## How it works
 
 1. **Serve the saved snapshot first.** Cached digests open without downloading or parsing the source again. Every response shows its capture date. `refresh=true` (HTTP or MCP) checks the source again. New fetches respect robots.txt (a robots.txt answered with 401/403, or one whose rules disallow us, means we don't read the site), reject private addresses and non-text files, and cap downloads at 20 MB.
@@ -38,7 +50,7 @@ Every read also returns an outline of the page, and `section=<heading or rule nu
 | Route | What it does |
 |---|---|
 | `POST /mcp` | Remote MCP server (Streamable HTTP) with `search_library`, `read_page` and `swarm_stats`. |
-| `GET /read?url=…` | Digest, outline and receipt as JSON. `&format=text` for markdown, `&section=…` for one part verbatim, `&refresh=true` to re-check the source. `POST` with `{"url": "…"}` also works. |
+| `GET /read?url=…` | Digest, outline and receipt as JSON. `&format=text` for markdown, `&section=…` for one part verbatim, `&refresh=true` to re-check the source. `POST` with `{"url": "…"}` also works. `&contribute=1` adds a page without counting a read (same 60-an-hour limit). |
 | `GET /library` | Searchable library. Parameters: `q`, `source` (hostname), `status` (`ready`, `all`, `unavailable`), `page`. HTML in a browser, JSON otherwise. |
 | `GET /document?url=…` | Readable HTML view of a saved digest; never triggers new processing. |
 | `GET /share`, `POST /share` | Make a stable short link (with a social image) for a saved digest. Never fetches or digests a source. |
