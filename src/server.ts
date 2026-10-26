@@ -46,6 +46,7 @@ const app = new App({
   a2aBearerToken: process.env.A2A_BEARER_TOKEN,
   arelayVerificationToken: process.env.ARELAY_VERIFICATION_TOKEN,
   missesPerHour: process.env.MISSES_PER_HOUR ? Number(process.env.MISSES_PER_HOUR) : undefined,
+  adminToken: process.env.SWARM_ADMIN_TOKEN,
 });
 
 async function toRequest(req: IncomingMessage): Promise<Request> {

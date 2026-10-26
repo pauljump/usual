@@ -17,6 +17,7 @@ export interface Env {
   A2A_BEARER_TOKEN?: string;
   ARELAY_VERIFICATION_TOKEN?: string;
   MISSES_PER_HOUR?: string;
+  SWARM_ADMIN_TOKEN?: string;
 }
 
 let app: App | null = null;
@@ -39,6 +40,7 @@ function build(env: Env): App {
     a2aBearerToken: env.A2A_BEARER_TOKEN,
     arelayVerificationToken: env.ARELAY_VERIFICATION_TOKEN,
     missesPerHour: env.MISSES_PER_HOUR ? Number(env.MISSES_PER_HOUR) : undefined,
+    adminToken: env.SWARM_ADMIN_TOKEN,
   });
 }
 

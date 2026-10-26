@@ -3,3 +3,7 @@ node_modules/
 *.db-*
 .wrangler/
 .dev.vars
+seeds/urls.txt
+seeds/done.txt
+.arelay-registration.json
+.swarm-secrets

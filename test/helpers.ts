@@ -67,6 +67,6 @@ export async function setup(opts: { missesPerHour?: number; now?: () => number }
       events.push(e);
     },
   });
-  const app = new App({ swarm, store, publicBaseUrl: "https://swarm.example", missesPerHour: opts.missesPerHour, a2aBearerToken: undefined });
+  const app = new App({ swarm, store, publicBaseUrl: "https://swarm.example", missesPerHour: opts.missesPerHour, adminToken: "admin-secret" });
   return { web, digester, store, swarm, app, events };
 }

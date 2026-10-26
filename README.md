@@ -23,14 +23,21 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 
 | Route | What it does |
 |---|---|
+| `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://swarm.example.com/mcp` |
+| `GET /live` (or `/` in a browser) | The public scoreboard page. |
+| `GET /badge/<domain>.svg` | README badge with how many agent reads a docs site has had. |
 | `GET /read?url=…` | Digest and receipt as JSON. Add `&format=text` for markdown, which is what agents using curl want. `POST` with `{"url": "…"}` also works. |
 | `POST /a2a` | A2A JSON-RPC `message/send`. arelay.to delivers visitor messages here; the first URL in the message is read. |
 | `GET /.well-known/agent-card.json` | A2A agent card pointing at `/a2a`. |
 | `GET /.well-known/arelay-verification.txt` | Domain proof for the arelay.to registration (set `ARELAY_VERIFICATION_TOKEN`). |
 | `GET /stats` | Scoreboard: tokens saved, hit rate, top pages in the last 24 hours, what agents are reading now. |
-| `GET /p/<domain>` | How often agents read one docs site, and which pages. |
+| `GET /p/<domain>` | How often agents read one docs site, and which pages (HTML in a browser, JSON otherwise). |
 
-## The line people paste into their agent
+## Install
+
+Claude Code: `claude mcp add --transport http swarm https://swarm.example.com/mcp`. There's also a skill in [skills/the-swarm](skills/the-swarm/SKILL.md) that tells the agent when to use it.
+
+Any agent with a shell:
 
 ```
 Before you read any public docs page, ask the swarm first: curl -s 'https://swarm.example.com/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.
@@ -51,20 +58,9 @@ curl -s 'http://localhost:8787/read?format=text&url=https://nodejs.org/api/sqlit
 
 Optional live feed: set `RELAY_WORKSPACE_KEY` (and `RELAY_FEED_TOKEN` after the first run) and every public read is posted to `#swarm-live` in that Relay workspace. Share it read-only with `agent-relay observer --channels swarm-live --expires 7d`.
 
-## Deploy (Cloudflare Workers + D1)
+## Deploy
 
-```sh
-npx wrangler d1 create thought-swarm        # put the id in wrangler.toml
-npx wrangler secret put ANTHROPIC_API_KEY
-npx wrangler secret put SWARM_AGENT_SALT     # any long random string
-npx wrangler deploy
-```
-
-The schema is created on first request.
-
-## Claim arelay.to/swarm
-
-Register a handle with A2A delivery (see https://arelay.to/register): `POST https://arelay.to/api/v1/registrations` with `handle: "swarm"`, your `domain`, and `delivery: { type: "a2a", agentCardUrl: "https://<your domain>/.well-known/agent-card.json", bearerToken: "<A2A_BEARER_TOKEN>" }`. Put the returned challenge token in `ARELAY_VERIFICATION_TOKEN`, redeploy, then call `/api/v1/registrations/{id}/verify`. The A2A request and response shapes here follow the A2A 0.3 spec; arelay.to's docs don't spell out its exact payload, so confirm with a test message after verifying.
+`ANTHROPIC_API_KEY=… ./scripts/go-live.sh` deploys to Cloudflare Workers + D1: it logs in, creates the database, generates and sets secrets, deploys, and runs a smoke test. Then pre-load pages with the scripts in [seeds/](seeds/README.md) and claim the Relay handle with `scripts/claim-handle.ts`. [LAUNCH.md](LAUNCH.md) has the full checklist and launch posts.
 
 ## Configuration
 
@@ -77,10 +73,11 @@ Register a handle with A2A delivery (see https://arelay.to/register): `POST http
 | `MISSES_PER_HOUR` | `60` | New digests one address can trigger per hour. |
 | `A2A_BEARER_TOKEN` | | If set, `/a2a` requires it. |
 | `ARELAY_VERIFICATION_TOKEN` | | Served at the well-known path. |
+| `SWARM_ADMIN_TOKEN` | | Lets `scripts/preload.ts` seed pages without counting them as agent reads. |
 
 ## Not built yet
 
-MCP server and Claude Code skill, the public scoreboard page and README badges, seeding the 10,000 most-read docs pages, pages that need JavaScript to render, and open peer seeding over Relay nodes.
+Pages that need JavaScript to render, the Relay live feed from the Worker (it runs from the Node server today), and open peer seeding over Relay nodes.
 
 ## License
 

@@ -55,7 +55,7 @@ export class Swarm {
 
   // Fetching is cheap and keeps answers current; digesting is the expensive
   // step, done once per (page content, recipe) for everyone.
-  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean } = {}): Promise<ReadResult> {
+  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean } = {}): Promise<ReadResult> {
     const page = await this.o.fetcher.fetchPage(normalizeUrl(rawUrl));
     const contentHash = await sha256Hex(page.text);
     const key = await sha256Hex([page.url, contentHash, this.o.digester.recipe].join("\n"));
@@ -96,7 +96,9 @@ export class Swarm {
     const saved = hit ? Math.max(0, row.page_tokens - row.digest_tokens) : 0;
     const at = this.now();
     const domain = domainOf(row.url);
-    await this.o.store.recordRead({
+    // Seeding (pre-loading pages before launch) is not a read by an agent, so
+    // it never counts toward reads, agents or savings.
+    if (!opts.seed) await this.o.store.recordRead({
       url: row.url,
       domain,
       digest_key: key,
@@ -108,7 +110,7 @@ export class Swarm {
     const stats = await this.o.store.pageStats(row.url);
     const receipt: Receipt = {
       hit,
-      first_read_at: stats.first_read_at ?? at,
+      first_read_at: Math.min(row.created_at, stats.first_read_at ?? at),
       agents_on_page: stats.agents,
       reads_on_page: stats.reads,
       page_tokens: row.page_tokens,
@@ -117,7 +119,7 @@ export class Swarm {
       tokens_saved_on_page: stats.tokens_saved,
       page_url: `${this.o.publicBaseUrl.replace(/\/$/, "")}/p/${domain}`,
     };
-    await Promise.resolve(this.o.onRead?.({ url: row.url, domain, hit, tokens_saved: saved, at })).catch(() => {});
+    if (!opts.seed) await Promise.resolve(this.o.onRead?.({ url: row.url, domain, hit, tokens_saved: saved, at })).catch(() => {});
     return { url: row.url, title: row.title, content_hash: contentHash, digest, markdown, receipt, receipt_line: receiptLine(receipt, at) };
   }
 }

@@ -5,6 +5,8 @@ import { DigestError } from "./digest.js";
 import { FetchError } from "./fetcher.js";
 import { PUBLIC_MIN_AGENTS, type SwarmStore } from "./store.js";
 import { RateLimited, type Swarm } from "./swarm.js";
+import { handleMcp } from "./mcp.js";
+import { badgeSvg, domainHtml, liveHtml } from "./pages.js";
 import { UrlError, firstUrlIn } from "./url.js";
 
 export interface AppConfig {
@@ -14,6 +16,7 @@ export interface AppConfig {
   a2aBearerToken?: string;
   arelayVerificationToken?: string;
   missesPerHour?: number;
+  adminToken?: string; // lets the pre-load script seed pages without counting them as reads
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -32,7 +35,18 @@ export class App {
     const path = url.pathname.replace(/\/+$/, "") || "/";
     try {
       if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
+      const wantsHtml = (req.headers.get("accept") ?? "").includes("text/html");
+      if ((path === "/" && wantsHtml) || path === "/live") return html(liveHtml(this.c.publicBaseUrl));
       if (path === "/" && req.method === "GET") return text(usage(this.c.publicBaseUrl));
+      if (path === "/mcp") {
+        const ip = clientIp(req);
+        return await handleMcp(req, { swarm: this.c.swarm, store: this.c.store, clientIp: ip, allowMiss: (a) => this.allowMiss(a), describeError: publicMessage });
+      }
+      const badge = path.match(/^\/badge\/([a-z0-9.-]+)\.svg$/i);
+      if (badge) {
+        const t = await this.c.store.domainTotals(badge[1].toLowerCase());
+        return new Response(badgeSvg(t.reads), { headers: { "content-type": "image/svg+xml", "cache-control": "max-age=300", ...CORS } });
+      }
       if (path === "/health") return json({ ok: true });
       if (path === "/read" && (req.method === "GET" || req.method === "POST")) return await this.read(req, url);
       if (path === "/a2a" && req.method === "POST") return await this.a2a(req);
@@ -40,7 +54,10 @@ export class App {
       if (path === "/.well-known/arelay-verification.txt" && this.c.arelayVerificationToken) return text(this.c.arelayVerificationToken);
       if (path === "/stats") return json(await this.stats());
       const domainMatch = path.match(/^\/p\/([a-z0-9.-]+)$/i);
-      if (domainMatch) return json(await this.domain(domainMatch[1].toLowerCase()));
+      if (domainMatch) {
+        const d = await this.domain(domainMatch[1].toLowerCase());
+        return wantsHtml ? html(domainHtml(this.c.publicBaseUrl, d.domain, d, d.top_pages)) : json(d);
+      }
       return json({ error: "Not found." }, 404);
     } catch (err) {
       return errorResponse(err);
@@ -57,8 +74,13 @@ export class App {
     }
     if (!target) return json({ error: "Pass the page to read as ?url=… or a JSON body {\"url\": \"…\"}." }, 400);
     const ip = clientIp(req);
+    const seed = url.searchParams.get("seed") === "1";
+    if (seed && (!this.c.adminToken || req.headers.get("authorization") !== `Bearer ${this.c.adminToken}`)) {
+      return json({ error: "Seeding needs the admin token." }, 401);
+    }
     const result = await this.c.swarm.read(target, agent || req.headers.get("x-swarm-agent") || ip, {
-      allowMiss: () => this.allowMiss(ip),
+      allowMiss: seed ? undefined : () => this.allowMiss(ip),
+      seed,
     });
     if ((req.headers.get("accept") ?? "").includes("text/markdown") || url.searchParams.get("format") === "text") {
       return text(`${result.markdown}\n\n${result.receipt_line}\n\n${UNTRUSTED_NOTE}`, 200, "text/markdown; charset=utf-8");
@@ -153,6 +175,10 @@ function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json; charset=utf-8", ...CORS } });
 }
 
+function html(body: string): Response {
+  return new Response(body, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "max-age=30" } });
+}
+
 function text(body: string, status = 200, type = "text/plain; charset=utf-8"): Response {
   return new Response(body, { status, headers: { "content-type": type, ...CORS } });
 }
@@ -214,13 +240,20 @@ function usage(base: string): string {
   const root = base.replace(/\/$/, "");
   return `The Swarm: the agent that has already read it.
 
-Paste this into Claude Code, Codex or Cursor:
+Claude Code, one command:
+
+  claude mcp add --transport http swarm ${root}/mcp
+
+Any agent with a shell, paste this into the chat:
 
   ${pasteLine(base)}
 
 Endpoints
   GET  ${root}/read?url=<page>        digest + receipt (JSON; add &format=text for markdown)
   POST ${root}/a2a                    A2A JSON-RPC (message/send), used by arelay.to/swarm
+  POST ${root}/mcp                    MCP (Streamable HTTP): tools read_page, swarm_stats
+  GET  ${root}/live                   the public scoreboard page
+  GET  ${root}/badge/<domain>.svg     README badge for a docs site
   GET  ${root}/stats                  live scoreboard: tokens saved, hit rate, what agents are reading
   GET  ${root}/p/<domain>             how often agents read a docs site
 
