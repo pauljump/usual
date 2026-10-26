@@ -23,12 +23,21 @@ const BLOCKED_HOSTS = [
   "ngrok.io", "ngrok-free.app", "ngrok.app", "trycloudflare.com", "ts.net",
 ];
 const BLOCKED_PATHS: [string, RegExp][] = [["developer.apple.com", /^\/forums(\/|$)/]];
+// Job boards: one posting is public, but the list of them is someone's job search.
+const PERSONAL_HOSTS = ["greenhouse.io", "lever.co", "myworkdayjobs.com", "ashbyhq.com", "workable.com", "smartrecruiters.com"];
+const SEARCH_PARAM = /^(q|query|term|search|s|keyword|keywords)$/i;
+const ACCOUNT_PATH = /^(signup|sign-up|login|log-in|signin|sign-in|register|account|accounts|checkout|subscribe|subscriptions|cart)$/i;
 const SECRET_PARAM = /(^|_|-)(token|key|apikey|secret|sig|signature|auth|password|passwd|pwd|session|sid|code|credential|jwt|otp)s?($|_|-)|^x-amz-|^x-goog-/i;
 
 export type Verdict = { ok: true; url: string } | { ok: false; reason: string };
 
 export function checkUrl(raw: string, extraBlockedHosts: string[] = []): Verdict {
-  if (!URL.canParse(raw.trim())) return { ok: false, reason: "not a URL" };
+  raw = raw.trim();
+  // Reader proxies wrap the real page: https://r.jina.ai/https://example.com/x
+  const wrapped = raw.match(/^https?:\/\/r\.jina\.ai\/(https?:\/\/.+)$/i);
+  if (wrapped) raw = wrapped[1];
+  if (!URL.canParse(raw)) return { ok: false, reason: "not a URL" };
+  if (/redacted/i.test(raw)) return { ok: false, reason: "redacted in the transcript" };
   let url: string;
   try {
     url = normalizeUrl(raw);
@@ -44,6 +53,10 @@ export function checkUrl(raw: string, extraBlockedHosts: string[] = []): Verdict
   if (extraBlockedHosts.map((h) => h.toLowerCase().replace(/^www\./, "")).some(onHost)) return { ok: false, reason: "your excluded site" };
   if (BLOCKED_PATHS.some(([h, p]) => onHost(h) && p.test(u.pathname))) return { ok: false, reason: "excluded site" };
   if ([...u.searchParams.keys()].some((k) => SECRET_PARAM.test(k))) return { ok: false, reason: "looks like it carries a secret" };
+  if (PERSONAL_HOSTS.some(onHost) || /^\/jobs(\/|$)/.test(u.pathname) && onHost("linkedin.com")) return { ok: false, reason: "job posting" };
+  if (host.startsWith("api.") || /\/(api|rest|webservices|graphql)(\/|$)|\/api\.php$/i.test(u.pathname)) return { ok: false, reason: "API call, not a document" };
+  if ([...u.searchParams.keys()].some((k) => SEARCH_PARAM.test(k)) || /\/search(\/|$)/i.test(u.pathname)) return { ok: false, reason: "search, not a document" };
+  if (u.pathname.split("/").some((seg) => ACCOUNT_PATH.test(seg))) return { ok: false, reason: "account or signup page" };
   if (u.pathname.split("/").some(looksLikeToken)) return { ok: false, reason: "looks like a private link" };
   return { ok: true, url };
 }
@@ -72,6 +85,8 @@ export function fetchedUrls(line: string): string[] {
 }
 
 // A plain URL list: one URL per line; blank lines and # comments are ignored.
+// A contribute-plan.tsv works too: the first http(s) field on each line is used.
 export function listedUrls(text: string): string[] {
-  return text.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#")).map((l) => l.split(/\s+/)[0]);
+  return text.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"))
+    .flatMap((l) => l.split(/\s+/).filter((f) => /^https?:\/\//i.test(f)).slice(0, 1));
 }

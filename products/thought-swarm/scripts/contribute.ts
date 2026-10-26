@@ -7,10 +7,12 @@
 // It starts as a dry run: it writes contribute-plan.tsv listing every URL as
 // new, already in the swarm, or skipped (and why), and sends nothing. Read the
 // plan, then add --send. Only URLs leave your machine, never page content or
-// transcripts. Options:
+// transcripts, but the list itself can say a lot about you, so read it. To
+// drop rows, delete them from the plan and pass it back with --file. Options:
 //   --swarm <url>        default https://thoughtswarm.tryusual.com
 //   --since YYYY-MM-DD   only transcripts changed since this date (with --from-claude)
 //   --skip-host <host>   never send this host (repeatable), e.g. your own sites
+//   --exclude <regex>    never send URLs matching this (repeatable), e.g. --exclude 'github.com/me/'
 //   --per-hour <n>       pace new digests (default 55; the swarm allows 60 an hour per address)
 // Resumable: sent URLs are appended to contribute-done.txt and skipped next run.
 import { appendFileSync, existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -25,7 +27,8 @@ const base = (opt("--swarm") ?? "https://thoughtswarm.tryusual.com").replace(/\/
 const send = args.includes("--send");
 const perHour = Number(opt("--per-hour")) || 55;
 const since = opt("--since") ? Date.parse(opt("--since")!) : 0;
-const skipHosts = all("--skip-host");
+const skipHosts = all("--skip-host").flatMap((h) => h.split(/[\s,]+/)).filter(Boolean);
+const excludes = all("--exclude").map((r) => new RegExp(r, "i"));
 const COST_PER_PAGE = [0.001, 0.003]; // Haiku 5.5, typical 5k to 20k token docs page
 
 function* jsonlFiles(dir: string): Generator<string> {
@@ -59,6 +62,7 @@ const skipped = new Map<string, number>();
 for (const r of raw) {
   const v = checkUrl(r, skipHosts);
   if (!v.ok) { skipped.set(v.reason, (skipped.get(v.reason) ?? 0) + 1); continue; }
+  if (excludes.some((x) => x.test(v.url))) { skipped.set("your --exclude", (skipped.get("your --exclude") ?? 0) + 1); continue; }
   const e = plan.get(v.url);
   if (e) e.times++;
   else plan.set(v.url, { status: "new", reason: "", times: 1 });
@@ -84,7 +88,8 @@ for (const [reason, n] of [...skipped].sort((a, b) => b[1] - a[1])) console.log(
 console.log(`New digests would cost the swarm about $${(fresh.length * COST_PER_PAGE[0]).toFixed(2)} to $${(fresh.length * COST_PER_PAGE[1]).toFixed(2)} and take about ${Math.ceil(fresh.length / perHour)} hours at ${perHour} an hour.`);
 console.log("Plan written to contribute-plan.tsv.");
 if (!send) {
-  console.log("Dry run: nothing sent. Check the plan, then re-run with --send.");
+  console.log("Dry run: nothing sent. Read the plan: each page is public, but together they show what you were researching.");
+  console.log("Delete any rows you'd rather keep to yourself, then: --file contribute-plan.tsv --send");
   process.exit(0);
 }
 
