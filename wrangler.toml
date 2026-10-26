@@ -1,0 +1,17 @@
+name = "thought-swarm"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PUBLIC_BASE_URL = "https://swarm.example.com"
+# SWARM_MODEL = "claude-opus-5-5"
+# MISSES_PER_HOUR = "60"
+
+# Secrets (wrangler secret put …): ANTHROPIC_API_KEY, SWARM_AGENT_SALT,
+# A2A_BEARER_TOKEN, ARELAY_VERIFICATION_TOKEN
+
+[[d1_databases]]
+binding = "DB"
+database_name = "thought-swarm"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
