@@ -1,7 +1,7 @@
 // Local / single-host Node server: node:sqlite storage, optional Relay feed.
 //   ANTHROPIC_API_KEY=... npm run dev
 // Env: PORT, SWARM_DB (file path, default ./swarm.db), PUBLIC_BASE_URL, SWARM_MODEL,
-// SWARM_AGENT_SALT, A2A_BEARER_TOKEN, ARELAY_VERIFICATION_TOKEN, STACKEXCHANGE_KEY,
+// SWARM_AGENT_SALT, A2A_BEARER_TOKEN, ARELAY_VERIFICATION_TOKEN,
 // RELAY_WORKSPACE_KEY + RELAY_FEED_TOKEN (optional live feed to #swarm-live).
 
 import { createServer, type IncomingMessage } from "node:http";
@@ -35,7 +35,7 @@ if (!process.env.SWARM_AGENT_SALT) console.warn("SWARM_AGENT_SALT is not set; us
 const app = new App({
   swarm: new Swarm({
     store,
-    fetcher: new PageFetcher(undefined, undefined, { stackExchangeKey: process.env.STACKEXCHANGE_KEY }),
+    fetcher: new PageFetcher(),
     digester: new ClaudeDigester(undefined, process.env.SWARM_MODEL || DEFAULT_MODEL),
     publicBaseUrl: base,
     agentSalt: process.env.SWARM_AGENT_SALT ?? "dev-salt",

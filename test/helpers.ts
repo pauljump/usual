@@ -20,6 +20,8 @@ export class FakeWeb {
     this.requests.push(input);
     const url = new URL(input);
     if (url.pathname === "/robots.txt") {
+      const page = this.pages.get(input);
+      if (page) return new Response(page.body, { status: page.status ?? 200, headers: { "content-type": page.type ?? "text/plain" } });
       const r = this.robots.get(url.origin);
       return r === undefined ? new Response("", { status: 404 }) : new Response(r, { headers: { "content-type": "text/plain" } });
     }

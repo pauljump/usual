@@ -1,6 +1,5 @@
 import { doccDataUrl, renderDocc } from "./docc.js";
 import { extractText, type Extracted } from "./extract.js";
-import { renderStackOverflow, stackExchangeUrls, stackOverflowQuestionId } from "./stackoverflow.js";
 import { AGENT_TOKEN, isAllowed, parseRobots } from "./robots.js";
 import { assertPublicTarget, normalizeUrl } from "./url.js";
 
@@ -25,18 +24,11 @@ export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 export class PageFetcher {
   private robots = new Map<string, { at: number; rules: ReturnType<typeof parseRobots> }>();
 
-  constructor(
-    private readonly fetchFn: FetchFn = (i, init) => fetch(i, init),
-    private readonly timeoutMs = 15_000,
-    private readonly opts: { stackExchangeKey?: string } = {},
-  ) {}
+  constructor(private readonly fetchFn: FetchFn = (i, init) => fetch(i, init), private readonly timeoutMs = 15_000) {}
 
   async fetchPage(normalizedUrl: string): Promise<FetchedPage> {
     assertPublicTarget(normalizedUrl);
     await this.checkRobots(normalizedUrl);
-
-    const soId = stackOverflowQuestionId(normalizedUrl);
-    if (soId) return this.fetchStackOverflow(normalizedUrl, soId);
 
     const docc = doccDataUrl(normalizedUrl);
     if (docc) {
@@ -83,33 +75,6 @@ export class PageFetcher {
     return { ...extracted, url: normalizedUrl, contentType: "application/json" };
   }
 
-  // Stack Overflow pages refuse plain fetches; its official API serves the same content.
-  private async fetchStackOverflow(normalizedUrl: string, id: string): Promise<FetchedPage> {
-    const urls = stackExchangeUrls(id, this.opts.stackExchangeKey);
-    const [q, a] = await Promise.all([this.getJson(urls.question), this.getJson(urls.answers)]);
-    const page = renderStackOverflow(q, a);
-    if (!page) throw new FetchError("That Stack Overflow question doesn't exist or was deleted.", 404);
-    return { ...page, url: normalizedUrl, contentType: "application/json" };
-  }
-
-  private async getJson(url: string): Promise<unknown> {
-    const res = await this.get(url, "application/json");
-    let body: any;
-    try {
-      body = JSON.parse(await readCapped(res, MAX_BYTES));
-    } catch {
-      body = null;
-    }
-    if (!res.ok || body?.error_id) {
-      const throttled = res.status === 429 || body?.error_id === 502 || body?.error_name === "throttle_violation";
-      throw new FetchError(
-        throttled ? "Stack Overflow's API is rate limiting the swarm right now; try again later." : `Stack Overflow's API returned an error (${body?.error_message ?? `HTTP ${res.status}`}).`,
-        throttled ? 503 : 502,
-      );
-    }
-    return body;
-  }
-
   private async checkRobots(normalizedUrl: string): Promise<void> {
     const url = new URL(normalizedUrl);
     const cached = this.robots.get(url.origin);
@@ -117,7 +82,10 @@ export class PageFetcher {
     if (!rules) {
       try {
         const res = await this.get(`${url.origin}/robots.txt`, "text/plain");
-        rules = res.ok ? parseRobots(await readCapped(res, 500_000)) : [];
+        // A site that refuses to show us its robots.txt is refusing us: treat 401/403 as "disallow everything".
+        // Other failures (404, 5xx, network) mean there are no rules to follow.
+        if (res.status === 401 || res.status === 403) rules = parseRobots("User-agent: *\nDisallow: /");
+        else rules = res.ok ? parseRobots(await readCapped(res, 500_000)) : [];
       } catch {
         rules = [];
       }
