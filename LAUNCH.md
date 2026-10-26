@@ -42,8 +42,8 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 - **done** Section lookup: every answer has an outline, and `section=4.3` returns that part of the live page word for word.
 - **done** robots.txt is respected, including when a site serves it with an error status. Stack Overflow is refused.
 - **done** Agent Relay removed from the README, this file and the usage text.
-- **in progress** Switch on thoughtswarm.tryusual.com (Paul said go at 12:38Z).
-- **waiting on Paul** Merge the Usual restyle, [PR #2](https://github.com/pauljump/thought-swarm/pull/2) (rebased, 54 tests pass), then redeploy from the Mini.
+- **done** thoughtswarm.tryusual.com is live (workers.dev kept as a fallback).
+- **in progress** Usual restyle ([PR #2](https://github.com/pauljump/thought-swarm/pull/2)) merged; redeploying from the Mini.
 - **to do** Re-run the stranger test on the live domain once it resolves: a clean Claude Code install answering what App Review Guideline 4.3 covers, the curl paste line, /live and the badges.
 
 ### 2. Pre-load and costs
