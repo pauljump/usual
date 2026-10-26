@@ -156,9 +156,12 @@ export class App {
     if (seed && (!this.c.adminToken || req.headers.get("authorization") !== `Bearer ${this.c.adminToken}`)) {
       return json({ error: "Seeding needs the admin token." }, 401);
     }
+    // A contribution digests a page someone's agent already read, so the next
+    // agent gets a hit. Same per-address limit as a read, but not counted as one.
+    const contribute = url.searchParams.get("contribute") === "1";
     const result = await this.c.swarm.read(target, agent || req.headers.get("x-swarm-agent") || ip, {
       allowMiss: seed ? undefined : () => this.allowMiss(ip),
-      seed,
+      seed: seed || contribute,
       section,
       refresh,
     });
