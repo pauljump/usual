@@ -3,7 +3,7 @@ import { extractText, type Extracted } from "./extract.js";
 import { AGENT_TOKEN, isAllowed, parseRobots } from "./robots.js";
 import { assertPublicTarget, normalizeUrl } from "./url.js";
 
-export const USER_AGENT = `Mozilla/5.0 (compatible; ${AGENT_TOKEN}/0.1; +https://arelay.to/swarm)`;
+export const USER_AGENT = `Mozilla/5.0 (compatible; ${AGENT_TOKEN}/0.1; +https://thoughtswarm.tryusual.com)`;
 const MAX_BYTES = 3_000_000;
 const ROBOTS_TTL_MS = 60 * 60 * 1000;
 const TEXT_TYPES = /^(text\/(html|plain|markdown|x-markdown)|application\/(xhtml\+xml|json))/i;

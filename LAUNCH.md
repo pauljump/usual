@@ -16,8 +16,6 @@ Any agent with a shell, paste into the chat:
 Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
 ```
 
-Talk to it on Agent Relay: https://arelay.to/swarm
-
 ## Checklist
 
 ### 1. Go live (Mac mini, about 10 minutes)
@@ -32,29 +30,16 @@ Talk to it on Agent Relay: https://arelay.to/swarm
 - [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/preload.ts`
 - [ ] Re-run `preload.ts` once to retry failures. Look at the "skipped because" summary; JavaScript-only sites are expected there.
 
-### 3. Claim arelay.to/swarm
+### 3. Private beta (a few days)
 
-- [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/claim-handle.ts register --domain <host>`
-- [ ] `ARELAY_VERIFICATION_TOKEN=<token it prints> ANTHROPIC_API_KEY=… ./scripts/go-live.sh` (redeploys with the token)
-- [ ] `npx tsx scripts/claim-handle.ts verify`, then send the handle a URL from arelay.to/swarm and check the reply has a receipt.
-
-### 4. Live feed on Relay (optional, recommended)
-
-- [ ] Create a Relay Cloud workspace for The Swarm. Run the Node server once with `RELAY_WORKSPACE_KEY` set to register the `swarm-feed` agent, and save the token it gets as `RELAY_FEED_TOKEN`. The feed runs from the Node server, not the Worker, for now.
-- [ ] `agent-relay observer --channels swarm-live --expires 7d` and put the link on the launch post. Renew it weekly.
-
-### 5. Private beta (a few days)
-
-- [ ] Send the install line to 20 to 50 friends who use Claude Code, Codex or Cursor. Nobody from the Relay team, to keep the surprise.
+- [ ] Send the install line to 20 to 50 friends who use Claude Code, Codex or Cursor.
 - [ ] Watch `/stats`. Target before launch: a hit rate of 15% or more on real traffic.
 - [ ] Record the 30-second video (script below) with real receipts.
 
-### 6. Launch day
+### 4. Launch day
 
-- [ ] One hour before: send the note to the Relay founders (below).
-- [ ] Post Show HN, then the X thread with the video. Tag Agent Relay.
+- [ ] Post Show HN, then the X thread with the video.
 - [ ] Product Hunt the next day.
-- [ ] Optional stunt: open a Relay Connect room and invite up to eight well-known developers' agents to read a whole framework's docs through the swarm, with the Observer link on the scoreboard.
 
 ## 30-second video
 
@@ -80,7 +65,7 @@ How it works:
 - Only the URL is stored. robots.txt is respected, with an opt-out for `ThoughtSwarm`.
 - A public scoreboard shows tokens saved and what agents are reading. A page shows up there only after three different agents have read it.
 
-Install: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`, or paste one line into any agent. The front door is a public agent on Agent Relay (arelay.to/swarm), so any A2A agent can talk to it too.
+Install: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`, or paste one line into any agent.
 
 Open source (Apache-2.0). I'd love to hear what hit rate you see.
 
@@ -89,9 +74,5 @@ Open source (Apache-2.0). I'd love to hear what hit rate you see.
 1. Your coding agent just read 24,000 tokens of docs that another agent read an hour ago. Today we're launching The Swarm: agents share what they've already read. [video]
 2. Before reading a public docs page, your agent asks the swarm. If anyone's agent already read that version, you get a dense digest instead, with a receipt for the tokens saved.
 3. Live counter of every token agents didn't have to read: https://thought-swarm.pauljump.workers.dev/live
-4. One command for Claude Code: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`. Any A2A agent can talk to it on @agentrelay: arelay.to/swarm
+4. One command for Claude Code: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`.
 5. Open source, robots.txt respected, only URLs stored. Code: github.com/pauljump/thought-swarm
-
-## Note to the Relay founders (send an hour before launch)
-
-Hey Will and Khaliq, I built something on Agent Relay and I'm launching it in an hour, and I wanted you to see it first. It's called The Swarm: coding agents share digests of the docs they read, so nobody's agent reads the same page twice. Its front door is arelay.to/swarm over A2A, and the live feed is a Relay channel with an Observer link. Link: https://thought-swarm.pauljump.workers.dev/live. Thanks for building the thing that made it easy.
