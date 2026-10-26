@@ -1,6 +1,7 @@
 // Cloudflare Worker entry. arelay.to's A2A delivery POSTs to /a2a here, so
 // nothing has to hold a live connection.
 
+import { githubStars } from "./github.js";
 import Anthropic from "@anthropic-ai/sdk";
 import { ClaudeDigester, DEFAULT_MODEL } from "./digest.js";
 import { PageFetcher } from "./fetcher.js";
@@ -47,6 +48,13 @@ function build(env: Env): App {
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const edgeCache = (caches as unknown as {default: Cache}).default;
+    if (new URL(req.url).pathname === "/github-stars" && req.method === "GET") {
+      const cached = await edgeCache.match(req);
+      if (cached) return cached;
+      const result = await githubStars();
+      if (result.ok) ctx.waitUntil(edgeCache.put(req, result.clone()));
+      return result;
+    }
     const image = req.method === "GET" && /^\/s\/[a-f0-9]{16,64}\/card\.png$/.test(new URL(req.url).pathname);
     if (image) {
       const cached = await edgeCache.match(req);

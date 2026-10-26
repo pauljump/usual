@@ -95,6 +95,13 @@ dl{grid-template-columns:95px minmax(0,1fr)}.site-footer{flex-wrap:wrap;padding:
 `;
 
 const COPY_SCRIPT = `<script>
+fetch('/github-stars').then(r=>r.ok?r.json():null).then(data=>{
+if(!data||!Number.isSafeInteger(data.stars)||data.stars<0)return;
+for(const el of document.querySelectorAll('[data-github-stars]')){
+el.textContent=' · ★ '+data.stars.toLocaleString();
+el.parentElement.setAttribute('aria-label','Usual on GitHub, '+data.stars.toLocaleString()+' stars');
+}}).catch(()=>{});
+
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;
 const t=document.getElementById(b.dataset.copy).textContent,n=document.getElementById('notice');
 try{await navigator.clipboard.writeText(t);n.textContent='Copied.'}catch(_){n.textContent='Select the text and copy it by hand.'}
@@ -103,7 +110,7 @@ n.classList.add('show');setTimeout(()=>n.classList.remove('show'),2200)});
 
 function header(root: string): string {
   return `<div class="wrap"><header class="site-header"><a class="brand" href="${USUAL}/" aria-label="Usual home"><span class="brand-mark" aria-hidden="true">u</span>usual<span class="brand-period">.</span></a>
-<nav aria-label="Main navigation"><a href="${USUAL}/#menu">Menu</a><a class="hide-sm" href="${esc(root)}/library">Library</a><a href="${esc(root)}/share">Share</a><a class="github-link" href="${REPO}">GitHub</a></nav></header></div>`;
+<nav aria-label="Main navigation"><a href="${USUAL}/#menu">Menu</a><a class="hide-sm" href="${esc(root)}/library">Library</a><a href="${esc(root)}/share">Share</a><a class="github-link" href="https://github.com/pauljump/usual" aria-label="Usual on GitHub">GitHub<span data-github-stars></span></a></nav></header></div>`;
 }
 
 function footer(): string {
