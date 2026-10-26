@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>escape-webview — get out of in-app browsers</title>
+    <meta name="description" content="You tapped a link. That's you asking to leave the app. Social apps override you and open a browser they control. This is the exit. One file, MIT.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="escape-webview">
+    <meta property="og:url" content="https://pauljump.github.io/escape-webview/">
+    <meta property="og:title" content="escape-webview — get out of in-app browsers">
+    <meta property="og:description" content="You tapped a link. That's you asking to leave the app. Open this from X and watch it work on itself.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="escape-webview — get out of in-app browsers">
+    <meta name="twitter:description" content="You tapped a link. That's you asking to leave the app. Open this from X and watch it work on itself.">
+
+    <link rel="stylesheet" href="style.css?v=1">
+  <script defer data-pulse-posthog="1" src="https://pulse.polyfeeds.dev/_pulse/posthog.js"></script>
+</head>
+  <body>
+    <main>
+      <header>
+        <h1>escape&#8209;webview</h1>
+        <p class="deck">You tapped a link. That is you asking to leave the app.
+          X, Instagram, Facebook and TikTok override you and open it in a browser
+          they control &mdash; no sign&#8209;in, no saved passwords, no extensions,
+          no autofill.</p>
+        <p class="deck">This is the exit.</p>
+
+        <div class="badges">
+          <a class="badge primary" href="https://github.com/pauljump/escape-webview">Source on GitHub</a>
+          <span class="badge">MIT</span>
+          <span class="badge">10 KB gzipped</span>
+          <span class="badge">Zero dependencies</span>
+        </div>
+      </header>
+
+      <section class="live" id="live">
+        <h2>It is running on this page right now</h2>
+        <p id="verdict" class="verdict">Checking&hellip;</p>
+        <p class="small">Nothing is sent anywhere. Detection is a User&#8209;Agent
+          check that runs entirely in your browser.</p>
+      </section>
+
+      <section>
+        <h2>Install</h2>
+        <p>Point your coding agent at the repo:</p>
+        <pre><code>Install https://github.com/pauljump/escape-webview
+into this site. Follow AGENTS.md.</code></pre>
+        <p>It finds your static directory and shared layout, copies one file,
+          adds one line, checks your CSP, and verifies the result. Or do it by
+          hand &mdash; copy <code>escape-webview.js</code> and add:</p>
+        <pre><code>&lt;script src="/escape-webview.js" defer
+        data-auto data-name="Your Site"&gt;&lt;/script&gt;</code></pre>
+      </section>
+
+      <section>
+        <h2>What actually works</h2>
+        <table>
+          <tr><td><b>Android</b></td><td>Escapes automatically via <code>intent://</code>. The user does nothing.</td></tr>
+          <tr><td><b>iOS</b></td><td>Guided, not automatic. The card teaches the host app&rsquo;s own two&#8209;tap gesture.</td></tr>
+        </table>
+        <p>No iPhone auto&#8209;escape is claimed, because none exists. Measured
+          inside X for iPhone 12.21 on iOS 26.6, with a bogus&#8209;scheme control
+          to catch false positives: <b>11 of 11 custom&#8209;scheme routes are
+          blocked</b> &mdash; <code>googlechromes://</code>,
+          <code>x-safari-https://</code>, <code>firefox://open-url</code>,
+          <code>x-web-search://</code>, <code>googlechrome-x-callback://</code>,
+          <code>shortcuts://</code>, and every one of them again via a hidden
+          iframe. <code>window.open</code> only yields another tab inside the
+          same in&#8209;app browser.</p>
+        <p>Anyone selling you an iPhone auto&#8209;escape is relying on a bug
+          that gets patched.</p>
+      </section>
+
+      <section>
+        <h2>It will not spy on anyone</h2>
+        <p>Your analytics are automatic: if <code>gtag</code>,
+          <code>plausible</code>, <code>posthog</code>, <code>umami</code>,
+          <code>fathom</code> or <code>dataLayer</code> is on the page, events go
+          there. First&#8209;party, your data.</p>
+        <p>Telemetry back to this project is <b>off unless you add
+          <code>data-telemetry</code></b>, sends no URL, path, referrer, visitor
+          ID or cookie, and honours Do&nbsp;Not&nbsp;Track and Global Privacy
+          Control. A tool about apps taking things from you has no business
+          quietly taking something back.</p>
+      </section>
+
+      <section>
+        <h2>When not to install it</h2>
+        <p>If your site genuinely works fine inside an in&#8209;app browser,
+          don&rsquo;t. Interrupting every visitor with a two&#8209;tap chore costs
+          more than it returns. This earns its place when sign&#8209;in, saved
+          passwords, extensions or payments are actually involved.</p>
+      </section>
+
+      <footer>
+        <a href="https://github.com/pauljump/escape-webview">github.com/pauljump/escape-webview</a>
+        <span>&middot;</span>
+        <span>MIT</span>
+      </footer>
+    </main>
+
+    <script src="detect.js?v=1"></script>
+    <!-- Dogfooding: the widget is installed on its own homepage. Open this
+         page from inside X and the card appears. -->
+    <script src="escape-webview.js?v=1" defer data-auto data-name="escape-webview"></script>
+  </body>
+</html>

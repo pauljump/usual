@@ -1,0 +1,12 @@
+node_modules/
+.DS_Store
+*.log
+.gstack/
+
+# Generated local files; source and retained evidence remain explicit.
+__pycache__/
+*.pyc
+*.tsbuildinfo
+.next/
+.next-*/
+.build/

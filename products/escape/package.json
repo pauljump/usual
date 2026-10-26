@@ -1,0 +1,45 @@
+{
+  "name": "escape-webview",
+  "version": "1.0.0",
+  "description": "Break out of in-app browsers (X, Instagram, Facebook, TikTok...) into the user's real browser. One file, no dependencies. Point your coding agent at AGENTS.md and it installs itself.",
+  "main": "src/escape-webview.js",
+  "module": "src/escape-webview.js",
+  "unpkg": "src/escape-webview.js",
+  "jsdelivr": "src/escape-webview.js",
+  "files": [
+    "src",
+    "interstitial",
+    "examples",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "serve": "python3 -m http.server 8080"
+  },
+  "keywords": [
+    "agent-installable",
+    "analytics",
+    "claude",
+    "codex",
+    "deep-link",
+    "facebook",
+    "in-app-browser",
+    "instagram",
+    "oauth",
+    "privacy",
+    "redirect",
+    "share-link",
+    "tiktok",
+    "twitter",
+    "webview",
+    "x"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pauljump/escape-webview.git"
+  },
+  "homepage": "https://github.com/pauljump/escape-webview#readme"
+}

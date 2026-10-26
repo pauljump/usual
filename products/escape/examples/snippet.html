@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>escape-webview — snippet demo</title>
+</head>
+<body>
+  <h1>My page</h1>
+  <p>Open this URL from inside the X, Instagram, Facebook or TikTok app to see
+     the escape card. In a normal browser nothing happens.</p>
+
+  <!-- The whole integration: one line. -->
+  <!-- Local demo path; in production use a self-hosted /escape-webview.js -->
+  <script src="../src/escape-webview.js" data-auto></script>
+
+  <!-- With an app deep link:
+  <script src="../src/escape-webview.js" data-auto
+          data-name="My Site"
+          data-app-ios="https://mysite.com/post"
+          data-app-android="https://mysite.com/post"></script>
+  -->
+
+  <!-- Force the card in a desktop browser while developing:
+  <script src="../src/escape-webview.js" data-auto data-force></script>
+  -->
+</body>
+</html>
