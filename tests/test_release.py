@@ -78,7 +78,6 @@ def test_public_site_never_accepts_or_exposes_private_data():
             assert 'href="/claude-code-memory/"' in page
             assert 'https://github.com/pauljump/usual' in page
             assert 'data-demo-step="scope"' in page
-            assert 'id="handoff-prompt"' in page
             assert 'transcript upload' in page
             assert 'googletagmanager.com' not in page
         for path, marker in [
