@@ -2,26 +2,14 @@
 // hashing, storage, receipts and scoreboard, with an offline stand-in for the
 // model call. Set ANTHROPIC_API_KEY to use the real digester instead.
 //   npx tsx scripts/e2e.ts <url> [...]
-import { ClaudeDigester, type Digester } from "../src/digest.js";
+import { ClaudeDigester } from "../src/digest.js";
+import { OfflineDigester } from "../src/offline.js";
 import { PageFetcher } from "../src/fetcher.js";
 import { App } from "../src/http.js";
 import { sqliteDb } from "../src/sqlite.js";
 import { SwarmStore } from "../src/store.js";
 import { Swarm } from "../src/swarm.js";
 
-const offline: Digester = {
-  recipe: "offline-test",
-  async digest(page) {
-    const firstCode = page.text.match(/```(\w*)\n([\s\S]*?)\n```/);
-    return {
-      title: page.title,
-      summary: page.text.split("\n").find((l) => l.length > 80)?.slice(0, 300) ?? "",
-      key_points: [...page.text.matchAll(/^#{2,3} (.+)$/gm)].slice(0, 8).map((m) => m[1]),
-      api: [],
-      code_examples: firstCode ? [{ caption: "First example on the page", language: firstCode[1], code: firstCode[2] }] : [],
-      gotchas: [],
-      version_info: "",
-    };
   },
 };
 
@@ -34,7 +22,7 @@ const app = new App({
   swarm: new Swarm({
     store,
     fetcher: new PageFetcher(),
-    digester: process.env.ANTHROPIC_API_KEY ? new ClaudeDigester() : offline,
+    digester: process.env.ANTHROPIC_API_KEY ? new ClaudeDigester() : new OfflineDigester(),
     publicBaseUrl: base,
     agentSalt: "e2e",
   }),

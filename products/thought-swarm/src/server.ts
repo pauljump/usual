@@ -1,5 +1,6 @@
 // Local / single-host Node server: node:sqlite storage, optional Relay feed.
-//   ANTHROPIC_API_KEY=... npm run dev
+//   npm run dev                          (offline digester, labelled placeholders)
+//   ANTHROPIC_API_KEY=... npm run dev    (real digests)
 // Env: PORT, SWARM_DB (file path, default ./swarm.db), PUBLIC_BASE_URL, SWARM_MODEL,
 // SWARM_AGENT_SALT, A2A_BEARER_TOKEN, ARELAY_VERIFICATION_TOKEN,
 // RELAY_WORKSPACE_KEY + RELAY_FEED_TOKEN (optional live feed to #swarm-live).
@@ -7,6 +8,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import { ClaudeDigester, DEFAULT_MODEL } from "./digest.js";
 import { createRelayFeed } from "./feed.js";
+import { OfflineDigester } from "./offline.js";
 import { PageFetcher } from "./fetcher.js";
 import { App } from "./http.js";
 import { sqliteDb } from "./sqlite.js";
@@ -29,14 +31,14 @@ if (process.env.RELAY_WORKSPACE_KEY) {
   }
 }
 
-if (!process.env.ANTHROPIC_API_KEY) console.warn("ANTHROPIC_API_KEY is not set; cached pages work, new pages will fail to digest.");
+if (!process.env.ANTHROPIC_API_KEY) console.warn("ANTHROPIC_API_KEY is not set; using the offline digester. New digests are labelled placeholders, not real summaries.");
 if (!process.env.SWARM_AGENT_SALT) console.warn("SWARM_AGENT_SALT is not set; using a fixed development salt.");
 
 const app = new App({
   swarm: new Swarm({
     store,
     fetcher: new PageFetcher(),
-    digester: new ClaudeDigester(undefined, process.env.SWARM_MODEL || DEFAULT_MODEL),
+    digester: process.env.ANTHROPIC_API_KEY ? new ClaudeDigester(undefined, process.env.SWARM_MODEL || DEFAULT_MODEL) : new OfflineDigester(),
     publicBaseUrl: base,
     agentSalt: process.env.SWARM_AGENT_SALT ?? "dev-salt",
     onRead,
