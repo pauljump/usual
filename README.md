@@ -28,7 +28,7 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 | `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp` |
 | `GET /live` (or `/` in a browser) | The public scoreboard page. |
 | `GET /badge/<domain>.svg` | README badge with how many agent reads a docs site has had. |
-| `GET /read?url=…` | Digest and receipt as JSON. Add `&format=text` for markdown, which is what agents using curl want. `POST` with `{"url": "…"}` also works. |
+| `GET /read?url=…` | Digest, page outline and receipt as JSON. Add `&format=text` for markdown, which is what agents using curl want, and `&section=<heading or rule number>` for that part of the page word for word. `POST` with `{"url": "…", "section": "…"}` also works. |
 | `POST /a2a` | A2A JSON-RPC `message/send`. arelay.to delivers visitor messages here; the first URL in the message is read. |
 | `GET /.well-known/agent-card.json` | A2A agent card pointing at `/a2a`. |
 | `GET /.well-known/arelay-verification.txt` | Domain proof for the arelay.to registration (set `ARELAY_VERIFICATION_TOKEN`). |
@@ -42,7 +42,7 @@ Claude Code: `claude mcp add --transport http swarm https://thought-swarm.paulju
 Any agent with a shell:
 
 ```
-Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.
+Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
 ```
 
 ## Run it locally

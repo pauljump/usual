@@ -40,7 +40,7 @@ describe("ClaudeDigester", () => {
     await d.digest({ url: "u", title: "", text: "t" });
     expect(seen.body.model).toBe("claude-haiku-5-5");
     expect(seen.body).not.toHaveProperty("fallbacks");
-    expect(d.recipe).toBe("digest-v1/claude-haiku-5-5");
+    expect(d.recipe).toBe("digest-v2/claude-haiku-5-5");
   });
 
   it("sends a structured-output request with server-side fallbacks on Opus and parses the digest", async () => {
@@ -55,7 +55,7 @@ describe("ClaudeDigester", () => {
     expect(seen.body.output_config.format.schema.required).toContain("code_examples");
     expect(seen.body).not.toHaveProperty("thinking");
     expect(seen.body.messages[0].content).toContain('<page url="https://nextjs.org/docs/caching"');
-    expect(d.recipe).toBe("digest-v1/claude-opus-5-5");
+    expect(d.recipe).toBe("digest-v2/claude-opus-5-5");
   });
 
   it("surfaces refusals and malformed output as digest errors", async () => {

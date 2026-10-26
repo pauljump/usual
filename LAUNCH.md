@@ -13,7 +13,7 @@ claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev
 Any agent with a shell, paste into the chat:
 
 ```
-Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.
+Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
 ```
 
 Talk to it on Agent Relay: https://arelay.to/swarm
