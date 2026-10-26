@@ -1,66 +1,82 @@
-# Launch kit
+# Launch plan
 
-The Swarm launches as a 30-day public experiment, not a long-running product. The claim is that coding agents keep re-reading the same pages and burning tokens, when one read could serve everyone. The receipts and scoreboard are the evidence, and a results post on day 30 is the payoff. Steps run in order.
+The Swarm launches as a 30-day public experiment, a proof of concept rather than a long-running product. The claim: coding agents keep re-reading the same docs pages and burning tokens, when one read could serve everyone. The receipts and the scoreboard are the evidence, and a results post on day 30 is the payoff.
+
+This is the one checklist for the launch, reconciled across every thread on 26 Oct. Each item is marked **done**, **in progress**, **waiting on Paul** or **to do**.
+
+## Decisions so far (26 Oct)
+
+- **Angle:** iOS and App Store submission. Agents read Apple's guidelines and docs constantly; Paul's agents read the App Review Guidelines 8 times in a month.
+- **Home:** thoughtswarm.tryusual.com, styled as a tool on the Usual menu. thought-swarm.pauljump.workers.dev stays up as a fallback.
+- **Agent Relay is out of this launch.** No arelay.to handle, no founders note, no Relay mentions. The code stays for a possible later post (see the end).
+- **Pre-load:** the iOS submission pack only (1,492 pages, about $1–2 on Haiku 5.5). The generic 8,790-page framework list is on hold.
+- **Not included:** Stack Overflow (its robots.txt says no crawlers and no AI use), Apple's Developer Forums (human check) and Reddit (robots.txt).
+- **Costs stay small:** Cloudflare's free plan, which stops serving rather than billing when its limits run out, and a spending cap on the Anthropic key. No extra infrastructure.
+
+## Open decisions for Paul
+
+1. **Friends beta first, or straight to public?** A short beta (20 to 50 iOS developers for 2 or 3 days) means the scoreboard isn't at zero on launch day, and it gives real receipts for the video. Going straight to public is faster, but the first hours would show near-zero numbers. Recommended: the short beta.
+2. **Spending cap on the Anthropic key.** Recommended: in the Console, create a new key for The Swarm with a $25 monthly limit, swap it in, and revoke the key that was pasted in chat. That's the cap and the rotation in one step.
 
 ## Install lines (what people share)
 
 Claude Code, one command:
 
 ```
-claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp
+claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp
 ```
 
 Any agent with a shell, paste into the chat:
 
 ```
-Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
+Before you read any public docs page, ask the swarm first: curl -s 'https://thoughtswarm.tryusual.com/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page. If it lacks a part you need, add &section=<heading or rule number from its outline> rather than reading the page. Show me the swarm receipt line.
 ```
 
 ## Checklist
 
-### 1. Go live (Mac mini, about 10 minutes)
+### 1. Build and deploy
 
-- [ ] `git clone https://github.com/pauljump/thought-swarm && cd thought-swarm`
-- [ ] `ANTHROPIC_API_KEY=… ./scripts/go-live.sh` (logs in to Cloudflare if needed, creates the D1 database, sets secrets, deploys, points every doc at the real host, runs a smoke test)
-- [ ] Optional: add a custom domain to the worker in the Cloudflare dashboard, then re-run with `SWARM_HOST=<domain>`. Check that `.swarm-secrets` and `wrangler.toml` both have the new host.
+- **done** Live on Cloudflare Workers + D1, 54 tests passing.
+- **done** Claude Code fix: `read_page` returns the digest as text, so agents use it instead of re-reading the page. Agents are counted per address, not per session.
+- **done** Apple's JavaScript-built docs (developer.apple.com/documentation and the HIG) are read through their JSON.
+- **done** Section lookup: every answer has an outline, and `section=4.3` returns that part of the live page word for word.
+- **done** robots.txt is respected, including when a site serves it with an error status. Stack Overflow is refused.
+- **done** Agent Relay removed from the README, this file and the usage text.
+- **in progress** Switch on thoughtswarm.tryusual.com (Paul said go at 12:38Z).
+- **waiting on Paul** Merge the Usual restyle, [PR #2](https://github.com/pauljump/thought-swarm/pull/2), then redeploy.
+- **to do** Re-run the stranger test on the live domain once it resolves: a clean Claude Code install answering what App Review Guideline 4.3 covers, the curl paste line, /live and the badges.
 
-### 2. Pre-load, capped (Mac mini)
+### 2. Pre-load and costs
 
-- [ ] Set a monthly spending limit on the Anthropic key in the Console before pre-loading.
-- [ ] Pre-load the Apple pack plus a few hundred of the most-read framework pages, not the full 10k list.
-- [ ] `npx tsx scripts/build-seed-list.ts --max 500` (or the Apple pack's own list)
-- [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/preload.ts`
-- [ ] Re-run `preload.ts` once to retry failures. Look at the "skipped because" summary; JavaScript-only sites are expected there.
+- **done** iOS submission pack built, 1,492 pages: App Store Connect, developer account and App Review help; the App Review Guidelines; the HIG; StoreKit, privacy and ATT, Sign in with Apple, Xcode distribution, TestFlight and Xcode Cloud; the EU rules; Apple developer news; 69 WWDC sessions; plus fastlane, Expo, RevenueCat, Flutter, Capacitor and React Native.
+- **in progress** Pre-load the pack (Paul said go at 12:38Z). Re-run `preload.ts` once afterwards to retry failures.
+- **waiting on Paul** Spending cap and key swap (open decision 2). Also delete the Cloudflare API token that was pasted in chat once the domain is live.
+- **to do** Reset the stats so test reads don't count: `npx wrangler d1 execute DB --remote --command "DELETE FROM reads"`. Cached digests stay.
 
-### 3. Warm the counter (days −3 to −1)
+### 3. Warm the counter (days −3 to −1, if Paul picks the beta)
 
-- [ ] Reset the stats so test reads don't count.
-- [ ] Send the install line to 20 to 50 developers who use Claude Code, Codex or Cursor, mostly people shipping iOS apps, so the scoreboard isn't at zero on launch day.
-- [ ] Record the 30-second video (script below) with real receipts.
+- **to do** Send the install line to 20 to 50 developers who ship iOS apps with Claude Code, Codex or Cursor.
+- **to do** Record the video, receipt screenshot and scoreboard GIF from real receipts (script below).
 
 ### 4. Day 0 (a Tuesday or Wednesday)
 
-- [ ] 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts below from a clean machine (thoughtswarm.tryusual.com must resolve).
-- [ ] 08:30 PT: post the X thread with the video, and pin it. 09:00 PT: Show HN.
-- [ ] Reply to everyone for the first 3 hours. At about 3 hours, quote-tweet a scoreboard screenshot.
+- **to do** 08:15 PT: `gh repo edit pauljump/thought-swarm --visibility public --accept-visibility-change-consequences`, then check every link and command in the posts from a clean machine.
+- **to do** 08:30 PT: post the X thread with the video, and pin it. 09:00 PT: Show HN.
+- **to do** Reply to everyone for the first 3 hours. At about 3 hours, quote-tweet a scoreboard screenshot.
 
 ### 5. Days 7 and 14: check-ins
 
-- [ ] Quote-tweet the scoreboard: agents, reads, share of re-reads, tokens not burned, and the most re-read page of the week.
+- **to do** Quote-tweet the scoreboard: agents, reads, the share that were re-reads, tokens not burned, and the most re-read page of the week.
 
 ### 6. Day 30: results, then shut down
 
-- [ ] Results post: agents, reads, the share of reads that re-read a page another agent already read, tokens saved, the top 20 re-read pages, and the cost of running it. Add a clearly labeled projection ("if every coding agent did this…") worked out from the measured rate, with the math shown.
-- [ ] Publish per-page read counts (URLs only) so others can check the result.
-- [ ] Remove the API key so no new pages get digested. Leave a results page at the domain, and either keep serving cached pages or turn the worker off.
+- **to do** Results post: agents, reads, the share of reads that re-read a page another agent already read, tokens saved, the top 20 re-read pages and the cost of running it. Add a clearly labeled projection ("if every coding agent did this…") worked out from the measured rate, with the math shown.
+- **to do** Publish per-page read counts (URLs only) so others can check the result.
+- **to do** Remove the API key so no new pages get digested. Leave a results page at the domain, and either keep serving cached pages or turn the Worker off (Paul's call).
 
-### Later: Agent Relay (not part of launch)
+### Reference: pre-loading another list
 
-Relay was left out of the launch to keep the story simple (Paul's call, 2026-10-26). The code still supports it. When you add it, it's a second news moment ("The Swarm is now a public agent on Agent Relay"):
-
-- [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/claim-handle.ts register --domain <host>`, redeploy with `ARELAY_VERIFICATION_TOKEN`, then `claim-handle.ts verify`. Registered handles show up in the arelay.to/agents directory.
-- [ ] Optional live feed: the `#swarm-live` Relay channel with an Observer link. It runs from the Node server, not the Worker, today.
-- [ ] Relay's X handle is @agent_relay. Khaliq Gant is @khaliqgant.
+`preload.ts` reads `seeds/urls.txt`, skips what's already in `seeds/done.txt`, and prints a "skipped because" summary at the end: `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/preload.ts`. `npx tsx scripts/build-seed-list.ts --max 500` builds a framework list from `seeds/sites.tsv`. First-time setup on a new machine is `ANTHROPIC_API_KEY=… ./scripts/go-live.sh`.
 
 ## 30-second video
 
@@ -98,3 +114,11 @@ Install: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.co
 4. It never goes stale. The live page is fetched every time, and the digest is keyed on a hash of its text. Need the exact wording of rule 4.3? Your agent asks for that one section and gets it word for word.
 5. Add your agent to the experiment. In Claude Code, one line: `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp`. Any agent with a shell: paste the one-line prompt from the README.
 6. In 30 days I'll publish the numbers: how often agents re-read what another agent already read, and what that adds up to. Open source. Only URLs are stored. robots.txt is respected. Part of Usual: tryusual.com. github.com/pauljump/thought-swarm
+
+## Later: Agent Relay (not part of launch)
+
+Relay was left out of the launch to keep the story simple (Paul's call, 2026-10-26). The code still supports it. When you add it, it's a second news moment ("The Swarm is now a public agent on Agent Relay"):
+
+- [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/claim-handle.ts register --domain <host>`, redeploy with `ARELAY_VERIFICATION_TOKEN`, then `claim-handle.ts verify`. Registered handles show up in the arelay.to/agents directory.
+- [ ] Optional live feed: the `#swarm-live` Relay channel with an Observer link. It runs from the Node server, not the Worker, today.
+- [ ] Relay's X handle is @agent_relay. Khaliq Gant is @khaliqgant.
