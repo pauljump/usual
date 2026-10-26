@@ -55,7 +55,7 @@ export function checkUrl(raw: string, extraBlockedHosts: string[] = []): Verdict
   if ([...u.searchParams.keys()].some((k) => SECRET_PARAM.test(k))) return { ok: false, reason: "looks like it carries a secret" };
   if (PERSONAL_HOSTS.some(onHost) || /^\/jobs(\/|$)/.test(u.pathname) && onHost("linkedin.com")) return { ok: false, reason: "job posting" };
   if (host.startsWith("api.") || /\/(api|rest|webservices|graphql)(\/|$)|\/api\.php$/i.test(u.pathname)) return { ok: false, reason: "API call, not a document" };
-  if ([...u.searchParams.keys()].some((k) => SEARCH_PARAM.test(k)) || /\/search(\/|$)/i.test(u.pathname)) return { ok: false, reason: "search, not a document" };
+  if ([...u.searchParams.keys()].some((k) => SEARCH_PARAM.test(k)) || /\/search$/i.test(u.pathname)) return { ok: false, reason: "search, not a document" };
   if (u.pathname.split("/").some((seg) => ACCOUNT_PATH.test(seg))) return { ok: false, reason: "account or signup page" };
   if (u.pathname.split("/").some(looksLikeToken)) return { ok: false, reason: "looks like a private link" };
   return { ok: true, url };
