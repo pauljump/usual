@@ -1,3 +1,4 @@
+import { outline } from "./sections.js";
 // Storage over a tiny SQL interface, so the same queries run on Cloudflare D1
 // in production and on node:sqlite locally and in tests.
 
@@ -32,6 +33,17 @@ CREATE TABLE IF NOT EXISTS reads (
 CREATE INDEX IF NOT EXISTS reads_url ON reads (url, at);
 CREATE INDEX IF NOT EXISTS reads_domain ON reads (domain, at);
 CREATE INDEX IF NOT EXISTS reads_at ON reads (at);
+CREATE INDEX IF NOT EXISTS digests_url_created ON digests (url, created_at);
+CREATE TABLE IF NOT EXISTS source_chunks (
+  digest_key TEXT NOT NULL, part INTEGER NOT NULL, text TEXT NOT NULL,
+  PRIMARY KEY (digest_key, part)
+);
+CREATE TABLE IF NOT EXISTS source_snapshots (digest_key TEXT PRIMARY KEY, outline TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS page_aliases (url TEXT PRIMARY KEY, canonical_url TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS library (
+  url TEXT PRIMARY KEY, collection TEXT NOT NULL, status TEXT NOT NULL,
+  detail TEXT NOT NULL, checked_at INTEGER NOT NULL
+);
 `;
 
 export interface DigestRow {
@@ -86,6 +98,36 @@ export class SwarmStore {
 
   getDigest(key: string): Promise<DigestRow | null> {
     return this.db.first<DigestRow>("SELECT * FROM digests WHERE key = ?", [key]);
+  }
+
+  latestDigest(url: string): Promise<DigestRow | null> {
+    return this.db.first<DigestRow>("SELECT * FROM digests WHERE url = COALESCE((SELECT canonical_url FROM page_aliases WHERE url = ?), ?) ORDER BY created_at DESC LIMIT 1", [url, url]);
+  }
+
+  async alias(url: string, canonical: string): Promise<void> {
+    if (url !== canonical) await this.db.run("INSERT OR REPLACE INTO page_aliases (url, canonical_url) VALUES (?, ?)", [url, canonical]);
+  }
+
+  async saveSource(key: string, text: string): Promise<void> {
+    for (let start = 0, part = 0; start < text.length; start += 100_000, part++) {
+      await this.db.run("INSERT OR REPLACE INTO source_chunks (digest_key, part, text) VALUES (?, ?, ?)", [key, part, text.slice(start, start + 100_000)]);
+    }
+    await this.db.run("INSERT OR REPLACE INTO source_snapshots (digest_key, outline) VALUES (?, ?)", [key, outline(text)]);
+  }
+
+  sourceOutline(key: string): Promise<{outline: string} | null> {
+    return this.db.first("SELECT outline FROM source_snapshots WHERE digest_key = ?", [key]);
+  }
+
+  async source(key: string): Promise<string | undefined> {
+    if (!await this.sourceOutline(key)) return undefined;
+    const rows = await this.db.all<{text: string}>("SELECT text FROM source_chunks WHERE digest_key = ? ORDER BY part", [key]);
+    return rows.length ? rows.map(r => r.text).join("") : undefined;
+  }
+
+  library(): Promise<{url: string; collection: string; status: string; detail: string; checked_at: number; title: string | null}[]> {
+    return this.db.all(`SELECT l.*, (SELECT title FROM digests d WHERE d.url = COALESCE((SELECT canonical_url FROM page_aliases WHERE url = l.url), l.url) ORDER BY created_at DESC LIMIT 1) AS title
+      FROM library l ORDER BY collection, status, url`);
   }
 
   async putDigest(row: DigestRow): Promise<void> {

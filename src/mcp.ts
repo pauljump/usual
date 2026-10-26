@@ -20,6 +20,7 @@ const TOOLS = [
       type: "object",
       properties: {
         url: { type: "string", description: "The public page URL, for example https://nodejs.org/api/sqlite.html" },
+        refresh: { type: "boolean", description: "Fetch the source again to check for changes. Default: serve the dated saved snapshot." },
         section: {
           type: "string",
           description: "Optional. A heading, rule number or term from the page's outline (for example \"4.3\" or \"fs.cp(\"). Returns that part of the page word for word, along with the digest.",
@@ -105,7 +106,7 @@ async function dispatch(msg: RpcRequest, ctx: McpContext, agentId: string): Prom
         if (typeof args.url !== "string") return ok(toolText("read_page needs a url string.", true));
         const section = typeof args.section === "string" ? args.section : undefined;
         try {
-          const r = await ctx.swarm.read(args.url, agentId, { allowMiss: () => ctx.allowMiss(ctx.clientIp), section });
+          const r = await ctx.swarm.read(args.url, agentId, { allowMiss: () => ctx.allowMiss(ctx.clientIp), section, refresh: args.refresh === true });
           // Text only: clients such as Claude Code show the model structuredContent
           // instead of the text when both are present, which would hide the digest.
           return ok(toolText(`${r.markdown}\n\n${r.receipt_line}`));

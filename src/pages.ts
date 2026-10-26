@@ -5,6 +5,7 @@
 
 import { compact } from "./swarm.js";
 import type { PublicPage } from "./store.js";
+import type { Digest } from "./digest.js";
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
@@ -148,6 +149,12 @@ export function liveHtml(base: string): string {
   </aside>
 </section>
 <div class="layout"><div class="body">
+<section id="library">
+  <p class="eyebrow">Ready to read</p><h2>Apple docs. And the Anthropic S-1.</h2>
+  <p>Browse the Apple submission pack and the full-filing S-1 digest. Saved digests open without reprocessing the original document. Every result shows its source snapshot date.</p>
+  <div class="actions"><a class="button primary" href="/library">Browse the library →</a><a class="button" href="/document?url=https%3A%2F%2Fwww.sec.gov%2FArchives%2Fedgar%2Fdata%2F2130357%2F000162828026067168%2Fanthropicpbc-sx1.htm">Read the S-1 →</a></div>
+  <p class="micro">The library reports ready, unavailable, and pending pages separately. Preloading does not count as agent reads or token savings.</p>
+</section>
 <section id="install">
   <p class="eyebrow">01 / Make it yours</p><h2>One line, and your agent joins.</h2>
   <p>Every time a coding agent asks the swarm about a public docs page another agent already read, it gets a dense digest with the code examples kept word for word, plus a receipt of what it skipped.</p>
@@ -172,7 +179,7 @@ export function liveHtml(base: string): string {
     <dt>Status</dt><dd>Public beta</dd>
     <dt>Works with</dt><dd>Claude Code (MCP) and any agent with a shell</dd>
     <dt>Reads</dt><dd>Public pages only. robots.txt is respected.</dd>
-    <dt>Stores</dt><dd>The page URL and its digest. Nothing else your agent sends.</dd>
+    <dt>Stores</dt><dd>Public source snapshots and their digests. Nothing else your agent sends.</dd>
     <dt>Price</dt><dd>On the house</dd>
   </dl>
   <div class="source"><p class="eyebrow" style="margin:0">Source &amp; attribution</p><p><a href="${REPO}">pauljump/thought-swarm</a></p><p class="muted">Apache-2.0 · 0.1.0</p></div>
@@ -244,4 +251,34 @@ export function badgeSvg(reads: number): string {
 <title>${label}: ${value}</title><clipPath id="r"><rect width="${w}" height="20" rx="3" fill="#fff"/></clipPath><g clip-path="url(#r)"><rect width="${lw}" height="20" fill="#262820"/><rect x="${lw}" width="${vw}" height="20" fill="#385744"/></g>
 <rect x="5" y="4" width="12" height="12" rx="3" fill="#cc482b"/><path d="M8.5 7v3.2a2.5 2.5 0 0 0 5 0V7" fill="none" stroke="#fffdf7" stroke-width="1.4"/>
 <g fill="#fffdf7" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="${(lw + 20) / 2}" y="14">${label}</text><text x="${lw + vw / 2}" y="14">${value}</text></g></svg>`;
+}
+
+export function libraryHtml(base: string, entries: {url: string; collection: string; status: string; detail: string; checked_at: number; title: string | null}[]): string {
+  const groups = [...new Set(entries.map(e => e.collection))];
+  return shell(base, "Library · Thought Swarm", "Verified coverage of the Apple submission pack and Anthropic S-1.", `
+    <div class="breadcrumbs"><a href="/live">Thought Swarm</a><span>/</span>Library</div>
+    <h1 style="font-size:64px">Ready to read.</h1><p class="lede">Saved public documents, with honest coverage.</p>
+    <p>Each digest is a dated snapshot, not a claim that the source was checked just now. Use <code>refresh=true</code> on the read API to check for updates. Large-document refreshes may exceed the free hosting limit; saved digests remain available.</p>
+    ${groups.map(group => {
+      const rows = entries.filter(e => e.collection === group);
+      const ready = rows.filter(e => e.status === "ready");
+      return `<section style="margin:48px 0"><h2>${esc(group)}</h2><p>${ready.length} ready · ${rows.length - ready.length} unavailable or pending · ${rows.length} total</p>
+        <p class="micro">Last reconciliation: ${new Date(Math.max(...rows.map(e => e.checked_at))).toISOString()}</p>
+        <details><summary>Show ${rows.length} pages and their status</summary><div class="board">${rows.map(e => `<div class="row"><div><a href="${e.status === "ready" ? '/document?url=' + encodeURIComponent(e.url) : esc(e.url)}">${esc(e.title || e.url)}</a><p class="micro">${esc(e.status)}${e.detail ? ' · ' + esc(e.detail) : ''}</p></div></div>`).join("")}</div></details></section>`;
+    }).join("") || '<p>The library is being reconciled.</p>'}`);
+}
+
+export function documentHtml(base: string, d: Digest, url: string, at: number, receipt: string): string {
+  return shell(base, `${d.title} · Thought Swarm`, d.summary.slice(0, 180), `
+    <div class="breadcrumbs"><a href="/live">Thought Swarm</a><span>/</span><a href="/library">Library</a></div>
+    <article style="max-width:850px;margin:0 auto 70px"><h1 style="font-size:clamp(32px,5vw,58px)">${esc(d.title)}</h1>
+    <p class="micro" style="margin-top:20px">Source snapshot ${new Date(at).toISOString()} · Saved digest; source not re-fetched.</p>
+    <p><a href="${esc(url)}">Original source ↗</a> · <a href="/read?format=text&amp;url=${encodeURIComponent(url)}">Agent-readable version</a></p>
+    <p style="font-size:20px">${esc(d.summary)}</p>
+    ${d.version_info ? `<p class="micro">${esc(d.version_info)}</p>` : ''}
+    <h2>Key points</h2><ul>${d.key_points.map(p => `<li style="margin:16px 0">${esc(p)}</li>`).join('')}</ul>
+    ${d.api.length ? '<h2>API</h2>' + d.api.map(a => `<p><code>${esc(a.signature || a.name)}</code> ${esc(a.notes)}</p>`).join('') : ''}
+    ${d.code_examples.map(e => `<h3>${esc(e.caption)}</h3><pre style="overflow:auto;padding:20px;background:var(--light)"><code>${esc(e.code)}</code></pre>`).join('')}
+    ${d.gotchas.length ? '<h2>Qualifications</h2><ul>' + d.gotchas.map(g => `<li style="margin:12px 0">${esc(g)}</li>`).join('') + '</ul>' : ''}
+    <pre style="white-space:pre-wrap;overflow-wrap:anywhere" class="receipt">${esc(receipt)}</pre></article>`);
 }

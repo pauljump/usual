@@ -1,7 +1,7 @@
 import { renderDigest, type Digest, type Digester } from "./digest.js";
 import { estimateTokens } from "./extract.js";
 import { outline, section as findSection, type SectionResult } from "./sections.js";
-import { sha256Hex, type PageFetcher } from "./fetcher.js";
+import { sha256Hex, type FetchedPage, type PageFetcher } from "./fetcher.js";
 import type { DigestRow, SwarmStore } from "./store.js";
 import { domainOf, normalizeUrl } from "./url.js";
 
@@ -55,14 +55,34 @@ export class Swarm {
     return this.o.now ? this.o.now() : Date.now();
   }
 
-  // Fetching is cheap and keeps answers current; digesting is the expensive
-  // step, done once per (page content, recipe) for everyone.
-  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean; section?: string } = {}): Promise<ReadResult> {
-    const page = await this.o.fetcher.fetchPage(normalizeUrl(rawUrl));
+  // Saved snapshots avoid network and extraction work until an explicit refresh.
+  async read(rawUrl: string, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean; section?: string; refresh?: boolean } = {}): Promise<ReadResult> {
+    const normalized = normalizeUrl(rawUrl);
+    if (!opts.refresh) {
+      const cached = await this.o.store.latestDigest(normalized);
+      if (cached) {
+        const source = opts.section ? await this.o.store.source(cached.key) : undefined;
+        const savedOutline = await this.o.store.sourceOutline(cached.key);
+        // Old preloaded digests may lack a source snapshot. Their digest remains
+        // readable; explicit refresh can populate exact section lookups.
+        return this.finishRead(cached, true, agentId, opts, source, savedOutline?.outline);
+      }
+    }
+    const page = await this.o.fetcher.fetchPage(normalized);
+    return this.ingest(page, agentId, opts, normalized);
+  }
+
+  // Trusted preload callers perform fetching and robots checks on the Mini.
+  async ingest(page: FetchedPage, agentId: string, opts: { allowMiss?: () => boolean; seed?: boolean; section?: string; refresh?: boolean } = {}, normalized = page.url): Promise<ReadResult> {
+    await this.o.store.alias(normalized, page.url);
     const contentHash = await sha256Hex(page.text);
     const key = await sha256Hex([page.url, contentHash, this.o.digester.recipe].join("\n"));
 
     let row = await this.o.store.getDigest(key);
+    if (!row) {
+      const prior = await this.o.store.latestDigest(page.url);
+      if (prior?.content_hash === contentHash) row = prior;
+    }
     let hit = row !== null;
     if (!row) {
       if (opts.allowMiss && !opts.allowMiss()) throw new RateLimited();
@@ -94,11 +114,18 @@ export class Swarm {
       }
     }
 
+    await this.o.store.saveSource(row.key, page.text);
+    return this.finishRead(row, hit, agentId, opts, page.text);
+  }
+
+  private async finishRead(row: DigestRow, hit: boolean, agentId: string,
+    opts: { seed?: boolean; section?: string; refresh?: boolean }, source?: string, savedOutline?: string): Promise<ReadResult> {
     const digest = JSON.parse(row.digest_json) as Digest;
-    // The outline and section come from the live page text on every read, so
-    // they need no model call and are never stale.
-    const sec = opts.section?.trim() ? findSection(page.text, opts.section) : undefined;
-    const markdown = renderRead(renderDigest(digest, row.url), outline(page.text), sec);
+    // Exact sections and outlines use the same saved source as the digest.
+    const sec = opts.section?.trim() && source ? findSection(source, opts.section) : undefined;
+    const snapshot = `Source snapshot: ${new Date(row.created_at).toISOString()}. ${opts.refresh ? "Source checked during this read." : "Served from saved content; the source was not re-fetched. Use refresh=true to check for changes."}`;
+    const missing = opts.section?.trim() && !source ? "\n\nExact section text was not saved with this older digest. Use refresh=true to capture it, or open the source link." : "";
+    const markdown = renderRead(renderDigest(digest, row.url), source ? outline(source) : (savedOutline ?? ""), sec) + "\n\n" + snapshot + missing;
     const served = estimateTokens(markdown);
     const saved = hit ? Math.max(0, row.page_tokens - served) : 0;
     const at = this.now();
@@ -108,7 +135,7 @@ export class Swarm {
     if (!opts.seed) await this.o.store.recordRead({
       url: row.url,
       domain,
-      digest_key: key,
+      digest_key: row.key,
       agent: await sha256Hex(this.o.agentSalt + "\n" + agentId),
       hit,
       tokens_saved: saved,
@@ -127,7 +154,7 @@ export class Swarm {
       page_url: `${this.o.publicBaseUrl.replace(/\/$/, "")}/p/${domain}`,
     };
     if (!opts.seed) await Promise.resolve(this.o.onRead?.({ url: row.url, domain, hit, tokens_saved: saved, at })).catch(() => {});
-    return { url: row.url, title: row.title, content_hash: contentHash, digest, markdown, ...(sec ? { section: sec } : {}), receipt, receipt_line: receiptLine(receipt, at) };
+    return { url: row.url, title: row.title, content_hash: row.content_hash, digest, markdown, ...(sec ? { section: sec } : {}), receipt, receipt_line: receiptLine(receipt, at) };
   }
 }
 
@@ -138,7 +165,7 @@ function renderRead(digest: string, pageOutline: string, sec?: SectionResult): s
   }
   if (sec) {
     out.push("", `## Section: ${sec.query}`);
-    out.push(sec.found ? `Full text of this part of the page, copied from the live page:\n\n${sec.text}` : `Nothing on this page matches "${sec.query}". Try a heading or rule number from the outline.`);
+    out.push(sec.found ? `Full text of this part of the page, copied from the saved source snapshot:\n\n${sec.text}` : `Nothing on this page matches "${sec.query}". Try a heading or rule number from the outline.`);
   }
   return out.join("\n");
 }

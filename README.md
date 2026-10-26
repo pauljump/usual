@@ -11,11 +11,13 @@ Part of Thought Swarm.
 
 ## How it works
 
-1. **Fetch the live page every time.** Fetching is cheap and keeps answers current. robots.txt is respected, private addresses and non-text files are refused, and pages over 3 MB are skipped.
+1. **Serve the saved snapshot first.** Cached digests open without downloading or parsing the source again. Every response shows its capture date and explicitly says it was not checked live. Use `refresh=true` in HTTP or MCP to check the source again. New fetches respect robots.txt, reject private addresses and non-text files, and cap downloads at 20 MB.
 2. **Extract readable text** with a spec-compliant HTML parser (parse5). Navigation, scripts and sidebars are dropped and code blocks are kept verbatim.
 3. **Hash the text.** The cache key is `sha256(url + sha256(text) + recipe)`, where the recipe is the digest prompt version plus the model. A changed page is a new key, so nothing goes stale. Hashing the text rather than the raw HTML means per-request noise (CSP nonces, build ids) doesn't look like a new version.
-4. **On a miss, digest once for everyone.** Claude writes a structured digest (summary, API signatures, verbatim code examples, gotchas). Concurrent requests for the same page share one model call. Each address can trigger at most 60 new digests an hour.
+4. **On a miss, digest once for everyone.** Documents up to 400,000 extracted characters use one call. Larger documents (up to 4 million characters) are split at paragraph/row boundaries, summarized sequentially in at most 16 parts, then synthesized into one cached digest. Every character is included; a failed part aborts the read without caching a partial result. Large-document digests disclose the synthesis, and may omit detail; source section lookup remains available. Claude writes a structured digest (summary, API signatures, verbatim code examples, gotchas). Concurrent requests for the same page share one model call. Each address can trigger at most 60 new digests an hour.
 5. **On a hit, serve the digest and count the savings.** Tokens saved = page tokens minus digest tokens (chars / 4), counted only when a cached digest is reused.
+
+SEC EDGAR filings are extracted as whole documents, preserving sibling pages and tables instead of selecting a single content block. Their uppercase section labels are included in the outline. On Cloudflare, the native streaming HTML parser keeps large filings out of a full JavaScript DOM; a Worker-runtime regression test covers this path. Saved reads work on Workers Free without reparsing large filings. Initial processing and explicit refresh of very large files may still exceed Free CPU limits; the reconciliation runner can prepare source snapshots outside the public read path. No plan upgrade is required to serve saved content.
 
 Apple's developer docs and Human Interface Guidelines are JavaScript apps, so for those pages the swarm reads the DocC JSON they load instead of the HTML. A site whose robots.txt refuses the swarm (or answers 401/403 for it) is not read at all.
 
@@ -26,6 +28,8 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 | Route | What it does |
 |---|---|
 | `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp` |
+| `GET /library` | Curated pack coverage: ready, unavailable and pending pages, separate from agent-read statistics. |
+| `GET /document?url=…` | Readable HTML view of a saved digest; never triggers fresh processing. |
 | `GET /live` (or `/` in a browser) | The public scoreboard page. |
 | `GET /badge/<domain>.svg` | README badge with how many agent reads a docs site has had. |
 | `GET /read?url=…` | Digest, page outline and receipt as JSON. Add `&format=text` for markdown, which is what agents using curl want, and `&section=<heading or rule number>` for that part of the page word for word. `POST` with `{"url": "…", "section": "…"}` also works. |
@@ -77,3 +81,7 @@ Pages that need JavaScript to render (other than Apple's docs), and peer-to-peer
 ## License
 
 Apache-2.0
+
+## Reconcile the curated library
+
+`scripts/reconcile.ts` checks every seed URL against D1, reuses completed digests across recipes, and extracts sources and checks robots.txt on the Mini, then uses the admin-authenticated `/admin/ingest` Worker endpoint (Anthropic) for missing digests. Runtime credentials must be supplied from the vault. It records each URL in `library` and `seeds/reconciliation.json`; missing pages and source restrictions remain explicit, never silently counted as complete. Source snapshots are published only after all chunks are stored. The older `done.txt` is not an authority for completion because it included skipped URLs.

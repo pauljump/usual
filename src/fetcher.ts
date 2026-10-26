@@ -2,9 +2,10 @@ import { doccDataUrl, renderDocc } from "./docc.js";
 import { extractText, type Extracted } from "./extract.js";
 import { AGENT_TOKEN, isAllowed, parseRobots } from "./robots.js";
 import { assertPublicTarget, normalizeUrl } from "./url.js";
+import { streamFiling } from "./filing.js";
 
 export const USER_AGENT = `Mozilla/5.0 (compatible; ${AGENT_TOKEN}/0.1; +https://thoughtswarm.tryusual.com)`;
-const MAX_BYTES = 3_000_000;
+export const MAX_PAGE_BYTES = 20_000_000;
 const ROBOTS_TTL_MS = 60 * 60 * 1000;
 const TEXT_TYPES = /^(text\/(html|plain|markdown|x-markdown)|application\/(xhtml\+xml|json))/i;
 
@@ -45,8 +46,28 @@ export class PageFetcher {
     if (!TEXT_TYPES.test(contentType)) {
       throw new FetchError(`Only text pages are supported, this one is ${contentType.split(";")[0]}.`, 415);
     }
-    const body = await readCapped(res, MAX_BYTES);
-    const extracted = /html/i.test(contentType) ? extractText(body) : { title: "", text: body.trim() };
+    // A filing consists of many sibling page containers. Readability scoring
+    // can otherwise select just one table or page and silently lose the rest.
+    const target = new URL(finalUrl);
+    const filing = /(^|\.)sec\.gov$/i.test(target.hostname) && target.pathname.startsWith("/Archives/edgar/data/");
+    if (filing && /html/i.test(contentType) && typeof HTMLRewriter !== "undefined") {
+      let bytes = 0;
+      const capped = res.body?.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+        transform(chunk, controller) {
+          bytes += chunk.byteLength;
+          if (bytes > MAX_PAGE_BYTES) throw new FetchError(`The response exceeds the ${MAX_PAGE_BYTES.toLocaleString("en-US")} byte download limit.`, 413);
+          controller.enqueue(chunk);
+        },
+      }));
+      const extracted = await streamFiling(new Response(capped, { headers: res.headers }));
+      if (extracted.text.length < 80) throw new FetchError("The page had no readable text.", 422);
+      return { ...extracted, url: finalUrl, contentType };
+    }
+    const body = await readCapped(res, MAX_PAGE_BYTES);
+    const extracted = /html/i.test(contentType) ? extractText(body, { wholeDocument: filing }) : { title: "", text: body.trim() };
+    if (/^(page not found|404\b|not found\b)/i.test(extracted.title)) {
+      throw new FetchError("The source returned a Page Not Found page (even though its HTTP status was successful).", 404);
+    }
     if (extracted.text.length < 80) {
       const scripted = /html/i.test(contentType) && (body.match(/<script\b/gi)?.length ?? 0) > 3;
       throw new FetchError(
@@ -66,7 +87,7 @@ export class PageFetcher {
     if (!res.ok) return null;
     let doc: unknown;
     try {
-      doc = JSON.parse(await readCapped(res, MAX_BYTES));
+      doc = JSON.parse(await readCapped(res, MAX_PAGE_BYTES));
     } catch {
       return null;
     }
@@ -127,7 +148,7 @@ async function readCapped(res: Response, max: number): Promise<string> {
     total += value.byteLength;
     if (total > max) {
       await reader.cancel();
-      throw new FetchError("The page is larger than 3 MB, which the swarm doesn't read yet.", 413);
+      throw new FetchError(`The response exceeds the ${max.toLocaleString("en-US")} byte download limit.`, 413);
     }
     chunks.push(value);
   }

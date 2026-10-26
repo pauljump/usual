@@ -6,8 +6,8 @@ import { FetchError } from "./fetcher.js";
 import { PUBLIC_MIN_AGENTS, type SwarmStore } from "./store.js";
 import { RateLimited, type Swarm } from "./swarm.js";
 import { handleMcp } from "./mcp.js";
-import { badgeSvg, domainHtml, liveHtml } from "./pages.js";
-import { UrlError, firstUrlIn } from "./url.js";
+import { badgeSvg, domainHtml, liveHtml, libraryHtml, documentHtml } from "./pages.js";
+import { UrlError, firstUrlIn, normalizeUrl, assertPublicTarget } from "./url.js";
 
 export interface AppConfig {
   swarm: Swarm;
@@ -47,6 +47,26 @@ export class App {
         const t = await this.c.store.domainTotals(badge[1].toLowerCase());
         return new Response(badgeSvg(t.reads), { headers: { "content-type": "image/svg+xml", "cache-control": "max-age=300", ...CORS } });
       }
+      if (path === "/library") {
+        const entries = await this.c.store.library();
+        return wantsHtml ? html(libraryHtml(this.c.publicBaseUrl, entries)) : json({ entries });
+      }
+      if (path === "/document") {
+        const target = url.searchParams.get("url");
+        if (!target) return json({ error: "Provide a document URL." }, 400);
+        const row = await this.c.store.latestDigest(normalizeUrl(target));
+        if (!row) return json({ error: "No saved digest for this document yet." }, 404);
+        const result = await this.c.swarm.read(target, clientIp(req));
+        return html(documentHtml(this.c.publicBaseUrl, result.digest, result.url, row.created_at, result.receipt_line));
+      }
+      if (path === "/admin/ingest" && req.method === "POST") {
+        if (!this.c.adminToken || req.headers.get("authorization") !== `Bearer ${this.c.adminToken}`) return json({ error: "Unauthorized." }, 401);
+        const body = await req.json() as any;
+        if (typeof body.url !== "string" || typeof body.text !== "string" || !body.text.trim() || body.text.length > 4_000_000 || typeof body.title !== "string") return json({ error: "Provide a public URL, title and source text (maximum 4 million characters)." }, 400);
+        const target = normalizeUrl(body.url);
+        assertPublicTarget(target);
+        return json(await this.c.swarm.ingest({url:target, title:body.title, text:body.text, contentType:"text/plain", ...(typeof body.attribution === "string" ? {attribution:body.attribution} : {})}, "preload", {seed:true,refresh:true}));
+      }
       if (path === "/health") return json({ ok: true });
       if (path === "/read" && (req.method === "GET" || req.method === "POST")) return await this.read(req, url);
       if (path === "/a2a" && req.method === "POST") return await this.a2a(req);
@@ -68,11 +88,13 @@ export class App {
     let target = url.searchParams.get("url");
     let agent = url.searchParams.get("agent");
     let section = url.searchParams.get("section") ?? undefined;
+    let refresh = url.searchParams.get("refresh") === "true";
     if (req.method === "POST") {
-      const body = (await req.json().catch(() => ({}))) as { url?: unknown; agent?: unknown; section?: unknown };
+      const body = (await req.json().catch(() => ({}))) as { url?: unknown; agent?: unknown; section?: unknown; refresh?: unknown };
       if (typeof body.url === "string") target = body.url;
       if (typeof body.agent === "string") agent = body.agent;
       if (typeof body.section === "string") section = body.section;
+      if (typeof body.refresh === "boolean") refresh = body.refresh;
     }
     if (!target) return json({ error: "Pass the page to read as ?url=… or a JSON body {\"url\": \"…\"}." }, 400);
     const ip = clientIp(req);
@@ -84,6 +106,7 @@ export class App {
       allowMiss: seed ? undefined : () => this.allowMiss(ip),
       seed,
       section,
+      refresh,
     });
     if ((req.headers.get("accept") ?? "").includes("text/markdown") || url.searchParams.get("format") === "text") {
       return text(`${result.markdown}\n\n${result.receipt_line}\n\n${UNTRUSTED_NOTE}`, 200, "text/markdown; charset=utf-8");

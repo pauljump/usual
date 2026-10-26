@@ -64,13 +64,13 @@ function isChrome(el: T.Element): boolean {
   return CHROME.test(`${attr(el, "id") ?? ""} ${attr(el, "class") ?? ""}`);
 }
 
-function render(node: Node, out: string[], isRoot = false): void {
+function render(node: Node, out: string[], isRoot = false, documentHeadings = false): void {
   if (node.nodeName === "#text") {
     out.push((node as T.TextNode).value.replace(/\s+/g, " "));
     return;
   }
   if (!isElement(node)) {
-    for (const c of children(node)) render(c, out);
+    for (const c of children(node)) render(c, out, false, documentHeadings);
     return;
   }
   const tag = node.tagName;
@@ -92,10 +92,19 @@ function render(node: Node, out: string[], isRoot = false): void {
     out.push(`\n\n${"#".repeat(Number(heading[1]))} ${textOf(node).replace(/\s+/g, " ").trim()}\n\n`);
     return;
   }
+  // EDGAR often uses uppercase styled spans rather than semantic headings.
+  if (documentHeadings && ["div", "p"].includes(tag) &&
+      !children(node).some((c) => isElement(c) && BLOCK.has(c.tagName))) {
+    const label = textOf(node).replace(/\s+/g, " ").trim();
+    if (label.length >= 8 && label.length <= 160 && /[A-Z]{3}/.test(label) && !/[a-z]/.test(label)) {
+      out.push(`\n\n## ${label}\n\n`);
+      return;
+    }
+  }
   if (tag === "li") out.push("\n- ");
   else if (tag === "td" || tag === "th") out.push(" | ");
   else if (BLOCK.has(tag)) out.push("\n");
-  for (const c of children(node)) render(c, out);
+  for (const c of children(node)) render(c, out, false, documentHeadings);
   if (BLOCK.has(tag) || tag === "li") out.push("\n");
 }
 
@@ -143,14 +152,14 @@ function pickMain(doc: T.Document): Node {
   return body ?? doc;
 }
 
-export function extractText(html: string): Extracted {
+export function extractText(html: string, options: { wholeDocument?: boolean } = {}): Extracted {
   const doc = parse(html);
   let title = "";
   walk(doc, (el) => {
     if (el.tagName === "title" && !title) title = textOf(el).replace(/\s+/g, " ").trim();
   });
   const out: string[] = [];
-  render(pickMain(doc), out, true);
+  render(options.wholeDocument ? doc : pickMain(doc), out, true, options.wholeDocument);
   const text = out
     .join("")
     .split(/(\n```[\s\S]*?\n```\n)/)

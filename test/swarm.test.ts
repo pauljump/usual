@@ -30,12 +30,26 @@ describe("The Swarm read path", () => {
     expect(digester.calls).toBe(1);
   });
 
+  it("serves a saved digest and section without fetching or digesting again", async () => {
+    const { swarm, web, digester } = await setup();
+    web.pages.set(URL1, { body: pageHtml("Saved disclosure.") });
+    await swarm.read(URL1, "a");
+    web.pages.clear();
+    const before = web.requests.length;
+    const cached = await swarm.read(URL1, "b", {section:"Caching guide"});
+    expect(cached.receipt.hit).toBe(true);
+    expect(cached.markdown).toContain("source was not re-fetched");
+    expect(cached.section?.text).toContain("Saved disclosure.");
+    expect(web.requests.length).toBe(before);
+    expect(digester.calls).toBe(1);
+  });
+
   it("treats a changed page as a new version and digests it again", async () => {
     const { app, web, digester } = await setup();
     web.pages.set(URL1, { body: pageHtml("Version one.") });
     await get(app, `/read?url=${encodeURIComponent(URL1)}&agent=a`);
     web.pages.set(URL1, { body: pageHtml("Version two, with a new API.") });
-    const after = await get(app, `/read?url=${encodeURIComponent(URL1)}&agent=b`);
+    const after = await get(app, `/read?url=${encodeURIComponent(URL1)}&agent=b&refresh=true`);
     expect(after.body.receipt.hit).toBe(false);
     expect(digester.calls).toBe(2);
   });

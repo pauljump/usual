@@ -36,20 +36,20 @@ Before you read any public docs page, ask the swarm first: curl -s 'https://thou
 
 ### 1. Build and deploy
 
-- **done** Live on Cloudflare Workers + D1, 54 tests passing.
+- **done** Live on Cloudflare Workers + D1, 67 tests passing.
 - **done** Claude Code fix: `read_page` returns the digest as text, so agents use it instead of re-reading the page. Agents are counted per address, not per session.
 - **done** Apple's JavaScript-built docs (developer.apple.com/documentation and the HIG) are read through their JSON.
-- **done** Section lookup: every answer has an outline, and `section=4.3` returns that part of the live page word for word.
+- **done** Section lookup: newly saved sources include an outline, and `section=4.3` returns that part of the saved source word for word. Older preloaded digests without source text require explicit refresh to capture sections.
 - **done** robots.txt is respected, including when a site serves it with an error status. Stack Overflow is refused.
 - **done** Agent Relay removed from the README, this file and the usage text.
 - **done** thoughtswarm.tryusual.com is live (workers.dev kept as a fallback).
-- **in progress** Usual restyle ([PR #2](https://github.com/pauljump/thought-swarm/pull/2)) merged; redeploying from the Mini.
+- **done** Usual restyle ([PR #2](https://github.com/pauljump/thought-swarm/pull/2)) merged and deployed from the Mini.
 - **to do** Re-run the stranger test on the live domain once it resolves: a clean Claude Code install answering what App Review Guideline 4.3 covers, the curl paste line, /live and the badges.
 
 ### 2. Pre-load and costs
 
 - **done** iOS submission pack built, 1,492 pages: App Store Connect, developer account and App Review help; the App Review Guidelines; the HIG; StoreKit, privacy and ATT, Sign in with Apple, Xcode distribution, TestFlight and Xcode Cloud; the EU rules; Apple developer news; 69 WWDC sessions; plus fastlane, Expo, RevenueCat, Flutter, Capacitor and React Native.
-- **in progress** Pre-load the pack (Paul said go at 12:38Z). Re-run `preload.ts` once afterwards to retry failures.
+- **done** Reconciled every pack entry against D1: **1,461 of 1,492 ready**. The remaining **31** are explicitly unavailable: 30 source links return Page Not Found and one (Apple system status) is a JavaScript-only page. See `seeds/reconciliation.json` and the live `/library`. Do not use `done.txt` as completion evidence; the old runner included skipped URLs.
 - **waiting on Paul** Spending cap and key swap (open decision 2). Also delete the Cloudflare API token that was pasted in chat once the domain is live.
 - **to do** Reset the stats so test reads don't count: `npx wrangler d1 execute DB --remote --command "DELETE FROM reads"`. Cached digests stay.
 
@@ -123,3 +123,15 @@ Relay was left out of the launch to keep the story simple (Paul's call, 2026-10-
 - [ ] `set -a && . ./.swarm-secrets && set +a && npx tsx scripts/claim-handle.ts register --domain <host>`, redeploy with `ARELAY_VERIFICATION_TOKEN`, then `claim-handle.ts verify`. Registered handles show up in the arelay.to/agents directory.
 - [ ] Optional live feed: the `#swarm-live` Relay channel with an Observer link. It runs from the Node server, not the Worker, today.
 - [ ] Relay's X handle is @agent_relay. Khaliq Gant is @khaliqgant.
+
+## 26 Oct recovery handoff
+
+Paul authorized Codex to finish the Apple preload, process the Anthropic S-1 using Anthropic, update the live site, and inform the original Claude thread. All 1,493 curated entries are reconciled: 1,461 Apple-pack documents and one S-1 ready, 31 unavailable source pages clearly identified. No Cloudflare paid-plan upgrade was made.
+
+The S-1 is saved at `/document?url=https%3A%2F%2Fwww.sec.gov%2FArchives%2Fedgar%2Fdata%2F2130357%2F000162828026067168%2Fanthropicpbc-sx1.htm`. Processing covered all extracted text in five part summaries and a synthesis; it is a digest, not an exhaustive transcription. Three consecutive cached reads returned HTTP 200 after deployment. Homepage links to the S-1 and `/library`.
+
+Cloudflare 1102 was confirmed as CPU exhaustion while extracting the large filing. Default reads now serve dated saved digests without fetching or parsing their sources; `refresh=true` explicitly checks again. Exact sections use saved source snapshots when available. Old digests without those snapshots say so, and do not silently re-fetch. Initial processing or refresh of large sources may still exceed Free CPU limits. The operator recovery path fetches/extracts on the Mini and sends text to authenticated `/admin/ingest` using the existing deployed Anthropic key. robots.txt is checked by the local fetcher. No model call is made on a cache hit; no preload read is added to usage statistics.
+
+Runtime configuration comes from the vault; the admin credential is in `/Users/mini-home/.secrets/projects/thought-swarm.env`. The monorepo Anthropic key returned 401 and was not used for recovery; the deployed Worker key succeeded. Never paste key values into chat. Final deployed version: `1d0fd087-9943-4545-8a73-841c51241dd7`. Validation: typecheck, 67 tests, live cached S-1 reads, live library counts, browser checks. Source is canonical `thought-swarm` main. Original preload log is retained separately from the committed source.
+
+This recovery does not decide public-repo visibility, launch posts, beta strategy, stats reset, spending caps, or credential revocation. Those remain the user's launch decisions.
