@@ -82,10 +82,13 @@ export class PageFetcher {
     if (!rules) {
       try {
         const res = await this.get(`${url.origin}/robots.txt`, "text/plain");
-        // A site that refuses to show us its robots.txt is refusing us: treat 401/403 as "disallow everything".
-        // Other failures (404, 5xx, network) mean there are no rules to follow.
-        if (res.status === 401 || res.status === 403) rules = parseRobots("User-agent: *\nDisallow: /");
-        else rules = res.ok ? parseRobots(await readCapped(res, 500_000)) : [];
+        // Some sites send real rules with an error status (Stack Overflow answers 418 with "Disallow: /"),
+        // so any body that looks like robots.txt is obeyed. A site that refuses to show us its robots.txt
+        // (401/403) is refusing us. Other failures (404, 5xx, network) mean there are no rules to follow.
+        const body = await readCapped(res, 500_000).catch(() => "");
+        if (res.ok || /^\s*user-agent\s*:/im.test(body)) rules = parseRobots(body);
+        else if (res.status === 401 || res.status === 403) rules = parseRobots("User-agent: *\nDisallow: /");
+        else rules = [];
       } catch {
         rules = [];
       }
