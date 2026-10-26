@@ -19,7 +19,8 @@ export const DigestSchema = z.object({
   gotchas: z.array(z.string()),
   version_info: z.string(),
 });
-export type Digest = z.infer<typeof DigestSchema>;
+// attribution is set by the swarm from the source, never by the model.
+export type Digest = z.infer<typeof DigestSchema> & { attribution?: string };
 
 export class DigestError extends Error {
   constructor(message: string, readonly status = 502) {
@@ -112,6 +113,6 @@ export function renderDigest(d: Digest, sourceUrl: string): string {
     out.push("", `### ${ex.caption}`, "```" + ex.language, ex.code.replace(/\n+$/, ""), "```");
   }
   if (d.gotchas.length) out.push("", "## Gotchas", ...d.gotchas.map((g) => `- ${g}`));
-  out.push("", `Source: ${sourceUrl}`);
+  out.push("", `Source: ${d.attribution ?? sourceUrl}`);
   return out.join("\n");
 }

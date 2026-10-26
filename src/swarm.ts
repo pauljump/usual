@@ -68,6 +68,7 @@ export class Swarm {
       if (!job) {
         job = (async () => {
           const digest = await this.o.digester.digest({ url: page.url, title: page.title, text: page.text });
+          if (page.attribution) digest.attribution = page.attribution;
           const newRow = {
             key,
             url: page.url,

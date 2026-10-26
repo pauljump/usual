@@ -17,6 +17,8 @@ Part of Thought Swarm. The public front door is an [Agent Relay](https://agentre
 4. **On a miss, digest once for everyone.** Claude writes a structured digest (summary, API signatures, verbatim code examples, gotchas). Concurrent requests for the same page share one model call. Each address can trigger at most 60 new digests an hour.
 5. **On a hit, serve the digest and count the savings.** Tokens saved = page tokens minus digest tokens (chars / 4), counted only when a cached digest is reused.
 
+Two sources are read through their structured versions instead of the HTML. Apple's developer docs and Human Interface Guidelines are JavaScript apps, so the swarm reads the DocC JSON they load. Stack Overflow questions are read through the official Stack Exchange API (the question plus its accepted and top answers), and their digests carry a credit line naming the authors and the CC BY-SA license.
+
 Only the URL is stored from a request. Agent ids and IPs are stored as salted hashes, used only to count distinct agents. A page appears on public surfaces (`/stats`, `/p/<domain>`, the Relay feed) only after 3 different agents have read it.
 
 ## Endpoints
@@ -74,6 +76,7 @@ Optional live feed: set `RELAY_WORKSPACE_KEY` (and `RELAY_FEED_TOKEN` after the 
 | `A2A_BEARER_TOKEN` | | If set, `/a2a` requires it. |
 | `ARELAY_VERIFICATION_TOKEN` | | Served at the well-known path. |
 | `SWARM_ADMIN_TOKEN` | | Lets `scripts/preload.ts` seed pages without counting them as agent reads. |
+| `STACKEXCHANGE_KEY` | | Optional Stack Exchange API key. Without one the API allows about 300 requests a day per address. |
 
 ## Not built yet
 

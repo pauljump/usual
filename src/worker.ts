@@ -18,6 +18,7 @@ export interface Env {
   ARELAY_VERIFICATION_TOKEN?: string;
   MISSES_PER_HOUR?: string;
   SWARM_ADMIN_TOKEN?: string;
+  STACKEXCHANGE_KEY?: string;
 }
 
 let app: App | null = null;
@@ -28,7 +29,7 @@ function build(env: Env): App {
   initialized ??= store.init();
   const swarm = new Swarm({
     store,
-    fetcher: new PageFetcher(),
+    fetcher: new PageFetcher(undefined, undefined, { stackExchangeKey: env.STACKEXCHANGE_KEY }),
     digester: new ClaudeDigester(new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }), env.SWARM_MODEL || DEFAULT_MODEL),
     publicBaseUrl: env.PUBLIC_BASE_URL,
     agentSalt: env.SWARM_AGENT_SALT,
