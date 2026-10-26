@@ -1,16 +1,18 @@
 // Reconcile the curated pack against D1, not done.txt. Heavy extraction
-// happens on the Mini; the authenticated Worker handles model processing. Credentials are
+// happens locally; the authenticated Worker handles model processing. Credentials are
 // supplied by the vault runner, never read from project-local env files.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { PageFetcher, sha256Hex } from '../src/fetcher.js';
 import { SwarmStore, type SqlDb } from '../src/store.js';
 import { normalizeUrl } from '../src/url.js';
-const account = 'a90a0202b423bf9af3dec6e3b92d63e0';
-const database = 'f44bb949-9ec7-4f42-964e-a1bcdc8d0860';
+const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+const database = process.env.D1_DATABASE_ID;
+if (!account || !database) throw new Error('Set CLOUDFLARE_ACCOUNT_ID and D1_DATABASE_ID (the database_id in wrangler.toml), plus CLOUDFLARE_API_TOKEN or CLOUDFLARE_EMAIL and CLOUDFLARE_API_KEY.');
+const auth: Record<string,string> = process.env.CLOUDFLARE_API_TOKEN ? {authorization:`Bearer ${process.env.CLOUDFLARE_API_TOKEN}`} : {'X-Auth-Email':process.env.CLOUDFLARE_EMAIL!, 'X-Auth-Key':process.env.CLOUDFLARE_API_KEY!};
 async function query(sql: string, params: unknown[] = []): Promise<any[]> {
   const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database/${database}/query`, {
-    method:'POST', headers:{'content-type':'application/json','X-Auth-Email':process.env.CLOUDFLARE_EMAIL!, 'X-Auth-Key':process.env.CLOUDFLARE_API_KEY!},
+    method:'POST', headers:{'content-type':'application/json',...auth},
     body:JSON.stringify({sql,params}), signal:AbortSignal.timeout(60_000),
   });
   const body:any = await res.json();
@@ -41,7 +43,7 @@ async function one(raw:string) {
     const hash=await sha256Hex(page.text);
     let row=await store.latestDigest(page.url);
     if (!row || row.content_hash!==hash) {
-      const response = await fetch(`https://thoughtswarm.tryusual.com/admin/ingest`, {
+      const response = await fetch(`${(process.env.SWARM_URL ?? "https://thoughtswarm.tryusual.com").replace(/\/$/, "")}/admin/ingest`, {
         method:"POST", body:JSON.stringify(page), headers:{"content-type":"application/json",authorization:`Bearer ${process.env.SWARM_ADMIN_TOKEN}`}, signal:AbortSignal.timeout(300_000),
       });
       const result:any = await response.json().catch(()=>({error:`Worker HTTP ${response.status}`}));

@@ -10,7 +10,9 @@ Cloudflare Workers + D1. The free plan is enough to serve saved digests; it stop
 ANTHROPIC_API_KEY=… ./scripts/go-live.sh [host]
 ```
 
-The script installs dependencies, checks the Wrangler login (or `CLOUDFLARE_API_TOKEN`), creates the `thought-swarm` D1 database if `wrangler.toml` has no id yet, generates `SWARM_AGENT_SALT`, `SWARM_ADMIN_TOKEN` and `A2A_BEARER_TOKEN` into `.swarm-secrets` (mode 600, gitignored), deploys, sets the secrets and smoke-tests `/health`. With a `host` it points `PUBLIC_BASE_URL`, the docs and the skill at that hostname (`scripts/set-host.mjs`); add the custom-domain route in `wrangler.toml` yourself. Re-running it is safe.
+The script installs dependencies and checks the Wrangler login (or uses `CLOUDFLARE_API_TOKEN`). On the account that owns the database in `wrangler.toml` it deploys that file as is. On any other account it creates your own `thought-swarm` D1 database and writes `wrangler.own.toml` (gitignored) from the committed config, with your database id, your `PUBLIC_BASE_URL` and a custom-domain route only if you passed a host whose zone is in your account; the committed `wrangler.toml` is never edited. It generates `SWARM_AGENT_SALT`, `SWARM_ADMIN_TOKEN` and `A2A_BEARER_TOKEN` into `.swarm-secrets` (mode 600, gitignored), sets the Worker secrets and smoke-tests `/health`. Re-running it is safe.
+
+`node scripts/set-host.mjs <host>` is for moving the canonical instance to a new hostname: it rewrites `PUBLIC_BASE_URL`, the route and every doc that names the current host.
 
 The canonical instance is `thoughtswarm.tryusual.com` (Worker `thought-swarm`, with `thought-swarm.pauljump.workers.dev` kept as a fallback). Its credentials come from the maintainer's vault, never from files in this repository.
 

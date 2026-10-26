@@ -7,3 +7,5 @@ seeds/urls.txt
 seeds/done.txt
 .arelay-registration.json
 .swarm-secrets
+seeds/preload.log
+wrangler.own.toml
