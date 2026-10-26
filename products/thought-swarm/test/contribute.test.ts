@@ -20,11 +20,22 @@ describe("checkUrl", () => {
     ["http://localhost:3000/", "not a public page"],
     ["https://203.0.113.5/docs", "IP address or custom port"],
     ["not a url", "not a URL"],
+    ["https://gist.github.com/<REDACTED>/abc", "redacted in the transcript"],
+    ["https://job-boards.greenhouse.io/acme/jobs/123", "job posting"],
+    ["https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=x", "API call, not a document"],
+    ["https://api.github.com/repos/a/b", "API call, not a document"],
+    ["https://pubmed.ncbi.nlm.nih.gov/?term=hypotonia", "search, not a document"],
+    ["https://github.com/search?type=code", "search, not a document"],
+    ["https://www.example.com/signup/plan", "account or signup page"],
   ])("drops %s", (u, reason) => expect(checkUrl(u)).toEqual({ ok: false, reason }));
 
   it("drops the contributor's own sites, subdomains included", () => {
     expect(checkUrl("https://app.mysite.com/x", ["mysite.com"]).ok).toBe(false);
     expect(checkUrl("https://notmysite.com/x", ["mysite.com"]).ok).toBe(true);
+  });
+
+  it("unwraps reader proxies to the real page", () => {
+    expect(checkUrl("https://r.jina.ai/https://docs.expo.dev/eas")).toEqual({ ok: true, url: "https://docs.expo.dev/eas" });
   });
 
   it("normalizes so duplicates collapse", () => {
@@ -45,6 +56,7 @@ describe("fetchedUrls", () => {
 
   it("reads plain lists", () => {
     expect(listedUrls("# mine\nhttps://a.dev/x  note\n\nhttps://b.dev\n")).toEqual(["https://a.dev/x", "https://b.dev"]);
+    expect(listedUrls("status\ttimes_read\turl\nnew\t3\thttps://a.dev/x\n")).toEqual(["https://a.dev/x"]);
   });
 });
 
