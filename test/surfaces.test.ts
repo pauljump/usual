@@ -28,7 +28,7 @@ describe("MCP endpoint", () => {
     expect((await mcp(app, { jsonrpc: "2.0", method: "notifications/initialized" }, session!)).status).toBe(202);
 
     const list: any = await (await mcp(app, { jsonrpc: "2.0", id: 2, method: "tools/list" }, session!)).json();
-    expect(list.result.tools.map((t: any) => t.name)).toEqual(["read_page", "swarm_stats"]);
+    expect(list.result.tools.map((t: any) => t.name)).toEqual(["search_library", "read_page", "swarm_stats"]);
 
     const call: any = await (await mcp(app, { jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "read_page", arguments: { url: URL1 } } }, session!)).json();
     expect(call.result.isError).toBeUndefined();
@@ -111,4 +111,12 @@ describe("public pages", () => {
     expect(badge.headers.get("content-type")).toBe("image/svg+xml");
     expect(await badge.text()).toContain("read by agents: 3");
   });
+});
+
+it("lets agents discover the library and guide without fetching or digesting", async()=>{
+ const {app,web,digester}=await setup();
+ const response:any=await (await mcp(app,{jsonrpc:"2.0",id:1,method:"tools/call",params:{name:"search_library",arguments:{query:"S-1"}}})).json();
+ const result=JSON.parse(response.result.content[0].text);expect(result.total).toBe(0);expect(result.documents).toEqual([]);expect(result.next_step).toContain("read_page");
+ const guide=await (await app.handle(new Request("https://swarm.example/llms.txt"))).text();expect(guide).toContain("search_library");expect(guide).toContain("not measured billing savings");
+ expect(web.requests).toHaveLength(0);expect(digester.calls).toBe(0);
 });

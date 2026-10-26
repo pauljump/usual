@@ -88,6 +88,17 @@ export interface PublicPage {
 // have read it, so one person's browsing never appears in the feed.
 export const PUBLIC_MIN_AGENTS = 3;
 
+export interface LibraryEntry {
+  url: string; collection: string; status: string; detail: string;
+  checked_at: number; title: string | null; source: string;
+}
+export interface LibraryPage {
+  entries: LibraryEntry[]; total: number; page: number; page_size: number;
+  q: string; source: string; status: string;
+  sources: {source: string; count: number}[];
+  ready: number;
+}
+
 export class SwarmStore {
   constructor(private readonly db: SqlDb) {}
 
@@ -132,9 +143,32 @@ export class SwarmStore {
     return rows.length ? rows.map(r => r.text).join("") : undefined;
   }
 
-  library(): Promise<{url: string; collection: string; status: string; detail: string; checked_at: number; title: string | null}[]> {
-    return this.db.all(`SELECT l.*, (SELECT title FROM digests d WHERE d.url = COALESCE((SELECT canonical_url FROM page_aliases WHERE url = l.url), l.url) ORDER BY created_at DESC LIMIT 1) AS title
-      FROM library l ORDER BY collection, status, url`);
+  async library(options: {q?: string; source?: string; status?: string; page?: number} = {}): Promise<LibraryPage> {
+    const q=(options.q ?? '').trim().slice(0,160);
+    const source=(options.source ?? '').trim().slice(0,253);
+    const status=['all','unavailable'].includes(options.status ?? '') ? options.status! : 'ready';
+    const host = "substr(substr(l.url,instr(l.url,'://')+3),1,instr(substr(l.url,instr(l.url,'://')+3)||'/','/')-1)";
+    const from = `FROM library l LEFT JOIN digests d ON d.key =
+      (SELECT key FROM digests WHERE url = COALESCE((SELECT canonical_url FROM page_aliases WHERE url=l.url),l.url) ORDER BY created_at DESC LIMIT 1)`;
+    const terms: string[]=[];const params: unknown[]=[];
+    if(status==='ready') terms.push("l.status='ready'");
+    if(status==='unavailable') terms.push("l.status<>'ready'");
+    if(source) {terms.push(`${host} = ?`);params.push(source);}
+    if(q) {
+      terms.push("(COALESCE(d.title,'') LIKE ? ESCAPE '~' OR l.url LIKE ? ESCAPE '~' OR l.collection LIKE ? ESCAPE '~')");
+      const pattern='%'+q.replace(/[~%_]/g,c=>'~'+c)+'%';params.push(pattern,pattern,pattern);
+    }
+    const where=terms.length?'WHERE '+terms.join(' AND '):'';
+    const [count,sources,ready]=await Promise.all([
+      this.db.first<{n:number}>(`SELECT COUNT(*) AS n ${from} ${where}`,params),
+      this.db.all<{source:string;count:number}>(`SELECT ${host} AS source,COUNT(*) AS count FROM library l GROUP BY source ORDER BY count DESC,source`),
+      this.db.first<{n:number}>("SELECT COUNT(*) AS n FROM library WHERE status='ready'")
+    ]);
+    const total=count?.n ?? 0,page_size=24;
+    const requested=Number.isFinite(options.page)?Math.max(1,Math.floor(options.page!)):1;
+    const page=Math.min(requested,Math.max(1,Math.ceil(total/page_size)));
+    const entries=await this.db.all<LibraryEntry>(`SELECT l.*,d.title,${host} AS source ${from} ${where} ORDER BY COALESCE(d.title,l.url) COLLATE NOCASE,l.url LIMIT ? OFFSET ?`,[...params,page_size,(page-1)*page_size]);
+    return {entries,total,page,page_size,q,source,status,sources,ready:ready?.n ?? 0};
   }
 
   async putDigest(row: DigestRow): Promise<void> {

@@ -4,7 +4,7 @@
 // scripts or fonts; the scoreboard polls /stats.
 
 import { compact } from "./swarm.js";
-import type { PublicPage } from "./store.js";
+import type { PublicPage, LibraryPage } from "./store.js";
 import type { ShareInfo } from "./share.js";
 import type { Digest } from "./digest.js";
 
@@ -82,6 +82,7 @@ dt{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:up
 .site-footer>.brand{font-size:30px}.site-footer>span{font-size:11px;color:var(--muted);margin-right:auto}
 .site-footer>div{display:flex;gap:20px;font-size:10px;color:var(--muted);flex-wrap:wrap}.site-footer>div a{text-decoration:none}.site-footer>div a:hover{color:var(--ink)}
 .share-actions{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.share-actions a,.share-actions button,.share-submit{border:1px solid var(--ink);padding:10px 16px;border-radius:3px;background:var(--light);color:var(--ink);font-size:14px;text-decoration:none}.share-actions a:hover,.share-actions button:hover{background:var(--soft)}.share-submit{background:var(--orange);color:var(--light);border-color:var(--orange)}.share-panel{padding:22px;background:var(--light);border:1px solid var(--line);border-radius:4px;margin:26px 0}.share-panel summary{cursor:pointer}.share-panel img,.share-preview{display:block;width:100%;height:auto;border:1px solid var(--line);margin:16px 0}.share-form label{display:block;margin:0 0 8px}.share-form input{width:100%;padding:14px;font:inherit;border:1px solid var(--muted);border-radius:3px;margin-bottom:12px}.share-form input:focus-visible{outline:3px solid var(--orange);outline-offset:3px}.share-link{overflow-wrap:anywhere;font-family:var(--mono);font-size:13px}.share-error{color:#9d2618;margin:12px 0}
+.library-search{margin:24px 0}.library-search>label{display:block;margin-bottom:8px}.search-line{display:flex;gap:10px}.search-line input{flex:1;min-width:0;font:inherit;padding:14px 16px;border:1px solid var(--muted);border-radius:3px;background:var(--light);color:var(--ink)}.library-filters{display:flex;gap:18px;align-items:end;flex-wrap:wrap;margin-top:18px}.library-filters label{display:grid;gap:6px;font-size:13px}.library-filters select{font:inherit;padding:10px;background:var(--light);border:1px solid var(--line);max-width:100%}.library-results{margin:38px 0 70px}.document-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.document-card{border:1px solid var(--line);border-radius:4px;padding:24px;display:flex;flex-direction:column;background:var(--light);min-width:0}.document-card h2{font-size:23px;line-height:1.2;letter-spacing:-.025em;margin:0 0 18px;overflow-wrap:anywhere}.document-card h2 a{text-decoration:none}.document-card .eyebrow{overflow-wrap:anywhere;margin-bottom:16px}.document-action{margin-top:auto;padding-top:18px;font-size:14px}.library-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:30px}.library-pagination>span{font-size:13px}@media(max-width:1000px){.document-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.document-grid{grid-template-columns:1fr}.search-line{flex-direction:column}.library-filters{align-items:stretch;flex-direction:column}}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--light);font-size:12px;padding:11px 16px;border-radius:3px;transition:.2s;pointer-events:none}.toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:no-preference){.flash{animation:f 1.4s ease-out}@keyframes f{from{background:#f3eedf}to{background:transparent}}}
 @media (max-width:1050px){.wrap{width:calc(100% - 56px)}.hero,.layout{grid-template-columns:1fr;gap:50px}.facts{position:static;border-left:0;border-top:1px solid var(--line);padding:28px 0 0}}
@@ -114,7 +115,7 @@ function footer(): string {
 function shell(root: string, title: string, description: string, main: string, script = "", social?: ShareInfo): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f5f2e9"><title>${esc(title)}</title><meta name="description" content="${esc(description)}">
-<link rel="icon" href="${ICON}" type="image/svg+xml"><meta property="og:site_name" content="Thought Swarm"><meta property="og:type" content="website">
+<link rel="alternate" type="text/plain" title="Agent guide" href="${esc(root)}/llms.txt"><link rel="icon" href="${ICON}" type="image/svg+xml"><meta property="og:site_name" content="Thought Swarm"><meta property="og:type" content="website">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(social?.url ?? root + '/')}">
 ${social ? `<link rel="canonical" href="${esc(social.url)}"><meta property="og:image" content="${esc(social.image_url)}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${esc(social.image_alt)}"><meta name="twitter:image" content="${esc(social.image_url)}"><meta name="twitter:image:alt" content="${esc(social.image_alt)}">` : ''}
 <meta name="twitter:card" content="${social ? 'summary_large_image' : 'summary'}"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}">
@@ -125,7 +126,7 @@ function copyBox(id: string, label: string, value: string): string {
   return `<div class="step"><label for="${id}">${label}</label><div class="copy"><code id="${id}">${value}</code><button type="button" data-copy="${id}">Copy</button></div></div>`;
 }
 
-const DESCRIPTION = "Thought Swarm, a tool on the Usual menu: your coding agent asks before it reads a docs page, and if another agent already read it, gets a short digest instead. Live tokens saved.";
+const DESCRIPTION = "Thought Swarm is a shared library of AI-generated document summaries. People can find and share digests; AI agents can reuse them instead of processing the full source.";
 
 export function liveHtml(base: string): string {
   const root = base.replace(/\/$/, "");
@@ -133,45 +134,45 @@ export function liveHtml(base: string): string {
 <div class="breadcrumbs"><a href="${USUAL}/#menu">The menu</a><span>/</span>Thought Swarm</div>
 <section class="hero">
   <div>
-    <p class="eyebrow">THE COLLECTION / ON THE HOUSE</p>
-    <h1>Thought<br>Swarm<span class="orange">.</span></h1>
-    <p class="lede">Your agent asks before it reads a docs page. If another agent already read it, it gets the short version.</p>
-    <div class="actions"><a class="button primary" href="#install">Add your agent <span aria-hidden="true">→</span></a><a class="button" href="#reading">See what agents read</a></div>
+    <p class="eyebrow">THOUGHT SWARM</p>
+    <h1 style="font-size:clamp(44px,6vw,76px)">Shared reading<br>for AI agents<span class="orange">.</span></h1>
+    <p class="lede">A shared library of AI-generated summaries of public documents. Read and share a digest yourself, or let your agent reuse it instead of processing the full document.</p>
+    <div class="actions"><a class="button primary" href="/library">Find a document →</a><a class="button" href="#install">Connect your agent →</a></div>
     <p class="micro">Free and shared. One line to add, one line to remove. No account.</p>
   </div>
   <aside class="receipt" aria-labelledby="saved-label">
     <div class="receipt-top"><span><span class="status-dot live" aria-hidden="true"></span> THE SWARM / LIVE</span><span>ALL AGENTS · ALL TIME</span></div>
     <div class="big" id="saved">…</div>
-    <p class="big-label" id="saved-label">tokens AI agents didn't have to read</p>
+    <p class="big-label" id="saved-label">estimated tokens avoided by reusing digests</p>
     <div class="tally">
-      <div><span>reads served</span><b id="reads">…</b></div>
-      <div><span>from cache</span><b id="rate">…</b></div>
-      <div><span>agents</span><b id="agents">…</b></div>
+      <div><span>document requests</span><b id="reads">…</b></div>
+      <div><span>reused digests</span><b id="rate">…</b></div>
+      <div><span>agent identifiers</span><b id="agents">…</b></div>
       <div><span>pages read</span><b id="pages">…</b></div>
     </div>
-    <div class="receipt-bottom">UPDATES EVERY 5 SECONDS · COUNTED FROM REAL READS</div>
+    <div class="receipt-bottom">UPDATES EVERY 5 SECONDS · RECORDED API REQUESTS</div>
   </aside>
 </section>
 <div class="layout"><div class="body">
 <section id="library">
-  <p class="eyebrow">Ready to read</p><h2>Apple docs. And the Anthropic S-1.</h2>
-  <p>Browse the Apple submission pack and the full-filing S-1 digest. Saved digests open without reprocessing the original document. Every result shows its source snapshot date.</p>
-  <div class="actions"><a class="button primary" href="/library">Browse the library →</a><a class="button" href="/document?url=https%3A%2F%2Fwww.sec.gov%2FArchives%2Fedgar%2Fdata%2F2130357%2F000162828026067168%2Fanthropicpbc-sx1.htm">Read the S-1 →</a></div>
-  <p class="micro">The library reports ready, unavailable, and pending pages separately. Preloading does not count as agent reads or token savings.</p>
+  <p class="eyebrow">The shared library</p><h2>Find something already read.</h2>
+  <p>Search the documents in Thought Swarm. Give your agent a saved digest, or share one with someone else.</p>
+  <form action="/library" method="get" class="library-search" role="search"><label class="micro" for="home-search">Search by document, topic, or website</label><div class="search-line"><input id="home-search" name="q" type="search" placeholder="What are you looking for?" maxlength="160"><button class="button primary" type="submit">Search library →</button></div></form>
+  <p style="margin-top:18px"><a href="/library">Browse all documents →</a></p>
 </section>
 <section id="install">
-  <p class="eyebrow">01 / Make it yours</p><h2>One line, and your agent joins.</h2>
-  <p>Every time a coding agent asks the swarm about a public docs page another agent already read, it gets a dense digest with the code examples kept word for word, plus a receipt of what it skipped.</p>
+  <p class="eyebrow">For AI agents</p><h2>Find a document. Reuse its digest.</h2>
+  <p>Connect through MCP to search the library and read a saved digest. If a public page has not been saved, requesting it can create a new digest. Each result identifies its source and capture date; summaries can omit details, so consult the original when exact wording matters.</p>
   ${copyBox("cmd-claude", "Claude Code, one command", `claude mcp add --transport http swarm ${esc(root)}/mcp`)}
   ${copyBox("cmd-paste", "Any agent with a shell, paste this into the chat", `Before you read any public docs page, ask the swarm first: curl -s '${esc(root)}/read?format=text&amp;url=&lt;page url&gt;'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.`)}
+<p class="micro"><a href="/llms.txt">Agent guide: tools, endpoints, and how to interpret results →</a></p>
 </section>
 <section id="reading">
-  <p class="eyebrow">02 / Shared reading activity</p><h2>One agent reads. Others reuse.</h2>
-  <p>Thought Swarm turns public documents into shorter digests that AI agents can share. This activity log shows requests for those digests: the first request creates one, and later requests reuse it instead of reading the full document.</p>
+  <p class="eyebrow">02 / Shared reading activity</p><h2>Documents requested through the swarm.</h2>
+  <p>One row per document, showing how often it was requested in the last 24 hours and the estimated text avoided by reusing its digest. This is usage activity; the searchable library above shows what is available.</p>
   <p><strong>Tokens saved</strong> estimates how much less text an agent received by using the digest. Tokens are the small pieces of text AI models process; these counts are estimates, not measured cost savings.</p>
   <div class="board"><div class="board-label"><span>MOST REQUESTED DOCUMENTS · LAST 24 HOURS</span><span>REQUESTS · EST. TOKENS SAVED</span></div><div id="top"><div class="empty">Loading…</div></div></div>
-  <div class="board"><div class="board-label"><span>RECENT REQUESTS</span><span>LATEST FIRST</span></div><div id="feed"><div class="empty">Loading…</div></div></div>
-  <p class="micro" style="margin-top:18px">Each entry is a request, so the same document can appear more than once. For privacy, a document appears only after requests from three distinct agent identifiers. These are not verified unique people. Preloaded documents are listed in the <a href="/library">library</a> and do not count as reads.</p>
+  <p class="micro" style="margin-top:18px">For privacy, documents appear here only after requests from three distinct agent identifiers. Counts can include testing and repeat requests; they are not a count of unique people. Preloading does not count as a read.</p>
 </section>
 <section id="adjust">
   <p class="eyebrow">03 / Keep it your way</p><h2>Inspect, opt out, remove.</h2>
@@ -196,15 +197,12 @@ const fmt=n=>n>=1e9?(n/1e9).toFixed(1).replace(/\\.0$/,'')+'B':n>=1e6?(n/1e6).to
 const ago=t=>{const s=Math.max(0,(Date.now()-t)/1e3);return s<60?'just now':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'};
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const row=(url,title,meta,cls,extra)=>'<div class="row'+(extra||'')+'"><div class="document-label"><a href="/document?url='+encodeURIComponent(url)+'">'+esc(title||'Untitled document')+'</a><span class="document-url">'+esc(url.replace(/^https?:\\/\\//,''))+'</span></div><span class="dots" aria-hidden="true"></span><small class="'+cls+'">'+meta+'</small></div>';
-let last=null;
 async function tick(){try{const s=await (await fetch('${root}/stats',{cache:'no-store'})).json();const a=s.all_time;
 document.getElementById('saved').textContent=fmt(a.tokens_saved);document.getElementById('reads').textContent=fmt(a.reads);
 document.getElementById('agents').textContent=fmt(a.agents);document.getElementById('pages').textContent=fmt(a.pages);
 document.getElementById('rate').textContent=Math.round(a.hit_rate*100)+'%';
 document.getElementById('top').innerHTML=s.top_pages_24h.length?s.top_pages_24h.slice(0,12).map(p=>row(p.url,p.title,p.reads+' requests · ~'+fmt(p.tokens_saved)+' tokens saved','')).join(''):'<div class="empty">No page has been read by three agents yet today.</div>';
-const head=s.now_reading[0]?s.now_reading[0].at:null;
-document.getElementById('feed').innerHTML=s.now_reading.length?s.now_reading.slice(0,12).map(r=>row(r.url,r.title,(r.hit?'Reused digest · ~'+fmt(r.tokens_saved)+' tokens saved':'Created digest')+' · '+ago(r.at),r.hit?'hit':'',last&&r.at>last?' flash':'')).join(''):'<div class="empty">Waiting for the first shared page.</div>';
-last=head;}catch(e){}}
+}catch(e){}}
 tick();setInterval(tick,5000);
 </script>`;
   return shell(root, "Thought Swarm · Usual", DESCRIPTION, main, script);
@@ -259,19 +257,24 @@ export function badgeSvg(reads: number): string {
 <g fill="#fffdf7" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="${(lw + 20) / 2}" y="14">${label}</text><text x="${lw + vw / 2}" y="14">${value}</text></g></svg>`;
 }
 
-export function libraryHtml(base: string, entries: {url: string; collection: string; status: string; detail: string; checked_at: number; title: string | null}[]): string {
-  const groups = [...new Set(entries.map(e => e.collection))];
-  return shell(base, "Library · Thought Swarm", "Verified coverage of the Apple submission pack and Anthropic S-1.", `
+export function libraryHtml(base: string, data: LibraryPage): string {
+  const {entries,total,page,page_size,q,source,status,sources,ready}=data;
+  const pages=Math.max(1,Math.ceil(total/page_size));
+  const pageLink=(n:number)=>'/library?'+new URLSearchParams({q,source,status,page:String(n)}).toString();
+  const range=total ? `${(page-1)*page_size+1}–${Math.min(page*page_size,total)} of ${total.toLocaleString('en-US')}` : 'No matching documents';
+  const navigation=pages>1 ? `<nav class="library-pagination" aria-label="Library pages">${page>1?`<a class="button" rel="prev" href="${esc(pageLink(page-1))}">← Previous</a>`:'<span></span>'}<span>Page ${page} of ${pages}</span>${page<pages?`<a class="button" rel="next" href="${esc(pageLink(page+1))}">Next →</a>`:'<span></span>'}</nav>`:'';
+  const fallback=(url:string)=>{const path=new URL(url).pathname.split('/').filter(Boolean).pop();return path?path.replace(/[-_]/g,' ').replace(/\.(html?|json)$/,''):'Document';};
+  return shell(base, "Library · Thought Swarm", "Search saved documents by title, topic, or source. Read and share their digests.", `
     <div class="breadcrumbs"><a href="/live">Thought Swarm</a><span>/</span>Library</div>
-    <h1 style="font-size:64px">Ready to read.</h1><p class="lede">Saved public documents, with honest coverage.</p>
-    <p>Each digest is a dated snapshot, not a claim that the source was checked just now. Use <code>refresh=true</code> on the read API to check for updates. Large-document refreshes may exceed the free hosting limit; saved digests remain available.</p>
-    ${groups.map(group => {
-      const rows = entries.filter(e => e.collection === group);
-      const ready = rows.filter(e => e.status === "ready");
-      return `<section style="margin:48px 0"><h2>${esc(group)}</h2><p>${ready.length} ready · ${rows.length - ready.length} unavailable or pending · ${rows.length} total</p>
-        <p class="micro">Last reconciliation: ${new Date(Math.max(...rows.map(e => e.checked_at))).toISOString()}</p>
-        <details><summary>Show ${rows.length} pages and their status</summary><div class="board">${rows.map(e => `<div class="row"><div><a href="${e.status === "ready" ? '/document?url=' + encodeURIComponent(e.url) : esc(e.url)}">${esc(e.title || e.url)}</a><p class="micro">${esc(e.status)}${e.detail ? ' · ' + esc(e.detail) : ''}</p></div></div>`).join("")}</div></details></section>`;
-    }).join("") || '<p>The library is being reconciled.</p>'}`);
+    <h1 style="font-size:clamp(40px,6vw,64px)">Already read. Ready for you.</h1>
+    <p class="lede" style="max-width:60ch;margin:22px 0">${ready.toLocaleString('en-US')} saved documents. Find a digest for your agent, or a link to share.</p>
+    <form action="/library" method="get" class="library-search" role="search"><label for="library-query">Search by document, topic, or website</label>
+    <div class="search-line"><input id="library-query" name="q" type="search" value="${esc(q)}" placeholder="What are you looking for?" maxlength="160"><button type="submit" class="button primary">Search</button></div>
+    <div class="library-filters"><label>Source <select name="source"><option value="">All sources</option>${sources.map(s=>`<option value="${esc(s.source)}" ${source===s.source?'selected':''}>${esc(s.source)} (${s.count})</option>`).join('')}</select></label>
+    <label>Availability <select name="status"><option value="ready" ${status==='ready'?'selected':''}>Ready to read</option><option value="all" ${status==='all'?'selected':''}>All documents</option><option value="unavailable" ${status==='unavailable'?'selected':''}>Unavailable</option></select></label><button type="submit" class="button">Apply filters</button>${q||source||status!=='ready'?'<a href="/library">Clear filters</a>':''}</div></form>
+    <div class="library-results"><p class="micro">${range}</p>
+    ${entries.length?`<div class="document-grid">${entries.map(e=>`<article class="document-card"><p class="eyebrow">${esc(e.source)}</p><h2><a href="${e.status==='ready'?'/document?url='+encodeURIComponent(e.url):esc(e.url)}">${esc(e.title||fallback(e.url))}</a></h2><p class="micro">${esc(e.collection)}</p>${e.status==='ready'?'<p class="micro">Saved digest · Ready to read</p>':`<p class="micro">Unavailable · ${esc(e.detail)}</p>`}<a class="document-action" href="${e.status==='ready'?'/document?url='+encodeURIComponent(e.url):esc(e.url)}">${e.status==='ready'?'Read & share →':'Visit source ↗'}</a></article>`).join('')}</div>`:'<div class="board"><p class="empty">No documents match these filters. Try a shorter search or choose all sources.</p><p><a href="/library">Browse all ready documents →</a></p></div>'}
+    ${navigation}</div>`);
 }
 
 export function documentHtml(base: string, d: Digest, url: string, at: number, receipt: string, social?: ShareInfo): string {

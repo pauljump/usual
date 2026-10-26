@@ -27,12 +27,13 @@ Only the URL is stored from a request. Agent ids and IPs are stored as salted ha
 
 | Route | What it does |
 |---|---|
-| `POST /mcp` | Remote MCP server (Streamable HTTP) with `read_page` and `swarm_stats`. `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp` |
+| `POST /mcp` | Remote MCP server (Streamable HTTP) with `search_library`, `read_page`, and `swarm_stats`. `claude mcp add --transport http swarm https://thoughtswarm.tryusual.com/mcp` |
+| `GET /llms.txt` | Agent guide for discovery, reading, snapshots, sharing and interpreting statistics. |
 | `GET /share` | Paste a saved document URL to get a short link and social preview. |
 | `POST /share` | `{ "url": "original URL or Thought Swarm link" }` returns a stable saved-version URL and PNG URL; never fetches or digests a source. |
 | `GET /s/<id>` | Shared saved-version page with Open Graph and X large-image metadata. Add `?format=text` for the same version with an agent receipt. |
 | `GET /s/<id>/card.png` | Branded 1200×630 PNG; HEAD supported; cached at the edge for a day. |
-| `GET /library` | Curated pack coverage: ready, unavailable and pending pages, separate from agent-read statistics. |
+| `GET /library` | Searchable curated library. Parameters: `q`, `source` (hostname), `status` (ready/all/unavailable), `page`. Defaults to ready-only, 24 entries per page; JSON includes total, page, page_size, source facets, and entries. |
 | `GET /document?url=…` | Readable HTML view of a saved digest; never triggers fresh processing. |
 | `GET /live` (or `/` in a browser) | The public scoreboard page. |
 | `GET /badge/<domain>.svg` | README badge with how many agent reads a docs site has had. |
@@ -98,4 +99,6 @@ Social images are generated locally within the Worker using pre-rendered raster 
 
 The share feature is implemented and locally verified, pending publication approval. It uses the existing canonical Worker/domain and does not require any new provider or model credentials.
 
-The activity section labels events as Created digest or Reused digest, shows saved document titles alongside source URLs, and explains requests and estimated token savings. Recent requests are historical events, not an online-presence indicator. Distinct agent identifiers are not verified unique people.
+The homepage explains the product for people and agents, offers library search and agent setup, then shows usage grouped by document rather than a repeated request stream. Document titles appear alongside source URLs, and requests and estimated token savings are explained. Distinct agent identifiers are not verified unique people.
+
+The homepage and library are collection-agnostic: no hard-coded featured filings or packs. Library search is server-side with bounded output, source and availability filters, and pagination. Search covers titles, collection names, and URLs rather than full text. The new layout and agent guide are verified locally and remain pending deployment.
