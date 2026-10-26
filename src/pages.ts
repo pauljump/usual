@@ -67,6 +67,7 @@ h2{font-size:clamp(32px,4.2vw,48px)}h3{font-size:24px;letter-spacing:-.04em}
 .row{display:flex;gap:14px;align-items:baseline;padding:13px 0;border-bottom:1px solid var(--line);text-decoration:none;min-width:0}
 .row:last-child{border-bottom:0}
 .row a{text-decoration:none;font-size:15px;letter-spacing:-.01em;overflow-wrap:anywhere;min-width:0}.row a:hover{color:var(--orange)}
+.document-label{min-width:0}.document-url{display:block;font-size:12px;color:var(--muted);overflow-wrap:anywhere;margin-top:4px}
 .row .dots{flex:1;border-bottom:2px dotted #cbccbd;min-width:16px;transform:translateY(-4px)}
 .row small{font-size:10px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}.row small.hit{color:var(--green)}
 .empty{padding:20px 0;color:var(--muted);font-size:14px}
@@ -165,10 +166,12 @@ export function liveHtml(base: string): string {
   ${copyBox("cmd-paste", "Any agent with a shell, paste this into the chat", `Before you read any public docs page, ask the swarm first: curl -s '${esc(root)}/read?format=text&amp;url=&lt;page url&gt;'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.`)}
 </section>
 <section id="reading">
-  <p class="eyebrow">02 / Put it to work</p><h2>What agents are reading.</h2>
-  <div class="board"><div class="board-label"><span>MOST READ · LAST 24 HOURS</span><span>READS · TOKENS SAVED</span></div><div id="top"><div class="empty">Loading…</div></div></div>
-  <div class="board"><div class="board-label"><span><span class="status-dot live" aria-hidden="true" style="display:inline-block;margin-right:8px"></span>READING NOW</span><span>LATEST FIRST</span></div><div id="feed"><div class="empty">Loading…</div></div></div>
-  <p class="micro" style="margin-top:18px">A page appears here only after three different agents have read it.</p>
+  <p class="eyebrow">02 / Shared reading activity</p><h2>One agent reads. Others reuse.</h2>
+  <p>Thought Swarm turns public documents into shorter digests that AI agents can share. This activity log shows requests for those digests: the first request creates one, and later requests reuse it instead of reading the full document.</p>
+  <p><strong>Tokens saved</strong> estimates how much less text an agent received by using the digest. Tokens are the small pieces of text AI models process; these counts are estimates, not measured cost savings.</p>
+  <div class="board"><div class="board-label"><span>MOST REQUESTED DOCUMENTS · LAST 24 HOURS</span><span>REQUESTS · EST. TOKENS SAVED</span></div><div id="top"><div class="empty">Loading…</div></div></div>
+  <div class="board"><div class="board-label"><span>RECENT REQUESTS</span><span>LATEST FIRST</span></div><div id="feed"><div class="empty">Loading…</div></div></div>
+  <p class="micro" style="margin-top:18px">Each entry is a request, so the same document can appear more than once. For privacy, a document appears only after requests from three distinct agent identifiers. These are not verified unique people. Preloaded documents are listed in the <a href="/library">library</a> and do not count as reads.</p>
 </section>
 <section id="adjust">
   <p class="eyebrow">03 / Keep it your way</p><h2>Inspect, opt out, remove.</h2>
@@ -192,15 +195,15 @@ export function liveHtml(base: string): string {
 const fmt=n=>n>=1e9?(n/1e9).toFixed(1).replace(/\\.0$/,'')+'B':n>=1e6?(n/1e6).toFixed(1).replace(/\\.0$/,'')+'M':n.toLocaleString('en-US');
 const ago=t=>{const s=Math.max(0,(Date.now()-t)/1e3);return s<60?'just now':s<3600?Math.round(s/60)+' min ago':Math.round(s/3600)+' h ago'};
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
-const row=(url,meta,cls,extra)=>'<div class="row'+(extra||'')+'"><a href="'+esc(url)+'" rel="noopener">'+esc(url.replace(/^https?:\\/\\//,''))+'</a><span class="dots" aria-hidden="true"></span><small class="'+cls+'">'+meta+'</small></div>';
+const row=(url,title,meta,cls,extra)=>'<div class="row'+(extra||'')+'"><div class="document-label"><a href="/document?url='+encodeURIComponent(url)+'">'+esc(title||'Untitled document')+'</a><span class="document-url">'+esc(url.replace(/^https?:\\/\\//,''))+'</span></div><span class="dots" aria-hidden="true"></span><small class="'+cls+'">'+meta+'</small></div>';
 let last=null;
 async function tick(){try{const s=await (await fetch('${root}/stats',{cache:'no-store'})).json();const a=s.all_time;
 document.getElementById('saved').textContent=fmt(a.tokens_saved);document.getElementById('reads').textContent=fmt(a.reads);
 document.getElementById('agents').textContent=fmt(a.agents);document.getElementById('pages').textContent=fmt(a.pages);
 document.getElementById('rate').textContent=Math.round(a.hit_rate*100)+'%';
-document.getElementById('top').innerHTML=s.top_pages_24h.length?s.top_pages_24h.slice(0,12).map(p=>row(p.url,p.reads+' reads · '+fmt(p.tokens_saved)+' saved','')).join(''):'<div class="empty">No page has been read by three agents yet today.</div>';
+document.getElementById('top').innerHTML=s.top_pages_24h.length?s.top_pages_24h.slice(0,12).map(p=>row(p.url,p.title,p.reads+' requests · ~'+fmt(p.tokens_saved)+' tokens saved','')).join(''):'<div class="empty">No page has been read by three agents yet today.</div>';
 const head=s.now_reading[0]?s.now_reading[0].at:null;
-document.getElementById('feed').innerHTML=s.now_reading.length?s.now_reading.slice(0,12).map(r=>row(r.url,(r.hit?fmt(r.tokens_saved)+' saved':'first read')+' · '+ago(r.at),r.hit?'hit':'',last&&r.at>last?' flash':'')).join(''):'<div class="empty">Waiting for the first shared page.</div>';
+document.getElementById('feed').innerHTML=s.now_reading.length?s.now_reading.slice(0,12).map(r=>row(r.url,r.title,(r.hit?'Reused digest · ~'+fmt(r.tokens_saved)+' tokens saved':'Created digest')+' · '+ago(r.at),r.hit?'hit':'',last&&r.at>last?' flash':'')).join(''):'<div class="empty">Waiting for the first shared page.</div>';
 last=head;}catch(e){}}
 tick();setInterval(tick,5000);
 </script>`;

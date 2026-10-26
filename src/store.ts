@@ -76,6 +76,7 @@ export interface PageStats {
 }
 
 export interface PublicPage {
+  title: string | null;
   url: string;
   domain: string;
   reads: number;
@@ -173,7 +174,7 @@ export class SwarmStore {
 
   topPages(since: number, limit = 20, domain?: string): Promise<PublicPage[]> {
     return this.db.all<PublicPage>(
-      `SELECT url, domain, COUNT(*) AS reads, COUNT(DISTINCT agent) AS agents, COALESCE(SUM(tokens_saved), 0) AS tokens_saved
+      `SELECT url, domain, (SELECT title FROM digests d WHERE d.url = reads.url ORDER BY created_at DESC LIMIT 1) AS title, COUNT(*) AS reads, COUNT(DISTINCT agent) AS agents, COALESCE(SUM(tokens_saved), 0) AS tokens_saved
        FROM reads WHERE at >= ? ${domain ? "AND domain = ?" : ""}
          AND url IN (SELECT url FROM reads GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
        GROUP BY url ORDER BY reads DESC, tokens_saved DESC LIMIT ?`,
@@ -181,9 +182,9 @@ export class SwarmStore {
     );
   }
 
-  recentPublicReads(limit = 25): Promise<{ url: string; domain: string; hit: number; tokens_saved: number; at: number }[]> {
+  recentPublicReads(limit = 25): Promise<{ title: string | null; url: string; domain: string; hit: number; tokens_saved: number; at: number }[]> {
     return this.db.all(
-      `SELECT url, domain, hit, tokens_saved, at FROM reads
+      `SELECT url, domain, (SELECT title FROM digests d WHERE d.key = reads.digest_key) AS title, hit, tokens_saved, at FROM reads
        WHERE url IN (SELECT url FROM reads GROUP BY url HAVING COUNT(DISTINCT agent) >= ${PUBLIC_MIN_AGENTS})
        ORDER BY at DESC LIMIT ?`,
       [limit],
