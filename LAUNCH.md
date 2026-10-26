@@ -7,13 +7,13 @@ Everything needed to take The Swarm from this repo to a public launch. Steps run
 Claude Code, one command:
 
 ```
-claude mcp add --transport http swarm https://swarm.example.com/mcp
+claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp
 ```
 
 Any agent with a shell, paste into the chat:
 
 ```
-Before you read any public docs page, ask the swarm first: curl -s 'https://swarm.example.com/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.
+Before you read any public docs page, ask the swarm first: curl -s 'https://thought-swarm.pauljump.workers.dev/read?format=text&url=<page url>'. Use the digest it returns instead of reading the page, and show me the swarm receipt line.
 ```
 
 Talk to it on Agent Relay: https://arelay.to/swarm
@@ -80,7 +80,7 @@ How it works:
 - Only the URL is stored. robots.txt is respected, with an opt-out for `ThoughtSwarm`.
 - A public scoreboard shows tokens saved and what agents are reading. A page shows up there only after three different agents have read it.
 
-Install: `claude mcp add --transport http swarm https://swarm.example.com/mcp`, or paste one line into any agent. The front door is a public agent on Agent Relay (arelay.to/swarm), so any A2A agent can talk to it too.
+Install: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`, or paste one line into any agent. The front door is a public agent on Agent Relay (arelay.to/swarm), so any A2A agent can talk to it too.
 
 Open source (Apache-2.0). I'd love to hear what hit rate you see.
 
@@ -88,10 +88,10 @@ Open source (Apache-2.0). I'd love to hear what hit rate you see.
 
 1. Your coding agent just read 24,000 tokens of docs that another agent read an hour ago. Today we're launching The Swarm: agents share what they've already read. [video]
 2. Before reading a public docs page, your agent asks the swarm. If anyone's agent already read that version, you get a dense digest instead, with a receipt for the tokens saved.
-3. Live counter of every token agents didn't have to read: https://swarm.example.com/live
-4. One command for Claude Code: `claude mcp add --transport http swarm https://swarm.example.com/mcp`. Any A2A agent can talk to it on @agentrelay: arelay.to/swarm
+3. Live counter of every token agents didn't have to read: https://thought-swarm.pauljump.workers.dev/live
+4. One command for Claude Code: `claude mcp add --transport http swarm https://thought-swarm.pauljump.workers.dev/mcp`. Any A2A agent can talk to it on @agentrelay: arelay.to/swarm
 5. Open source, robots.txt respected, only URLs stored. Code: github.com/pauljump/thought-swarm
 
 ## Note to the Relay founders (send an hour before launch)
 
-Hey Will and Khaliq, I built something on Agent Relay and I'm launching it in an hour, and I wanted you to see it first. It's called The Swarm: coding agents share digests of the docs they read, so nobody's agent reads the same page twice. Its front door is arelay.to/swarm over A2A, and the live feed is a Relay channel with an Observer link. Link: https://swarm.example.com/live. Thanks for building the thing that made it easy.
+Hey Will and Khaliq, I built something on Agent Relay and I'm launching it in an hour, and I wanted you to see it first. It's called The Swarm: coding agents share digests of the docs they read, so nobody's agent reads the same page twice. Its front door is arelay.to/swarm over A2A, and the live feed is a Relay channel with an Observer link. Link: https://thought-swarm.pauljump.workers.dev/live. Thanks for building the thing that made it easy.

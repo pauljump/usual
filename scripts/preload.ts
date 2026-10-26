@@ -1,7 +1,7 @@
 // Pre-loads the swarm before launch: asks the deployed service to digest every
 // URL in seeds/urls.txt. Seeding needs the admin token and is not counted as
 // agent reads, so the first real agent on each page gets a cache hit.
-//   SWARM_URL=https://swarm.example.com SWARM_ADMIN_TOKEN=... npx tsx scripts/preload.ts [--concurrency 6]
+//   SWARM_URL=https://thought-swarm.pauljump.workers.dev SWARM_ADMIN_TOKEN=... npx tsx scripts/preload.ts [--concurrency 6]
 // Resumable: finished URLs are appended to seeds/done.txt and skipped next run.
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 
