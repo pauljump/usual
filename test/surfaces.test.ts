@@ -94,7 +94,7 @@ describe("public pages", () => {
     expect(browser.headers.get("content-type")).toContain("text/html");
     const page = await browser.text();
     expect(page).toContain("claude mcp add --transport http swarm https://swarm.example/mcp");
-    expect(page).toContain("arelay.to/swarm");
+    expect(page).not.toMatch(/relay/i);
     const curl = await (await app.handle(new Request("https://swarm.example/"))).text();
     expect(curl).toContain("claude mcp add");
   });
