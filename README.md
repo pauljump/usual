@@ -97,8 +97,10 @@ Every saved document offers Copy share link, Share on X (opens a draft), Downloa
 
 Social images are generated locally within the Worker using pre-rendered raster glyphs and native PNG compression, with no external image service or extra runtime dependencies. The raster alphabet supports Latin-1 and common typographic punctuation; unsupported glyphs use `?` in the image only (full Unicode titles remain intact in HTML and metadata). Long titles wrap and truncate in the image. `scripts/build-share-font.py` regenerates the committed glyph data on macOS with Pillow. X/Open Graph metadata is server rendered; actual display and refresh timing remain controlled by the social platform.
 
-The share feature is implemented and locally verified, pending publication approval. It uses the existing canonical Worker/domain and does not require any new provider or model credentials.
+The share feature is published and verified on thoughtswarm.tryusual.com. It uses the existing canonical Worker/domain and does not require any new provider or model credentials.
 
 The homepage explains the product for people and agents, offers library search and agent setup, then shows usage grouped by document rather than a repeated request stream. Document titles appear alongside source URLs, and requests and estimated token savings are explained. Distinct agent identifiers are not verified unique people.
 
-The homepage and library are collection-agnostic: no hard-coded featured filings or packs. Library search is server-side with bounded output, source and availability filters, and pagination. Search covers titles, collection names, and URLs rather than full text. The new layout and agent guide are verified locally and remain pending deployment.
+The homepage and library are collection-agnostic: no hard-coded featured filings or packs. Library search is server-side with bounded output, source and availability filters, and pagination. Search covers titles, collection names, and URLs rather than full text. The new layout and agent guide are published and verified on thoughtswarm.tryusual.com.
+
+Published 2026-10-26: Worker version `f174ac24-f747-4bbb-ae02-0823e9c1cf42`. Validation: 73 tests, typecheck, live homepage, library search, MCP search, agent guide, and the S-1 short link with its 1200×630 PNG and social metadata. No new model processing was used for deployment verification.
