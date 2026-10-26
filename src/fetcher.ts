@@ -1,3 +1,4 @@
+import { doccDataUrl, renderDocc } from "./docc.js";
 import { extractText, type Extracted } from "./extract.js";
 import { AGENT_TOKEN, isAllowed, parseRobots } from "./robots.js";
 import { assertPublicTarget, normalizeUrl } from "./url.js";
@@ -29,6 +30,12 @@ export class PageFetcher {
     assertPublicTarget(normalizedUrl);
     await this.checkRobots(normalizedUrl);
 
+    const docc = doccDataUrl(normalizedUrl);
+    if (docc) {
+      const page = await this.fetchDocc(normalizedUrl, docc);
+      if (page) return page;
+    }
+
     const res = await this.get(normalizedUrl, "text/html,text/markdown;q=0.9,text/plain;q=0.8,*/*;q=0.1");
     if (!res.ok) throw new FetchError(`The page returned HTTP ${res.status}.`, res.status === 404 ? 404 : 502);
     const finalUrl = normalizeUrl(res.url || normalizedUrl);
@@ -50,6 +57,22 @@ export class PageFetcher {
       );
     }
     return { ...extracted, url: finalUrl, contentType };
+  }
+
+  // Apple's docs pages are empty shells filled in from a JSON file; read that instead.
+  // Returns null when there's no JSON for the page, so the caller falls back to the HTML.
+  private async fetchDocc(normalizedUrl: string, dataUrl: string): Promise<FetchedPage | null> {
+    const res = await this.get(dataUrl, "application/json");
+    if (!res.ok) return null;
+    let doc: unknown;
+    try {
+      doc = JSON.parse(await readCapped(res, MAX_BYTES));
+    } catch {
+      return null;
+    }
+    const extracted = renderDocc(doc);
+    if (extracted.text.length < 80) return null;
+    return { ...extracted, url: normalizedUrl, contentType: "application/json" };
   }
 
   private async checkRobots(normalizedUrl: string): Promise<void> {
