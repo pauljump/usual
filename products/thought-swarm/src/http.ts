@@ -38,7 +38,7 @@ export class App {
     try {
       if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
       const wantsHtml = (req.headers.get("accept") ?? "").includes("text/html");
-      if ((path === "/" && wantsHtml) || path === "/live") return html(liveHtml(this.c.publicBaseUrl));
+      if ((path === "/" && wantsHtml) || path === "/live") return html(liveHtml(this.c.publicBaseUrl, await this.c.store.library({}), await this.c.store.collections()));
       if (path === "/" && req.method === "GET") return text(usage(this.c.publicBaseUrl));
       if (path === "/llms.txt" && req.method === "GET") return text(agentGuide(this.c.publicBaseUrl));
       if (path === "/mcp") {
@@ -89,7 +89,7 @@ export class App {
         return req.method === "HEAD" ? new Response(null,{headers:{"content-type":"text/html; charset=utf-8"}}) : html(page);
       }
       if (path === "/library") {
-        const library = await this.c.store.library({q:url.searchParams.get("q") ?? undefined,source:url.searchParams.get("source") ?? undefined,status:url.searchParams.get("status") ?? undefined,page:Number(url.searchParams.get("page") || 1)});
+        const library = await this.c.store.library({q:url.searchParams.get("q") ?? undefined,source:url.searchParams.get("source") ?? undefined,status:url.searchParams.get("status") ?? undefined,collection:url.searchParams.get("collection") ?? undefined,page:Number(url.searchParams.get("page") || 1)});
         return wantsHtml ? html(libraryHtml(this.c.publicBaseUrl, library)) : json(library);
       }
       if (path === "/document") {

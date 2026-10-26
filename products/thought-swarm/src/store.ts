@@ -94,10 +94,11 @@ export interface LibraryEntry {
 }
 export interface LibraryPage {
   entries: LibraryEntry[]; total: number; page: number; page_size: number;
-  q: string; source: string; status: string;
+  q: string; source: string; status: string; collection: string;
   sources: {source: string; count: number}[];
   ready: number;
 }
+export interface LibraryCollection { collection: string; ready: number; total: number }
 
 export class SwarmStore {
   constructor(private readonly db: SqlDb) {}
@@ -143,9 +144,10 @@ export class SwarmStore {
     return rows.length ? rows.map(r => r.text).join("") : undefined;
   }
 
-  async library(options: {q?: string; source?: string; status?: string; page?: number} = {}): Promise<LibraryPage> {
+  async library(options: {q?: string; source?: string; status?: string; collection?: string; page?: number} = {}): Promise<LibraryPage> {
     const q=(options.q ?? '').trim().slice(0,160);
     const source=(options.source ?? '').trim().slice(0,253);
+    const collection=(options.collection ?? '').trim().slice(0,160);
     const status=['all','unavailable'].includes(options.status ?? '') ? options.status! : 'ready';
     const host = "substr(substr(l.url,instr(l.url,'://')+3),1,instr(substr(l.url,instr(l.url,'://')+3)||'/','/')-1)";
     const from = `FROM library l LEFT JOIN digests d ON d.key =
@@ -154,6 +156,7 @@ export class SwarmStore {
     if(status==='ready') terms.push("l.status='ready'");
     if(status==='unavailable') terms.push("l.status<>'ready'");
     if(source) {terms.push(`${host} = ?`);params.push(source);}
+    if(collection) {terms.push('l.collection = ?');params.push(collection);}
     if(q) {
       terms.push("(COALESCE(d.title,'') LIKE ? ESCAPE '~' OR l.url LIKE ? ESCAPE '~' OR l.collection LIKE ? ESCAPE '~')");
       const pattern='%'+q.replace(/[~%_]/g,c=>'~'+c)+'%';params.push(pattern,pattern,pattern);
@@ -168,7 +171,14 @@ export class SwarmStore {
     const requested=Number.isFinite(options.page)?Math.max(1,Math.floor(options.page!)):1;
     const page=Math.min(requested,Math.max(1,Math.ceil(total/page_size)));
     const entries=await this.db.all<LibraryEntry>(`SELECT l.*,d.title,${host} AS source ${from} ${where} ORDER BY COALESCE(d.title,l.url) COLLATE NOCASE,l.url LIMIT ? OFFSET ?`,[...params,page_size,(page-1)*page_size]);
-    return {entries,total,page,page_size,q,source,status,sources,ready:ready?.n ?? 0};
+    return {entries,total,page,page_size,q,source,status,collection,sources,ready:ready?.n ?? 0};
+  }
+
+  // Curated collections with how many of their documents are ready to read.
+  collections(): Promise<LibraryCollection[]> {
+    return this.db.all<LibraryCollection>(
+      "SELECT collection, COALESCE(SUM(status = 'ready'), 0) AS ready, COUNT(*) AS total FROM library GROUP BY collection ORDER BY ready DESC, collection",
+    );
   }
 
   async putDigest(row: DigestRow): Promise<void> {

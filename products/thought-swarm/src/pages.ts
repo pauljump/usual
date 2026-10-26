@@ -4,7 +4,7 @@
 // scripts or fonts; the scoreboard polls /stats.
 
 import { compact } from "./swarm.js";
-import type { PublicPage, LibraryPage } from "./store.js";
+import type { PublicPage, LibraryPage, LibraryCollection } from "./store.js";
 import type { ShareInfo } from "./share.js";
 import type { Digest } from "./digest.js";
 
@@ -135,8 +135,14 @@ function copyBox(id: string, label: string, value: string): string {
 
 const DESCRIPTION = "Thought Swarm is a shared library of AI-generated document summaries. People can find and share digests; AI agents can reuse them instead of processing the full source.";
 
-export function liveHtml(base: string): string {
+export function liveHtml(base: string, library?: LibraryPage, collections: LibraryCollection[] = []): string {
   const root = base.replace(/\/$/, "");
+  const ready = library?.ready ?? collections.reduce((n, c) => n + c.ready, 0);
+  const sources = (library?.sources ?? []).slice(0, 6);
+  const collectionRows = collections.filter((c) => c.ready > 0).map((c) =>
+    `<div class="row"><a href="/library?collection=${encodeURIComponent(c.collection)}">${esc(c.collection)}</a><span class="dots" aria-hidden="true"></span><small>${c.ready.toLocaleString("en-US")} ready</small></div>`).join("");
+  const sourceRows = sources.map((s) =>
+    `<div class="row"><a href="/library?source=${encodeURIComponent(s.source)}">${esc(s.source)}</a><span class="dots" aria-hidden="true"></span><small>${s.count.toLocaleString("en-US")}</small></div>`).join("");
   const main = `
 <div class="breadcrumbs"><a href="${USUAL}/#menu">The menu</a><span>/</span>Thought Swarm</div>
 <section class="hero">
@@ -147,17 +153,12 @@ export function liveHtml(base: string): string {
     <div class="actions"><a class="button primary" href="/library">Find a document →</a><a class="button" href="#install">Connect your agent →</a></div>
     <p class="micro">Free and shared. One line to add, one line to remove. No account.</p>
   </div>
-  <aside class="receipt" aria-labelledby="saved-label">
-    <div class="receipt-top"><span><span class="status-dot live" aria-hidden="true"></span> THE SWARM / LIVE</span><span>ALL AGENTS · ALL TIME</span></div>
-    <div class="big" id="saved">…</div>
-    <p class="big-label" id="saved-label">estimated tokens avoided by reusing digests</p>
-    <div class="tally">
-      <div><span>document requests</span><b id="reads">…</b></div>
-      <div><span>reused digests</span><b id="rate">…</b></div>
-      <div><span>agent identifiers</span><b id="agents">…</b></div>
-      <div><span>pages read</span><b id="pages">…</b></div>
-    </div>
-    <div class="receipt-bottom">UPDATES EVERY 5 SECONDS · RECORDED API REQUESTS</div>
+  <aside class="receipt" aria-labelledby="library-label">
+    <div class="receipt-top"><span>THE LIBRARY</span><span>READY TO READ</span></div>
+    <div class="big">${ready.toLocaleString("en-US")}</div>
+    <p class="big-label" id="library-label">documents already read and saved</p>
+    ${collectionRows ? `<div style="margin-top:18px">${collectionRows}</div>` : ""}
+    <div class="receipt-bottom"><a href="/library">BROWSE THE LIBRARY →</a></div>
   </aside>
 </section>
 <div class="layout"><div class="body">
@@ -165,6 +166,7 @@ export function liveHtml(base: string): string {
   <p class="eyebrow">The shared library</p><h2>Find something already read.</h2>
   <p>Search the documents in Thought Swarm. Give your agent a saved digest, or share one with someone else.</p>
   <form action="/library" method="get" class="library-search" role="search"><label class="micro" for="home-search">Search by document, topic, or website</label><div class="search-line"><input id="home-search" name="q" type="search" placeholder="What are you looking for?" maxlength="160"><button class="button primary" type="submit">Search library →</button></div></form>
+  ${sourceRows ? `<div class="board" style="margin-top:28px"><div class="board-label"><span>BY SOURCE</span><span>DOCUMENTS</span></div>${sourceRows}</div>` : ""}
   <p style="margin-top:18px"><a href="/library">Browse all documents →</a></p>
 </section>
 <section id="install">
@@ -175,14 +177,26 @@ export function liveHtml(base: string): string {
 <p class="micro"><a href="/llms.txt">Agent guide: tools, endpoints, and how to interpret results →</a></p>
 </section>
 <section id="reading">
-  <p class="eyebrow">02 / Shared reading activity</p><h2>Documents requested through the swarm.</h2>
+  <p class="eyebrow">Shared reading activity</p><h2>Documents requested through the swarm.</h2>
   <p>One row per document, showing how often it was requested in the last 24 hours and the estimated text avoided by reusing its digest. This is usage activity; the searchable library above shows what is available.</p>
   <p><strong>Tokens saved</strong> estimates how much less text an agent received by using the digest. Tokens are the small pieces of text AI models process; these counts are estimates, not measured cost savings.</p>
+  <div class="receipt" style="margin:26px 0 30px">
+    <div class="receipt-top"><span><span class="status-dot live" aria-hidden="true"></span> THE SWARM / LIVE</span><span>ALL AGENTS · ALL TIME</span></div>
+    <div class="big" id="saved">…</div>
+    <p class="big-label">estimated tokens avoided by reusing digests</p>
+    <div class="tally">
+      <div><span>document requests</span><b id="reads">…</b></div>
+      <div><span>reused digests</span><b id="rate">…</b></div>
+      <div><span>agent identifiers</span><b id="agents">…</b></div>
+      <div><span>pages read</span><b id="pages">…</b></div>
+    </div>
+    <div class="receipt-bottom">UPDATES EVERY 5 SECONDS · EXCLUDES PRELOADING AND INTERNAL TEST AGENTS</div>
+  </div>
   <div class="board"><div class="board-label"><span>MOST REQUESTED DOCUMENTS · LAST 24 HOURS</span><span>REQUESTS · EST. TOKENS SAVED</span></div><div id="top"><div class="empty">Loading…</div></div></div>
-  <p class="micro" style="margin-top:18px">For privacy, documents appear here only after requests from three distinct agent identifiers. Counts can include testing and repeat requests; they are not a count of unique people. Preloading does not count as a read.</p>
+  <p class="micro" style="margin-top:18px">For privacy, documents appear here only after requests from three distinct agent identifiers. Counts can include repeat requests and are not a count of unique people. Preloading and agents marked as internal testing do not count.</p>
 </section>
 <section id="adjust">
-  <p class="eyebrow">03 / Keep it your way</p><h2>Inspect, opt out, remove.</h2>
+  <p class="eyebrow">Keep it your way</p><h2>Inspect, opt out, remove.</h2>
   ${copyBox("cmd-remove", "Remove it from Claude Code", "claude mcp remove swarm")}
   <p>Run a docs site and would rather agents read it directly? Add <span class="inline">User-agent: ThoughtSwarm</span> with <span class="inline">Disallow: /</span> to your robots.txt and the swarm stops within the hour.</p>
 </section>
@@ -266,8 +280,9 @@ export function badgeSvg(reads: number): string {
 
 export function libraryHtml(base: string, data: LibraryPage): string {
   const {entries,total,page,page_size,q,source,status,sources,ready}=data;
+  const collection=data.collection ?? '';
   const pages=Math.max(1,Math.ceil(total/page_size));
-  const pageLink=(n:number)=>'/library?'+new URLSearchParams({q,source,status,page:String(n)}).toString();
+  const pageLink=(n:number)=>'/library?'+new URLSearchParams({q,source,status,...(collection?{collection}:{}),page:String(n)}).toString();
   const range=total ? `${(page-1)*page_size+1}–${Math.min(page*page_size,total)} of ${total.toLocaleString('en-US')}` : 'No matching documents';
   const navigation=pages>1 ? `<nav class="library-pagination" aria-label="Library pages">${page>1?`<a class="button" rel="prev" href="${esc(pageLink(page-1))}">← Previous</a>`:'<span></span>'}<span>Page ${page} of ${pages}</span>${page<pages?`<a class="button" rel="next" href="${esc(pageLink(page+1))}">Next →</a>`:'<span></span>'}</nav>`:'';
   const fallback=(url:string)=>{const path=new URL(url).pathname.split('/').filter(Boolean).pop();return path?path.replace(/[-_]/g,' ').replace(/\.(html?|json)$/,''):'Document';};
@@ -276,9 +291,9 @@ export function libraryHtml(base: string, data: LibraryPage): string {
     <h1 style="font-size:clamp(40px,6vw,64px)">Already read. Ready for you.</h1>
     <p class="lede" style="max-width:60ch;margin:22px 0">${ready.toLocaleString('en-US')} saved documents. Find a digest for your agent, or a link to share.</p>
     <form action="/library" method="get" class="library-search" role="search"><label for="library-query">Search by document, topic, or website</label>
-    <div class="search-line"><input id="library-query" name="q" type="search" value="${esc(q)}" placeholder="What are you looking for?" maxlength="160"><button type="submit" class="button primary">Search</button></div>
+    ${collection?`<input type="hidden" name="collection" value="${esc(collection)}"><p class="micro">Collection: <strong>${esc(collection)}</strong></p>`:''}<div class="search-line"><input id="library-query" name="q" type="search" value="${esc(q)}" placeholder="What are you looking for?" maxlength="160"><button type="submit" class="button primary">Search</button></div>
     <div class="library-filters"><label>Source <select name="source"><option value="">All sources</option>${sources.map(s=>`<option value="${esc(s.source)}" ${source===s.source?'selected':''}>${esc(s.source)} (${s.count})</option>`).join('')}</select></label>
-    <label>Availability <select name="status"><option value="ready" ${status==='ready'?'selected':''}>Ready to read</option><option value="all" ${status==='all'?'selected':''}>All documents</option><option value="unavailable" ${status==='unavailable'?'selected':''}>Unavailable</option></select></label><button type="submit" class="button">Apply filters</button>${q||source||status!=='ready'?'<a href="/library">Clear filters</a>':''}</div></form>
+    <label>Availability <select name="status"><option value="ready" ${status==='ready'?'selected':''}>Ready to read</option><option value="all" ${status==='all'?'selected':''}>All documents</option><option value="unavailable" ${status==='unavailable'?'selected':''}>Unavailable</option></select></label><button type="submit" class="button">Apply filters</button>${q||source||collection||status!=='ready'?'<a href="/library">Clear filters</a>':''}</div></form>
     <div class="library-results"><p class="micro">${range}</p>
     ${entries.length?`<div class="document-grid">${entries.map(e=>`<article class="document-card"><p class="eyebrow">${esc(e.source)}</p><h2><a href="${e.status==='ready'?'/document?url='+encodeURIComponent(e.url):esc(e.url)}">${esc(e.title||fallback(e.url))}</a></h2><p class="micro">${esc(e.collection)}</p>${e.status==='ready'?'<p class="micro">Saved digest · Ready to read</p>':`<p class="micro">Unavailable · ${esc(e.detail)}</p>`}<a class="document-action" href="${e.status==='ready'?'/document?url='+encodeURIComponent(e.url):esc(e.url)}">${e.status==='ready'?'Read & share →':'Visit source ↗'}</a></article>`).join('')}</div>`:'<div class="board"><p class="empty">No documents match these filters. Try a shorter search or choose all sources.</p><p><a href="/library">Browse all ready documents →</a></p></div>'}
     ${navigation}</div>`);
