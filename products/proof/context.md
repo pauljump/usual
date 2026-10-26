@@ -1,3 +1,7 @@
+# Proof research context
+
+Proof is the Usual workshop name. The historical research below refers to the external Turrii product; those references are retained for accuracy.
+
 # Turrii decision context — frozen 2026-10-14
 
 This is working material for a private product jam. It separates observed facts,

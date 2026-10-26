@@ -1,4 +1,4 @@
-"""Private, human-in-the-loop Turrii product jams.
+"""Private, human-in-the-loop Proof product jams.
 
 The public Usual server owns the route and password gate. This module owns the
 durable jam record, Teek evidence selection, and the single explicit provider call
@@ -29,7 +29,7 @@ MAX_ATTEMPTS = 6
 GENERAL_TOPIC = {"id":"general","title":"General jam","subtitle":"No category. Bring whatever is on your mind and let the conversation find its direction."}
 TOPICS = [
     GENERAL_TOPIC,
-    {"id": "claim", "title": "The claim: what does Turrii prove?", "subtitle": "Draw a defensible line between observed input facts, inference, authorship, and identity."},
+    {"id": "claim", "title": "The claim: what does Proof prove?", "subtitle": "Draw a defensible line between observed input facts, inference, authorship, and identity."},
     {"id": "payer", "title": "Demand: who actually pays?", "subtitle": "Choose the checker with a frequent, costly decision—not the writer who wants a badge."},
     {"id": "test", "title": "The 20-link test: sharpen or kill it", "subtitle": "Decide what one week of hand-sent receipts can reveal and what result changes the plan."},
     {"id": "shape", "title": "Product shape: receipt, network, or infrastructure", "subtitle": "Pick one primary product and name what must be cut for the next version."},
@@ -79,7 +79,7 @@ def _repo_root() -> Path:
 
 
 def context_text() -> str:
-    return (_repo_root() / "products" / "turrii-jam" / "context.md").read_text(encoding="utf-8")
+    return (_repo_root() / "products" / "proof" / "context.md").read_text(encoding="utf-8")
 
 
 def _markdown_files(path: Path) -> list[Path]:
@@ -106,7 +106,7 @@ def load_profiles(root: Path | None = None, people: list[dict[str, str]] | None 
 
 
 def evidence_for(profile: dict[str, Any], query: str) -> dict[str, Any]:
-    stop = {"this", "that", "with", "have", "from", "what", "turrii", "human"}
+    stop = {"this", "that", "with", "have", "from", "what", "proof", "human"}
     words = sorted({word for word in re.findall(r"[a-z]{4,}", query.lower()) if word not in stop})
     chunks: list[dict[str, Any]] = []
     for document in profile["documents"]:
@@ -144,8 +144,10 @@ def evidence_for(profile: dict[str, Any], query: str) -> dict[str, Any]:
     }
 
 
-def anthropic_generate(*, system: str, messages: list[dict[str, str]], key_env: str = "TURRII_ANTHROPIC_API_KEY") -> dict[str, Any]:
+def anthropic_generate(*, system: str, messages: list[dict[str, str]], key_env: str = "PROOF_ANTHROPIC_API_KEY") -> dict[str, Any]:
     key = os.environ.get(key_env, "")
+    if not key and key_env == "PROOF_ANTHROPIC_API_KEY":
+        key = os.environ.get("TURRII_ANTHROPIC_API_KEY", "")
     if not key:
         raise RuntimeError("Anthropic is not configured")
     payload = json.dumps({
@@ -173,7 +175,7 @@ def anthropic_generate(*, system: str, messages: list[dict[str, str]], key_env: 
     return {"text": text, "usage": data.get("usage", {}), "model": data.get("model", MODEL)}
 
 
-class TurriiJamStore:
+class ProofJamStore:
     def __init__(
         self,
         *,
@@ -183,7 +185,7 @@ class TurriiJamStore:
         generate: Callable[..., dict[str, Any]] = anthropic_generate,
         ready: Callable[[], bool] | None = None,
         background: bool = True,
-        project_name: str = "Turrii",
+        project_name: str = "Proof",
         topics: list[dict[str, str]] | None = None,
         guardrails: str | None = None,
     ) -> None:
@@ -194,7 +196,7 @@ class TurriiJamStore:
         self.topics = [GENERAL_TOPIC] + [topic for topic in (TOPICS if topics is None else topics) if topic["id"] != "general"]
         self.guardrails = guardrails if guardrails is not None else "Do not imply access to Turrii's closed source, classifier, internal metrics, or team. Do not help evade bot detection, anti-abuse systems, platform rules, identity checks, or provenance controls. You may critically evaluate agent interaction realism as a compatibility, accessibility, quality, or red-team problem."
         self.generate = generate
-        self.ready = ready or (lambda: bool(os.environ.get("TURRII_ANTHROPIC_API_KEY")))
+        self.ready = ready or (lambda: bool(os.environ.get("PROOF_ANTHROPIC_API_KEY") or os.environ.get("TURRII_ANTHROPIC_API_KEY")))
         self.background = background
         self.lock = threading.RLock()
         self.data_file.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -348,7 +350,7 @@ SELECTED TEEK MATERIAL:
         jam.pop("error", None)
         self._save()
         if self.background:
-            threading.Thread(target=self._run_generation, args=(jam["id"],), daemon=True, name=f"turrii-jam-{jam['id'][:8]}").start()
+            threading.Thread(target=self._run_generation, args=(jam["id"],), daemon=True, name=f"proof-jam-{jam['id'][:8]}").start()
         else:
             self._run_generation(jam["id"])
 
@@ -385,17 +387,20 @@ SELECTED TEEK MATERIAL:
                 self._save()
 
 
-_STORE: TurriiJamStore | None = None
+_STORE: ProofJamStore | None = None
 _STORE_LOCK = threading.Lock()
 
 
-def store() -> TurriiJamStore:
+def store() -> ProofJamStore:
     global _STORE
     with _STORE_LOCK:
         if _STORE is None:
-            default = Path.home() / ".usual" / "turrii-jam" / "jams.json"
-            _STORE = TurriiJamStore(
-                data_file=Path(os.environ.get("TURRII_JAM_DATA_FILE", default)),
+            default = Path.home() / ".usual" / "proof-jam" / "jams.json"
+            legacy = Path.home() / ".usual" / "turrii-jam" / "jams.json"
+            if not default.exists() and legacy.exists():
+                default = legacy
+            _STORE = ProofJamStore(
+                data_file=Path(os.environ.get("PROOF_JAM_DATA_FILE", os.environ.get("TURRII_JAM_DATA_FILE", default))),
                 profiles=load_profiles(),
                 context=context_text(),
             )

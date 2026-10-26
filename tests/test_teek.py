@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 
 from usual import teek
 from usual.server import PublicAutopilotHandler, ThreadingHTTPServer
-from usual.turrii_jam import TurriiJamStore
+from usual.proof_jam import ProofJamStore
 
 
 class TeekTests(unittest.TestCase):
@@ -64,8 +64,8 @@ class TeekTests(unittest.TestCase):
             self.assertEqual(self.request("GET", path, headers={"Cookie": cookie})[0], 200)
         result = self.request("GET", "/teek/template.json", headers={"Cookie": cookie})
         self.assertEqual(teek.validate(json.loads(result[2]))["version"], 1)
-        # A hub cookie must not open the existing Turrii workshop.
-        self.assertEqual(self.request("GET", "/turrii/api/jam", headers={"Cookie": cookie})[0], 401)
+        # A hub cookie must not open the existing Proof workshop.
+        self.assertEqual(self.request("GET", "/proof/api/jam", headers={"Cookie": cookie})[0], 401)
 
     def test_login_accepts_native_no_referrer_form_but_rejects_foreign_origin(self):
         body = urlencode({"password": "synthetic-hub-password"})
@@ -112,7 +112,7 @@ class TeekTests(unittest.TestCase):
             return {"text": json.dumps({"messages": [{"speaker": person, "text": "A grounded reply."} for person in ["pg", "achen", "pg", "achen"]], "question": "What do you think?", "summary": None}), "model": "mock"}
         with tempfile.TemporaryDirectory() as directory:
             def make(slug):
-                return TurriiJamStore(data_file=Path(directory)/slug/"jams.json", profiles=profiles, context=slug+" context", project_name=slug, topics=teek.DEFAULT_TOPICS, guardrails=teek.GUARDRAILS, generate=generate, ready=lambda: True, background=False)
+                return ProofJamStore(data_file=Path(directory)/slug/"jams.json", profiles=profiles, context=slug+" context", project_name=slug, topics=teek.DEFAULT_TOPICS, guardrails=teek.GUARDRAILS, generate=generate, ready=lambda: True, background=False)
             a, b = make("Alpha"), make("Beta")
             a.catalog(); b.catalog()
             self.assertEqual(calls, [])
@@ -122,6 +122,6 @@ class TeekTests(unittest.TestCase):
             self.assertEqual(a.catalog()["used"], 1)
             self.assertEqual(b.catalog()["used"], 0)
             self.assertIn("Alpha context", calls[0]["system"])
-            self.assertNotIn("Turrii", calls[0]["system"])
+            self.assertNotIn("Proof", calls[0]["system"])
             self.assertNotIn("system", jam)
             self.assertEqual(make("Alpha").catalog()["used"], 1)

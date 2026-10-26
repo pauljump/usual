@@ -16,7 +16,7 @@
   "healthCheck": "https://tryusual.com/health",
   "deploymentCommand": "node /Users/mini-home/projects/_factory/control-plane/scripts/migrate-pm2-fleet.mjs --apply --only usual-web",
   "runtimeMode": "--autopilot-public",
-  "notes": "Usual public site and source-only downloads, served from the canonical pauljump/usual checkout. tryusual.com is canonical; www and previous hostnames redirect with paths and queries preserved. The legacy /whetstone.zip redirects to /usual.zip. Public routes have no private corpus or model calls. The isolated, noindex, password-gated /turrii/ workshop stores its archive outside the repository and makes a model call only after an authenticated human contribution. Browser Integrity Check is off for this public agent-facing site because it blocked Python download clients with Cloudflare 1010.",
+  "notes": "Usual public site and source-only downloads, served from the canonical pauljump/usual checkout. tryusual.com is canonical; www and previous hostnames redirect with paths and queries preserved. The legacy /whetstone.zip redirects to /usual.zip. Public routes have no private corpus or model calls. The isolated, noindex, password-gated /proof/ workshop stores its archive outside the repository and makes a model call only after an authenticated human contribution. Browser Integrity Check is off for this public agent-facing site because it blocked Python download clients with Cloudflare 1010.",
   "redirects": {
     "www.tryusual.com": "https://tryusual.com",
     "usual.polyfeeds.dev": "https://tryusual.com",

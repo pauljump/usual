@@ -15,7 +15,7 @@ from importlib.resources import files
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from .turrii_jam import JamError, PEOPLE, TurriiJamStore, anthropic_generate, load_profiles
+from .proof_jam import JamError, PEOPLE, ProofJamStore, anthropic_generate, load_profiles
 
 SLUG = re.compile(r"[a-z][a-z0-9-]{0,47}")
 GUARDRAILS = "Stay on product and business decisions. Do not provide medical, legal, or financial professional advice. Route high-stakes claims to qualified human reviewers. Optimize for user agency and benefit, not compulsion or deception."
@@ -78,7 +78,7 @@ def room_store(config):
     slug = config["slug"]
     with _lock:
         if slug not in _stores:
-            _stores[slug] = TurriiJamStore(
+            _stores[slug] = ProofJamStore(
                 data_file=root() / "archives" / slug / "jams.json",
                 profiles=load_profiles(people=[p for p in PEOPLE if p["id"] in config["profiles"]]),
                 context=config["context"], project_name=config["name"], topics=config["topics"],
@@ -120,18 +120,18 @@ def authorized(handler):
 
 
 def login_page(error=""):
-    return ('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Teek · Private</title><link rel="stylesheet" href="/turrii/turrii.css"><body class="login-body"><main class="login-shell"><section class="login-card"><p class="eyebrow">TEEK / PRIVATE ROOM KIT</p><h1>A little friction.<br>Your call.</h1><p>Reusable product workshops. A brain dump in, a clearer decision out.</p>'''
+    return ('''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Teek · Private</title><link rel="stylesheet" href="/proof/proof.css"><body class="login-body"><main class="login-shell"><section class="login-card"><p class="eyebrow">TEEK / PRIVATE ROOM KIT</p><h1>A little friction.<br>Your call.</h1><p>Reusable product workshops. A brain dump in, a clearer decision out.</p>'''
             + html.escape(error) + '''<form method="post" action="/teek/login"><label for="password">Workshop password</label><input id="password" name="password" type="password" autocomplete="current-password" required><button class="primary">Enter Teek ↗</button></form></section></main></body></html>''').encode()
 
 
 def handle(handler, *, post=False, head=False):
     path = urlparse(handler.path).path
-    send = lambda status, body, mime="text/html; charset=utf-8": handler._turrii_send(status, body, mime, html=mime.startswith("text/html"), head=head)
-    respond = handler._turrii_json
+    send = lambda status, body, mime="text/html; charset=utf-8": handler._proof_send(status, body, mime, html=mime.startswith("text/html"), head=head)
+    respond = handler._proof_json
     if not post and path == "/teek":
         handler.send_response(308)
         handler.send_header("Location", "/teek/")
-        handler._turrii_headers()
+        handler._proof_headers()
         handler.end_headers()
         return
     if post and path == "/teek/login":
@@ -140,7 +140,7 @@ def handle(handler, *, post=False, head=False):
         if handler.headers.get("Origin") not in (None, "null") and not same_origin(handler):
             send(403, login_page("Same-origin sign-in required."))
             return
-        key = handler._turrii_client_key()
+        key = handler._proof_client_key()
         with _lock:
             count, started = _attempts.get(key, (0, time.time()))
             if time.time() - started > 900:
@@ -149,7 +149,7 @@ def handle(handler, *, post=False, head=False):
                 send(429, login_page("Too many attempts. Try again later."))
                 return
             try:
-                value = parse_qs(handler._turrii_read_body().decode()).get("password", [""])[0]
+                value = parse_qs(handler._proof_read_body().decode()).get("password", [""])[0]
             except (ValueError, UnicodeError):
                 send(400, login_page("Invalid request."))
                 return
@@ -164,7 +164,7 @@ def handle(handler, *, post=False, head=False):
         handler.send_response(303)
         handler.send_header("Location", "/teek/")
         handler.send_header("Set-Cookie", f"teek_session={expires}.{signature(expires)}; Path=/teek; HttpOnly; SameSite=Strict; Max-Age=86400" + ("; Secure" if secure else ""))
-        handler._turrii_headers()
+        handler._proof_headers()
         handler.end_headers()
         return
     if not authorized(handler):
@@ -175,7 +175,7 @@ def handle(handler, *, post=False, head=False):
         return
     try:
         if not post:
-            assets = {"/teek/": ("teek.html", "text/html; charset=utf-8"), "/teek/teek.css": ("teek.css", "text/css"), "/teek/room.css": ("turrii.css", "text/css"), "/teek/room.js": ("turrii.js", "text/javascript"), "/teek/hub.js": ("teek-hub.js", "text/javascript"), "/teek/guide": ("teek-guide.txt", "text/plain; charset=utf-8")}
+            assets = {"/teek/": ("teek.html", "text/html; charset=utf-8"), "/teek/teek.css": ("teek.css", "text/css"), "/teek/room.css": ("proof.css", "text/css"), "/teek/room.js": ("proof.js", "text/javascript"), "/teek/hub.js": ("teek-hub.js", "text/javascript"), "/teek/guide": ("teek-guide.txt", "text/plain; charset=utf-8")}
             if path in assets:
                 file, mime = assets[path]
                 send(200, files("usual").joinpath("public/" + file).read_bytes(), mime)
@@ -200,7 +200,7 @@ def handle(handler, *, post=False, head=False):
         if post:
             if "/api/jam" not in path or not same_origin(handler) or handler.headers.get("X-Jam-Request") != "1" or not handler.headers.get("Content-Type", "").startswith("application/json"):
                 raise JamError(403, "Same-origin JSON request required")
-            value = json.loads(handler._turrii_read_body())
+            value = json.loads(handler._proof_read_body())
             if not isinstance(value, dict):
                 raise ValueError("Expected object")
             store = room_store(config)

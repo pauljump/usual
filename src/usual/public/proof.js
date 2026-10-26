@@ -1,8 +1,8 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
-const API = document.body.dataset.jamApi || "/turrii/api/jam";
-const roomName = document.body.dataset.jamName || "Turrii";
-const requestKey = API === "/turrii/api/jam" ? "turrii-jam-request" : API + ":request";
+const API = document.body.dataset.jamApi || "/proof/api/jam";
+const roomName = document.body.dataset.jamName || "Proof";
+const requestKey = API === "/proof/api/jam" ? "proof-jam-request" : API + ":request";
 let catalog;
 let current;
 let poll;

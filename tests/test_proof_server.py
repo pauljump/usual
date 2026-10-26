@@ -8,10 +8,10 @@ from urllib.parse import urlencode
 from usual.server import PublicAutopilotHandler, ThreadingHTTPServer
 
 
-class TurriiServerTests(unittest.TestCase):
+class ProofServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.environment = patch.dict(os.environ, {"TURRII_JAM_PASSWORD": "test-only-password"}, clear=False)
+        cls.environment = patch.dict(os.environ, {"PROOF_JAM_PASSWORD": "test-only-password"}, clear=False)
         cls.environment.start()
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), PublicAutopilotHandler)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
@@ -36,17 +36,27 @@ class TurriiServerTests(unittest.TestCase):
 
     def login(self):
         body = urlencode({"password": "test-only-password"})
-        status, headers, _ = self.request("POST", "/turrii/login", body, {"Content-Type": "application/x-www-form-urlencoded"})
+        status, headers, _ = self.request("POST", "/proof/login", body, {"Content-Type": "application/x-www-form-urlencoded"})
         self.assertEqual(status, 303)
         return headers["Set-Cookie"].split(";", 1)[0]
 
+    def test_legacy_links_redirect_without_losing_query_or_method(self):
+        for method, path, target in [("GET", "/turrii/?x=1", "/proof/?x=1"), ("HEAD", "/turrii/turrii.css", "/proof/proof.css"), ("POST", "/turrii/login", "/proof/login")]:
+            status, headers, _ = self.request(method, path)
+            self.assertEqual(status, 308)
+            self.assertEqual(headers["Location"], target)
+
+    def test_legacy_password_remains_usable(self):
+        with patch.dict(os.environ, {"TURRII_JAM_PASSWORD": "legacy"}, clear=True):
+            self.assertEqual(PublicAutopilotHandler._proof_password(), "legacy")
+
     def test_path_redirects_to_canonical_slash(self):
-        status, headers, _ = self.request("GET", "/turrii")
+        status, headers, _ = self.request("GET", "/proof")
         self.assertEqual(status, 308)
-        self.assertEqual(headers["Location"], "/turrii/")
+        self.assertEqual(headers["Location"], "/proof/")
 
     def test_private_page_requires_password_and_is_not_indexable(self):
-        status, headers, body = self.request("GET", "/turrii/")
+        status, headers, body = self.request("GET", "/proof/")
         self.assertEqual(status, 200)
         self.assertIn(b"Workshop password", body)
         self.assertIn("noindex", headers["X-Robots-Tag"])
@@ -54,24 +64,24 @@ class TurriiServerTests(unittest.TestCase):
 
     def test_wrong_password_is_rejected(self):
         body = urlencode({"password": "wrong"})
-        status, _, response = self.request("POST", "/turrii/login", body, {"Content-Type": "application/x-www-form-urlencoded"})
+        status, _, response = self.request("POST", "/proof/login", body, {"Content-Type": "application/x-www-form-urlencoded"})
         self.assertEqual(status, 401)
         self.assertIn(b"didn", response)
 
     def test_login_establishes_scoped_session_and_serves_workshop(self):
         cookie = self.login()
-        status, headers, body = self.request("GET", "/turrii/", headers={"Cookie": cookie})
+        status, headers, body = self.request("GET", "/proof/", headers={"Cookie": cookie})
         self.assertEqual(status, 200)
-        self.assertIn(b"What is Turrii", body)
+        self.assertIn(b"What is Proof", body)
         self.assertIn("private, no-store", headers["Cache-Control"])
-        self.assertNotIn("TURRII_JAM_PASSWORD", body.decode())
+        self.assertNotIn("PROOF_JAM_PASSWORD", body.decode())
 
     def test_api_requires_auth_and_rejects_cross_origin_writes(self):
-        status, _, _ = self.request("GET", "/turrii/api/jam")
+        status, _, _ = self.request("GET", "/proof/api/jam")
         self.assertEqual(status, 401)
         cookie = self.login()
         status, _, body = self.request(
-            "POST", "/turrii/api/jam", "{}",
+            "POST", "/proof/api/jam", "{}",
             {"Cookie": cookie, "Origin": "https://evil.example", "Content-Type": "application/json", "X-Jam-Request": "1"},
         )
         self.assertEqual(status, 403)

@@ -1,4 +1,4 @@
-"""Versioned, validated speaker turns shared by Turrii and every Teek room."""
+"""Versioned, validated speaker turns shared by Proof and every Teek room."""
 import json
 
 EVIDENCE_STYLE = """EVIDENCE PRESENTATION v1 — applies to this reply, including ongoing jams.

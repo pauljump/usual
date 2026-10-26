@@ -4,7 +4,7 @@ import unittest
 import uuid
 from pathlib import Path
 
-from usual.turrii_jam import LIMIT, MODEL, ROUNDS, JamError, TurriiJamStore, context_text
+from usual.proof_jam import LIMIT, MODEL, ROUNDS, JamError, ProofJamStore, context_text
 from usual.jam_dialogue import EVIDENCE_STYLE, parse_dialogue
 
 
@@ -41,7 +41,7 @@ def opening():
     }
 
 
-class TurriiJamStoreTests(unittest.TestCase):
+class ProofJamStoreTests(unittest.TestCase):
     def make_store(self, generate=None, ready=lambda: True):
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
@@ -51,10 +51,10 @@ class TurriiJamStoreTests(unittest.TestCase):
             calls.append(kwargs)
             return {"text": dialogue((len(kwargs["messages"]) + 1) // 2), "model": MODEL, "usage": {"output_tokens": 12}}
 
-        store = TurriiJamStore(
+        store = ProofJamStore(
             data_file=Path(directory.name) / "jams.json",
             profiles=profiles(),
-            context="Frozen Turrii context",
+            context="Frozen Proof context",
             generate=generate or fake_generate,
             ready=ready,
             background=False,
@@ -152,7 +152,7 @@ class TurriiJamStoreTests(unittest.TestCase):
         value = {**opening(), "topic": "general"}
         jam = store.create(value)
         self.assertEqual(jam["status"], "waiting")
-        self.assertIn("Frozen Turrii context", calls[0]["system"])
+        self.assertIn("Frozen Proof context", calls[0]["system"])
 
     def test_evidence_style_applies_to_existing_frozen_jams_without_rewriting_history(self):
         store, calls = self.make_store()

@@ -15,7 +15,7 @@ QUICK START (in the Usual repository)
 SUPPORTED PROFILE IDS
 achen, pg, benthomp, collison, bretvictor, thiel, mattlevine, shreyas, jzhuo, pmarca
 Choose at least two. Runtime selection is two or three, initially unselected,
-sorted by last name. This first kit uses Turrii's curated roster, not every Teek
+sorted by last name. This first kit uses Proof's curated roster, not every Teek
 profile. Profile files/corpus remain local to the deployment host; not bundled.
 
 RUNTIME CONFIGURATION
@@ -54,10 +54,10 @@ CHANGE MANAGEMENT
 Restart through the fleet after editing existing room configuration: room stores
 are cached per process. Existing jams preserve their original frozen context.
 Keep old topic IDs when revising room topics so archives remain understandable.
-Never copy Last Bump or Turrii archives into the kit. Their existing URLs and
-passwords remain separate. Turrii now shares the parameterized engine/client;
+Never copy Last Bump or Proof archives into the kit. Their existing URLs and
+passwords remain separate. Proof now shares the parameterized engine/client;
 Last Bump remains a separate Node implementation, not automatically synchronized.
 
 VERIFICATION
-python3 -m pytest -q tests/test_teek.py tests/test_turrii_jam.py tests/test_turrii_server.py
+python3 -m pytest -q tests/test_teek.py tests/test_proof_jam.py tests/test_proof_server.py
 Tests must use synthetic profiles and mocked generation, never provider calls.

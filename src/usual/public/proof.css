@@ -108,7 +108,7 @@ body:has(#session:not([hidden])) main{padding:0}
 @media(prefers-reduced-motion:no-preference){.chat-dots{animation:chat-pulse 1.2s ease-in-out infinite}}
 @keyframes chat-pulse{50%{opacity:.35}}
 
-/* Turrii brand brief, translated into a restrained working room. */
+/* Proof brand brief, translated into a restrained working room. */
 :root{
   --paper:#f3f0ea;
   --surface:#fbfaf7;
